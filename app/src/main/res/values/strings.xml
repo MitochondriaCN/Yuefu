@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Yuefu</string>
+    <string name="app_name">乐府</string>
+    <string name="home">主页</string>
 </resources>
