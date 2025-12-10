@@ -7,10 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 
 class MainActivity : ComponentActivity() {
@@ -19,29 +19,23 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             YuefuTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                AppFramework(modifier = Modifier.fillMaxSize())
             }
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+fun AppFramework(modifier: Modifier = Modifier) {
+    val navController = rememberNavController()
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    YuefuTheme {
-        Greeting("Android")
+    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+        NavHost(
+            modifier = Modifier.padding(innerPadding),
+            navController = navController,
+            startDestination = "home"
+        ) {
+
+        }
     }
 }
