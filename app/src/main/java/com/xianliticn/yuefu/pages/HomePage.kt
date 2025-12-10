@@ -1,5 +1,7 @@
 package com.xianliticn.yuefu.pages
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,11 +33,34 @@ import com.xianliticn.yuefu.ui.theme.Clouds
 
 @Composable
 fun HomePage(viewModel: HomePageViewModel) {
-    HomePageContent()
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            viewModel.handleImportFile(uri)
+        }
+    }
+
+    HomePageContent(
+        onShotSheetClick = { /*TODO*/ },
+        onImportFileClick = {
+            filePickerLauncher.launch(
+                arrayOf(
+                    "text/xml",
+                    "application/xml",
+                    "application/octet-stream" //MIDI
+                )
+            )
+        }
+    )
 }
 
 @Composable
-fun HomePageContent(modifier: Modifier = Modifier) {
+fun HomePageContent(
+    modifier: Modifier = Modifier,
+    onShotSheetClick: () -> Unit = {},
+    onImportFileClick: () -> Unit = {}
+) {
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
@@ -49,13 +74,13 @@ fun HomePageContent(modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
                 label = stringResource(R.string.shot_sheet),
                 bgColor = Blue800
-            )
+            ) { onShotSheetClick() }
             ButtonCard(
                 icon = Icons.Default.AttachFile,
                 modifier = Modifier.weight(1f),
                 label = stringResource(R.string.import_file),
                 bgColor = Amber800
-            )
+            ) { onImportFileClick() }
         }
     }
 }
