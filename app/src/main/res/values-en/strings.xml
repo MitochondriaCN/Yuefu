@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">Yuefu</string>
     <string name="home">Home</string>
+    <string name="shot_sheet">Scan score</string>
+    <string name="import_file">Import score</string>
 </resources>

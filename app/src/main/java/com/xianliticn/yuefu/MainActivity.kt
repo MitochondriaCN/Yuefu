@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -55,7 +56,13 @@ fun AppFramework(modifier: Modifier = Modifier) {
                 navItems.forEach { item ->
                     NavigationBarItem(
                         selected = navBackStackEntry?.destination?.route == item.route,
-                        onClick = { navController.navigate(item.route) },
+                        onClick = { navController.navigate(item.route){
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        } },
                         icon = { Icon(item.icon, null) },
                         label = { Text(stringResource(item.labelStringRes)) }
                     )
@@ -69,7 +76,7 @@ fun AppFramework(modifier: Modifier = Modifier) {
             navController = navController,
             startDestination = "home"
         ) {
-            composable("home") { HomePage() }
+            composable("home") { HomePage(hiltViewModel()) }
         }
     }
 }
