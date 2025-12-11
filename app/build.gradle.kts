@@ -68,4 +68,9 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
 
     implementation(libs.retrofit)
+
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+
 }
