@@ -16,6 +16,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 import java.time.LocalDateTime
@@ -32,10 +33,37 @@ class HomePageViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomePageState())
     val uiState: StateFlow<HomePageState> = _uiState
 
+    fun refresh() {
+        _uiState.update {
+            _uiState.value.copy(
+                loading = true
+            )
+        }
+
+        viewModelScope.launch {
+            //获取最近用过的四个文件
+            val recent4 = appDatabase.sheetDao().getAllOpenTimeDesc().take(4)
+            _uiState.update {
+                it.copy(
+                    recent4 = recent4
+                )
+            }
+
+            //完成
+            _uiState.update {
+                _uiState.value.copy(
+                    loading = false
+                )
+            }
+        }
+    }
+
     fun handleImportFile(uri: Uri) {
-        _uiState.value = _uiState.value.copy(
-            loading = true
-        )
+        _uiState.update {
+            _uiState.value.copy(
+                loading = true
+            )
+        }
 
         try {
             //创建导入子目录
@@ -59,37 +87,47 @@ class HomePageViewModel @Inject constructor(
                 }
             }
 
-            //检查合法性
             viewModelScope.launch {
+                //检查合法性
                 if (!isValidMusicXml(file)) {
                     //不合法
                     Toast.makeText(context, R.string.invalid_sheet, Toast.LENGTH_LONG).show()
                     file.delete()
-                    _uiState.value = _uiState.value.copy(
-                        loading = false
-                    )
-                } else {
-                    //合法
-                    //查重
-                    appDatabase.sheetDao().getSameHash(file.getHash())?.let {
-                        Toast.makeText(context, R.string.import_duplicate, Toast.LENGTH_LONG).show()
-                        file.delete()
-                        _uiState.value = _uiState.value.copy(
+                    _uiState.update {
+                        _uiState.value.copy(
                             loading = false
                         )
+                    }
+                    return@launch
+                }
+                //合法
+                //查重
+                appDatabase.sheetDao().getSameHash(file.getHash()).takeIf { it.isNotEmpty() }
+                    ?.let {
+                        Toast.makeText(context, R.string.import_duplicate, Toast.LENGTH_LONG)
+                            .show()
+                        file.delete()
+                        _uiState.update {
+                            _uiState.value.copy(
+                                loading = false
+                            )
+                        }
                         return@launch
                     }
-                    Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
-                    //插入数据条目
-                    appDatabase.sheetDao().insert(
-                        Sheet(
-                            fileName = file.name,
-                            sheetName = file.nameWithoutExtension,
-                            lastOpenTime = System.currentTimeMillis(),
-                            hash = file.getHash()
-                        )
+                Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
+                //插入数据条目
+                appDatabase.sheetDao().insert(
+                    Sheet(
+                        fileName = file.name,
+                        sheetName = file.nameWithoutExtension,
+                        lastOpenTime = System.currentTimeMillis(),
+                        hash = file.getHash()
                     )
-                    _uiState.value = _uiState.value.copy(
+                )
+
+                refresh()
+                _uiState.update {
+                    _uiState.value.copy(
                         loading = false
                     )
                 }
@@ -104,6 +142,7 @@ class HomePageViewModel @Inject constructor(
     }
 
     data class HomePageState(
-        val loading: Boolean = false
+        val loading: Boolean = false,
+        val recent4: List<Sheet> = emptyList()
     )
 }

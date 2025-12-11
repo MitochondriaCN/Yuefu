@@ -12,6 +12,9 @@ interface SheetDao {
     @Query("SELECT * FROM sheet")
     suspend fun getAll(): List<Sheet>
 
+    @Query("SELECT * FROM sheet ORDER BY last_open_time DESC")
+    suspend fun getAllOpenTimeDesc(): List<Sheet>
+
     @Query("SELECT * FROM sheet WHERE file_name = :fileName")
     suspend fun getByFileName(fileName: String): Sheet?
 
@@ -25,5 +28,5 @@ interface SheetDao {
     suspend fun delete(sheet: Sheet)
 
     @Query("SELECT * FROM sheet WHERE hash = :hash")
-    suspend fun getSameHash(hash: String): List<Sheet>?
+    suspend fun getSameHash(hash: String): List<Sheet>
 }
