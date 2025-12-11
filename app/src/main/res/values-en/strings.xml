@@ -4,4 +4,7 @@
     <string name="home">Home</string>
     <string name="shot_sheet">Scan score</string>
     <string name="import_file">Import score</string>
+    <string name="invalid_sheet">Invalid sheet music file.</string>
+    <string name="import_success">Import successful!</string>
+    <string name="import_failed">Import failed.</string>
 </resources>

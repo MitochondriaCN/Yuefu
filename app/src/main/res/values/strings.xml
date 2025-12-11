@@ -3,4 +3,7 @@
     <string name="home">主页</string>
     <string name="shot_sheet">扫描乐谱</string>
     <string name="import_file">导入乐谱</string>
+    <string name="invalid_sheet">不是有效的乐谱文件。</string>
+    <string name="import_success">导入成功！</string>
+    <string name="import_failed">导入失败。</string>
 </resources>
