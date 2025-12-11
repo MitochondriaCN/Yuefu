@@ -1,0 +1,13 @@
+name: PR Artifacts Cleanup
+
+on:
+  pull_request:
+    types: [synchronize]
+
+jobs:
+    delete_pr_artifacts:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: stefanluptak/delete-old-pr-artifacts@v1
+            with:
+                workflow_filename: 'android.yml'
