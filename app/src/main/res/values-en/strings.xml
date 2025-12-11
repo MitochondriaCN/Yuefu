@@ -2,4 +2,11 @@
 <resources>
     <string name="app_name">Yuefu</string>
     <string name="home">Home</string>
+    <string name="shot_sheet">Scan score</string>
+    <string name="import_file">Import score</string>
+    <string name="invalid_sheet">Invalid sheet music file.</string>
+    <string name="import_success">Import successful!</string>
+    <string name="import_failed">Import failed.</string>
+    <string name="import_duplicate">The sheet is already imported.</string>
+    <string name="recently_used">Recently used</string>
 </resources>
