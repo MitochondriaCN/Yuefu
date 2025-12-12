@@ -8,4 +8,8 @@
     <string name="import_failed">导入失败。</string>
     <string name="import_duplicate">该乐谱已导入。</string>
     <string name="recently_used">最近使用</string>
+    <string name="sheet">乐谱</string>
+    <string name="last_open_time">上次使用：</string>
+    <string name="search">搜索</string>
+    <string name="search_sheets">搜索乐谱</string>
 </resources>
