@@ -24,6 +24,8 @@ class SheetPageViewModel @Inject constructor(
     lateinit var context: Context
 
     private var searchJob: Job? = null
+    private var deleteJob: Job? = null
+
 
     private val _uiState = MutableStateFlow(SheetPageState())
     val uiState: StateFlow<SheetPageState> = _uiState
@@ -75,6 +77,14 @@ class SheetPageViewModel @Inject constructor(
                     sheets = result
                 )
             }
+        }
+    }
+
+    fun handleDeleteSheet(sheet: Sheet) {
+        if (deleteJob?.isActive == true) return
+        deleteJob = viewModelScope.launch {
+            appDatabase.sheetDao().delete(sheet)
+            refresh()
         }
     }
 

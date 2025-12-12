@@ -1,20 +1,27 @@
 package com.xianliticn.yuefu.pages
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults.InputField
 import androidx.compose.material3.Text
@@ -28,7 +35,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
@@ -49,7 +58,8 @@ fun SheetPage(viewModel: SheetPageViewModel) {
         loading = uiState.loading,
         onItemClick = { viewModel.handleItemClick() },
         onSearchQueryChanged = { viewModel.handleSearchQueryChanged(it) },
-        onSearch = { viewModel.handleSearch(it) }
+        onSearch = { viewModel.handleSearch(it) },
+        onDeleteSheet = { viewModel.handleDeleteSheet(it) }
     )
 }
 
@@ -62,9 +72,41 @@ fun SheetPageContent(
     onRefresh: () -> Unit = {},
     onItemClick: (Sheet) -> Unit = {},
     onSearchQueryChanged: (String) -> Unit = {},
-    onSearch: (String) -> Unit = {}
+    onSearch: (String) -> Unit = {},
+    onDeleteSheet: (Sheet) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var optionSheet by remember { mutableStateOf<Sheet?>(null) }
+
+    optionSheet?.let {
+        ModalBottomSheet(
+            onDismissRequest = { optionSheet = null },
+            content = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = it.sheetName,
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .basicMarquee()
+                    )
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = { Text(stringResource(R.string.delete)) },
+                        leadingContent = { Icon(Icons.Default.Delete, null) },
+                        modifier = Modifier.clickable {
+                            onDeleteSheet(it)
+                            optionSheet = null
+                        }
+                    )
+                }
+            }
+        )
+    }
 
     PullToRefreshBox(
         modifier = modifier.fillMaxSize(),
@@ -125,6 +167,11 @@ fun SheetPageContent(
                                 Instant.ofEpochMilli(sheets[it].lastOpenTime).toFriendlyString()
                             }"
                         )
+                    },
+                    trailingContent = {
+                        IconButton(onClick = {
+                            optionSheet = sheets[it]
+                        }) { Icon(Icons.Default.MoreVert, null) }
                     }
                 )
             }

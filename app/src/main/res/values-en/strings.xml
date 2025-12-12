@@ -13,4 +13,5 @@
     <string name="last_open_time">"Last opened: "</string>
     <string name="search">Search</string>
     <string name="search_sheets">Search sheets</string>
+    <string name="delete">Delete</string>
 </resources>
