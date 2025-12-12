@@ -29,4 +29,7 @@ interface SheetDao {
 
     @Query("SELECT * FROM sheet WHERE hash = :hash")
     suspend fun getSameHash(hash: String): List<Sheet>
+
+    @Query("SELECT * FROM sheet WHERE file_name LIKE '%' || :fileName || '%'")
+    suspend fun getLikeFileName(fileName: String): List<Sheet>
 }

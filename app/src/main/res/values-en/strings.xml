@@ -9,4 +9,9 @@
     <string name="import_failed">Import failed.</string>
     <string name="import_duplicate">The sheet is already imported.</string>
     <string name="recently_used">Recently used</string>
+    <string name="sheet">Sheets</string>
+    <string name="last_open_time">"Last opened: "</string>
+    <string name="search">Search</string>
+    <string name="search_sheets">Search sheets</string>
+    <string name="delete">Delete</string>
 </resources>
