@@ -2,6 +2,8 @@ package com.xianliticn.yuefu.utils
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.dom4j.Document
+import org.dom4j.io.SAXReader
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 import java.io.File
@@ -27,3 +29,24 @@ suspend fun isValidMusicXml(file: File): Boolean =
             return@withContext false
         }
     }
+
+fun readXml(file: File): Document {
+    val reader = SAXReader()
+    return reader.read(file)
+}
+
+fun getSheetTitle(doc: Document): String? {
+    //尝试直接获取movement-title
+    val movementTitle = doc.selectSingleNode("//score-partwise/movement-title")?.text
+    if (!movementTitle.isNullOrBlank()) {
+        return movementTitle
+    }
+
+    //如果没有，尝试获取work/work-title
+    val workTitle = doc.selectSingleNode("//score-partwise/work/work-title")?.text
+    if (!workTitle.isNullOrBlank()) {
+        return workTitle
+    }
+
+    return null
+}

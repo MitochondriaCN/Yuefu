@@ -16,4 +16,6 @@
     <string name="delete">Delete</string>
     <string name="overview">Overview</string>
     <string name="play">Play</string>
+    <string name="sheet_not_found">Cannot find the sheet</string>
+    <string name="unknown">Unknown</string>
 </resources>

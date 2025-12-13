@@ -16,4 +16,6 @@
     <string name="title_activity_sheet">SheetActivity</string>
     <string name="overview">概览</string>
     <string name="play">演奏</string>
+    <string name="sheet_not_found">未找到乐谱</string>
+    <string name="unknown">未知</string>
 </resources>
