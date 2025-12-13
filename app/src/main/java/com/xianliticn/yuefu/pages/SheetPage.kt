@@ -56,7 +56,7 @@ fun SheetPage(viewModel: SheetPageViewModel) {
         sheets = uiState.sheets,
         onRefresh = { viewModel.refresh() },
         loading = uiState.loading,
-        onItemClick = { viewModel.handleItemClick() },
+        onItemClick = { viewModel.handleItemClick(it) },
         onSearchQueryChanged = { viewModel.handleSearchQueryChanged(it) },
         onSearch = { viewModel.handleSearch(it) },
         onDeleteSheet = { viewModel.handleDeleteSheet(it) }

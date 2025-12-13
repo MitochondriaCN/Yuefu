@@ -18,6 +18,9 @@ interface SheetDao {
     @Query("SELECT * FROM sheet WHERE file_name = :fileName")
     suspend fun getByFileName(fileName: String): Sheet?
 
+    @Query("SELECT * FROM sheet WHERE id = :id")
+    suspend fun getById(id: Int): Sheet?
+
     @Update
     suspend fun update(sheet: Sheet)
 

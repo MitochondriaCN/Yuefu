@@ -1,9 +1,11 @@
 package com.xianliticn.yuefu.pages
 
 import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.AppDatabase
+import com.xianliticn.yuefu.SheetActivity
 import com.xianliticn.yuefu.entities.Sheet
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,7 +27,6 @@ class SheetPageViewModel @Inject constructor(
 
     private var searchJob: Job? = null
     private var deleteJob: Job? = null
-
 
     private val _uiState = MutableStateFlow(SheetPageState())
     val uiState: StateFlow<SheetPageState> = _uiState
@@ -55,8 +56,11 @@ class SheetPageViewModel @Inject constructor(
         }
     }
 
-    fun handleItemClick() {
-        //TODO
+    fun handleItemClick(sheet: Sheet) {
+        val intent = Intent(context, SheetActivity::class.java)
+        intent.putExtra("sheetId", sheet.id)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
     }
 
     fun handleSearchQueryChanged(keyword: String) {

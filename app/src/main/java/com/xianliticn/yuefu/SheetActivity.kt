@@ -7,8 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -24,34 +24,39 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.xianliticn.yuefu.pages.HomePage
-import com.xianliticn.yuefu.pages.SheetPage
+import com.xianliticn.yuefu.pages.SheetOverviewPage
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class SheetActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             YuefuTheme {
-                MainActivityFramework(modifier = Modifier.fillMaxSize())
+                SheetActivityFramework(
+                    modifier = Modifier.fillMaxSize(),
+                    sheetId = intent.getIntExtra("sheetId", 0)
+                )
             }
         }
     }
 
     @Composable
-    fun MainActivityFramework(modifier: Modifier = Modifier) {
+    fun SheetActivityFramework(
+        modifier: Modifier = Modifier,
+        sheetId: Int
+    ) {
         val navItems = listOf(
-            NavItem("home", R.string.home, Icons.Filled.Home),
-            NavItem("sheet", R.string.sheet, Icons.Filled.MusicNote)
+            NavItem("overview", R.string.overview, Icons.Default.Info),
+            NavItem("play", R.string.play, Icons.Default.Piano)
         )
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
 
         Scaffold(
-            modifier = modifier.fillMaxSize(),
+            modifier = modifier,
             bottomBar = {
                 NavigationBar {
                     navItems.forEach { item ->
@@ -77,11 +82,11 @@ class MainActivity : ComponentActivity() {
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp),
                 navController = navController,
-                startDestination = "home"
+                startDestination = "overview"
             ) {
-                composable("home") { HomePage(hiltViewModel()) }
-                composable("sheet") { SheetPage(hiltViewModel()) }
+                composable("overview") { SheetOverviewPage(hiltViewModel(), sheetId) }
             }
         }
     }
 }
+
