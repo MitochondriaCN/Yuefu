@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.AppDatabase
 import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
 import com.xianliticn.yuefu.utils.getSheetTitle
 import com.xianliticn.yuefu.utils.readXml
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 
 @HiltViewModel
 class SheetOverviewPageViewModel @Inject constructor(
@@ -45,7 +47,7 @@ class SheetOverviewPageViewModel @Inject constructor(
                 return@launch
             }
 
-            val sheetDoc = readXml(context.filesDir.resolve("import/${sheet.fileName}"))
+            val sheetDoc = readXml(File(context.getAbsoluteImportFilePath(sheet.fileName)))
 
             val sheetName = getSheetTitle(sheetDoc)
             _uiState.update {
