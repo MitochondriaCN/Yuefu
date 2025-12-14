@@ -1,16 +1,29 @@
 package com.xianliticn.yuefu.music
 
-data class MidiEvent(
+class MidiEvent(
     /**
      * 音高
      */
     val pitch: Int,
     /**
-     * 开始时间（ms）
+     * 开始时间（ns）
      */
-    val time: Long,
+    val timeNano: Long,
     /**
      * 音符类型
      */
-    val note: Note
-)
+    val note: Note,
+    /**
+     * 是否已发送
+     */
+    var isSent: Boolean
+) {
+    fun getMidiData(): ByteArray =
+        when (note) {
+            Note.PRESS ->
+                byteArrayOf(0x90.toByte(), pitch.toByte(), 127.toByte())
+
+            Note.RELEASE ->
+                byteArrayOf(0x80.toByte(), pitch.toByte(), 0.toByte())
+        }
+}

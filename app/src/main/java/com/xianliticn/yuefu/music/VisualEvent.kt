@@ -13,9 +13,9 @@ data class VisualEvent(
      */
     val part: Int,
     /**
-     * 开始时间（ms）
+     * 开始时间（ns）
      */
-    val time: Long,
+    val timeNano: Long,
     /**
      * 持续时间（ms）
      */
