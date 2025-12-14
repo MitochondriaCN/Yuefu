@@ -1,6 +1,7 @@
 package com.xianliticn.yuefu.pages
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,12 +24,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.ui.theme.Grey800
 
 @Composable
 fun SheetOverviewPage(
@@ -40,16 +44,26 @@ fun SheetOverviewPage(
         viewModel.refresh(sheetId)
     }
 
-    SheetOverviewPageContent(
-        modifier = Modifier.fillMaxSize(),
-        sheetName = uiState.sheetName
-    )
+    if (uiState.loading)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    else
+        SheetOverviewPageContent(
+            modifier = Modifier.fillMaxSize(),
+            sheetName = uiState.sheetTitle,
+            sheetAuthor = uiState.sheetAuthor
+        )
 }
 
 @Composable
 fun SheetOverviewPageContent(
     modifier: Modifier = Modifier,
-    sheetName: String
+    sheetName: String,
+    sheetAuthor: String
 ) {
     Column(
         modifier = modifier
@@ -68,22 +82,32 @@ fun SheetOverviewPageContent(
             AsyncImage(
                 modifier = Modifier
                     .width(100.dp)
-                    .aspectRatio(1f / 1.414f)
+                    .aspectRatio(1f / 1.414f) //A4比例
                     .shadow(
                         elevation = 4.dp,
-                        shape = RoundedCornerShape(4.dp),
+                        shape = RoundedCornerShape(12.dp),
                         clip = true
                     ),
-                model = null,
+                model = R.drawable.sheet_placeholder,
                 contentDescription = null,
-                placeholder = ColorPainter(Color.LightGray),
+                placeholder = painterResource(R.drawable.sheet_placeholder),
                 contentScale = ContentScale.Crop
             )
-            Column {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
                     text = sheetName,
                     style = MaterialTheme.typography.headlineMedium,
-                    maxLines = 3
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = sheetAuthor,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Grey800,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -94,6 +118,7 @@ fun SheetOverviewPageContent(
 @Composable
 fun SheetOverviewPagePreview() {
     SheetOverviewPageContent(
-        sheetName = "Rhapsody in The Blue in B Flat, Op. 21"
+        sheetName = "Rhapsody in The Blue in B Flat, Op. 21",
+        sheetAuthor = "P. I. Tchaikovsky"
     )
 }

@@ -6,7 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.AppDatabase
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
-import com.xianliticn.yuefu.utils.getSheetTitle
+import com.xianliticn.yuefu.utils.getAuthor
+import com.xianliticn.yuefu.utils.getTitle
 import com.xianliticn.yuefu.utils.readXml
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -47,12 +48,17 @@ class SheetOverviewPageViewModel @Inject constructor(
                 return@launch
             }
 
-            val sheetDoc = readXml(File(context.getAbsoluteImportFilePath(sheet.fileName)))
+            val sheetDoc =
+                readXml(File(context.getAbsoluteImportFilePath(sheet.fileName)))
 
-            val sheetName = getSheetTitle(sheetDoc)
+            //获取各项信息
+            val sheetTitle = sheetDoc.getTitle()
+            val sheetAuthor = sheetDoc.getAuthor()
+
             _uiState.update {
                 _uiState.value.copy(
-                    sheetName = sheetName ?: context.getString(R.string.unknown),
+                    sheetTitle = sheetTitle ?: "",
+                    sheetAuthor = sheetAuthor ?: "",
                     loading = false
                 )
             }
@@ -62,6 +68,7 @@ class SheetOverviewPageViewModel @Inject constructor(
     data class UiState(
         val loading: Boolean = false,
         val errorMessage: String? = null,
-        val sheetName: String = "",
+        val sheetTitle: String = "",
+        val sheetAuthor: String = ""
     )
 }

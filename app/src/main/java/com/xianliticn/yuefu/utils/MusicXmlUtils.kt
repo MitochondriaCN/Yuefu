@@ -30,23 +30,45 @@ suspend fun isValidMusicXml(file: File): Boolean =
         }
     }
 
-fun readXml(file: File): Document {
-    val reader = SAXReader()
-    return reader.read(file)
-}
-
-fun getSheetTitle(doc: Document): String? {
-    //尝试直接获取movement-title
-    val movementTitle = doc.selectSingleNode("//score-partwise/movement-title")?.text
-    if (!movementTitle.isNullOrBlank()) {
-        return movementTitle
+suspend fun readXml(file: File): Document =
+    withContext(Dispatchers.IO) {
+        val reader = SAXReader()
+        return@withContext reader.read(file)
     }
 
-    //如果没有，尝试获取work/work-title
-    val workTitle = doc.selectSingleNode("//score-partwise/work/work-title")?.text
-    if (!workTitle.isNullOrBlank()) {
-        return workTitle
+
+suspend fun Document.getTitle(): String? =
+    withContext(Dispatchers.IO) {
+        //尝试直接获取movement-title
+        val movementTitle = this@getTitle.selectSingleNode("//score-partwise/movement-title")?.text
+        if (!movementTitle.isNullOrBlank()) {
+            return@withContext movementTitle
+        }
+
+        //如果没有，尝试获取work/work-title
+        val workTitle = this@getTitle.selectSingleNode("//score-partwise/work/work-title")?.text
+        if (!workTitle.isNullOrBlank()) {
+            return@withContext workTitle
+        }
+
+        return@withContext null
     }
 
-    return null
-}
+
+suspend fun Document.getAuthor(): String? =
+    withContext(Dispatchers.IO) {
+        val composer =
+            this@getAuthor.selectSingleNode("//score-partwise/identification/creator[@type='composer']")?.text
+        if (!composer.isNullOrBlank()) {
+            return@withContext composer
+        }
+
+        //如果没有明确标记为composer的，尝试获取任意creator节点
+        val creator =
+            this@getAuthor.selectSingleNode("//score-partwise/identification/creator")?.text
+        if (!creator.isNullOrBlank()) {
+            return@withContext creator
+        }
+
+        return@withContext null
+    }
