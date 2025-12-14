@@ -1,6 +1,7 @@
 package com.xianliticn.yuefu.music
 
 import android.media.midi.MidiReceiver
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,6 +29,7 @@ class SequenceEngine(private val midiReceiver: MidiReceiver) {
         playJob?.cancel()
 
         playJob = scope.launch {
+            Log.d("DEV", "Sequence engine started")
             while (isPlaying) {
                 val now = System.nanoTime()
                 val scheduleUntil = now - startTimeNano + (LOOK_AHEAD_TIME_MILLIS * 1_000_000)
@@ -37,6 +39,7 @@ class SequenceEngine(private val midiReceiver: MidiReceiver) {
                 }
 
                 events.forEach { event ->
+                    Log.d("DEV", "Sending midi event: ${event}")
                     val timestamp = startTimeNano + event.timeNano
                     midiReceiver.send(event.getMidiData(), 0, event.getMidiData().size, timestamp)
                     event.isSent = true

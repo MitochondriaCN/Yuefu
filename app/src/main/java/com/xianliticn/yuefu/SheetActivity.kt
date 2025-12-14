@@ -25,6 +25,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.xianliticn.yuefu.pages.SheetOverviewPage
+import com.xianliticn.yuefu.pages.SheetPlayPage
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -85,6 +86,7 @@ class SheetActivity : ComponentActivity() {
                 startDestination = "overview"
             ) {
                 composable("overview") { SheetOverviewPage(hiltViewModel(), sheetId) }
+                composable("play") { SheetPlayPage(hiltViewModel(), sheetId) }
             }
         }
     }
