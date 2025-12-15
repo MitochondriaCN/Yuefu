@@ -18,10 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -40,6 +37,7 @@ import androidx.compose.ui.zIndex
 fun PianoRoll(
     modifier: Modifier = Modifier,
     isScrollMode: Boolean = false,
+    pressedKeyIds: List<String> = emptyList(),
     onKeyPressed: (PianoKeyData) -> Unit = {},
     onKeyReleased: (PianoKeyData) -> Unit = {}
 ) {
@@ -56,7 +54,7 @@ fun PianoRoll(
     val scrollState = rememberScrollState()
 
     // 4. 触摸位置检测相关状态 (用于滑奏模式)
-    var pressedKeyId by remember { mutableStateOf<String?>(null) }
+
     // 存储每个白键和黑键的布局区域，用于命中测试
     val keysLayoutMap = remember { mutableMapOf<String, Rect>() }
 
@@ -85,7 +83,6 @@ fun PianoRoll(
                             // 查找被按下的键
                             var currentKey = findKeyAt(touchPosition, keysLayoutMap, allKeys)
                             currentKey?.let {
-                                pressedKeyId = it.id
                                 onKeyPressed(it)
                             }
 
@@ -103,7 +100,6 @@ fun PianoRoll(
                                         // 释放旧键，按下新键
                                         currentKey?.let { onKeyReleased(it) }
                                         currentKey = newKey
-                                        pressedKeyId = newKey.id
                                         onKeyPressed(newKey)
                                     }
                                 } else {
@@ -113,7 +109,6 @@ fun PianoRoll(
                             // 循环结束（手指抬起），释放最后的键
                             currentKey?.let {
                                 onKeyReleased(it)
-                                pressedKeyId = null
                             }
                         }
                     }
@@ -152,18 +147,16 @@ fun PianoRoll(
                                 }
                             },
                         keyType = PianoKeyType.White,
-                        isPressed = pressedKeyId == keyData.id && !isScrollMode, // 只有非滚动模式才显示按下效果
+                        isPressed = pressedKeyIds.contains(keyData.id) && !isScrollMode, // 只有非滚动模式才显示按下效果
                         // 单击模式 (如果是滚动模式，点击依然可以发声，这取决于你的需求，这里保留)
                         onPressed = {
                             if (isScrollMode) {
                                 onKeyPressed(keyData)
-                                pressedKeyId = keyData.id
                             }
                         },
                         onReleased = {
                             if (isScrollMode) {
                                 onKeyReleased(keyData)
-                                pressedKeyId = null
                             }
                         }
                     )
@@ -207,17 +200,15 @@ fun PianoRoll(
                                     }
                                 },
                             keyType = PianoKeyType.Black,
-                            isPressed = pressedKeyId == keyData.id && !isScrollMode,
+                            isPressed = pressedKeyIds.contains(keyData.id) && !isScrollMode,
                             onPressed = {
                                 if (isScrollMode) {
                                     onKeyPressed(keyData)
-                                    pressedKeyId = keyData.id
                                 }
                             },
                             onReleased = {
                                 if (isScrollMode) {
                                     onKeyReleased(keyData)
-                                    pressedKeyId = null
                                 }
                             }
                         )
