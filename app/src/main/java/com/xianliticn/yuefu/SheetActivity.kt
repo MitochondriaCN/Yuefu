@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -80,8 +79,7 @@ class SheetActivity : ComponentActivity() {
             }) { innerPadding ->
             NavHost(
                 modifier = Modifier
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+                    .padding(innerPadding),
                 navController = navController,
                 startDestination = "overview"
             ) {
