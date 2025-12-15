@@ -38,6 +38,9 @@ class SheetPlayPageViewModel @Inject constructor(
             val events = Parser().generateMidiEvents(sheetDoc)
 
             se.play(events)
+            se.currentProgressMillis.collect { p ->
+
+            }
 
         }
     }

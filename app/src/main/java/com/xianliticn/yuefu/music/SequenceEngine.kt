@@ -5,6 +5,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.billthefarmer.mididriver.MidiDriver
 
@@ -16,9 +18,14 @@ class SequenceEngine {
     private var isPlaying = false
     private var startTimeNano = 0L
     private val scope = CoroutineScope(Dispatchers.IO + Job())
+
     private var playJob: Job? = null
+    private var progressJob: Job? = null
 
     private val midiDriver = MidiDriver.getInstance()
+
+    private val _currentProgressMillis = MutableStateFlow(0L)
+    val currentProgressMillis = _currentProgressMillis.asStateFlow()
 
     init {
         midiDriver.setOnMidiStartListener {
@@ -32,13 +39,27 @@ class SequenceEngine {
         startTimeNano = System.nanoTime()
 
         playJob?.cancel()
+        progressJob?.cancel()
 
         midiDriver.start()
+
+        progressJob = scope.launch {
+            while (isPlaying) {
+                val now = System.nanoTime()
+                val elapsedMillis = (now - startTimeNano) / 1_000_000
+                _currentProgressMillis.emit(elapsedMillis)
+
+                // 1000ms / 32ms = 31.25
+                // 即以31.25Hz更新当前进度
+                delay(32)
+            }
+        }
 
         playJob = scope.launch {
             Log.d("DEV", "Sequence engine started")
 
             var eventIndex = 0
+
             while (isPlaying && eventIndex < (sequence?.size ?: -1)) {
                 val event = sequence?.get(eventIndex)
 
@@ -78,12 +99,14 @@ class SequenceEngine {
                 eventIndex++
             }
 
-            isPlaying = false
+            stop()
         }
     }
 
     fun stop() {
         isPlaying = false
         playJob?.cancel()
+        progressJob?.cancel()
+        midiDriver.stop()
     }
 }
