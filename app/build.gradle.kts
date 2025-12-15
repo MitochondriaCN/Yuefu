@@ -83,4 +83,6 @@ dependencies {
 
     implementation(libs.dom4j)
     implementation(libs.jaxen)
+
+    implementation(files("libs/MidiDriver-1.29.aar"))
 }

@@ -1,52 +1,84 @@
 package com.xianliticn.yuefu.music
 
-import android.media.midi.MidiReceiver
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.billthefarmer.mididriver.MidiDriver
 
 /**
  * 音序引擎。
  */
-class SequenceEngine(private val midiReceiver: MidiReceiver) {
+class SequenceEngine {
     private var sequence: List<MidiEvent>? = null
     private var isPlaying = false
     private var startTimeNano = 0L
     private val scope = CoroutineScope(Dispatchers.IO + Job())
     private var playJob: Job? = null
 
-    private val LOOK_AHEAD_TIME_MILLIS = 50L //前瞻50ms
-    private val LOOP_INTERVAL_MILLIS = 20L   //循环间隔20ms
+    private val midiDriver = MidiDriver.getInstance()
+
+    init {
+        midiDriver.setOnMidiStartListener {
+            Log.d("DEV", "MidiDriver started")
+        }
+    }
 
     fun play(midiEvents: List<MidiEvent>) {
-        sequence = ArrayList(midiEvents)
+        sequence = midiEvents.sortedBy { it.timeNano }
         isPlaying = true
         startTimeNano = System.nanoTime()
 
         playJob?.cancel()
 
+        midiDriver.start()
+
         playJob = scope.launch {
             Log.d("DEV", "Sequence engine started")
-            while (isPlaying) {
+
+            var eventIndex = 0
+            while (isPlaying && eventIndex < (sequence?.size ?: -1)) {
+                val event = sequence?.get(eventIndex)
+
+                if (event == null) {
+                    break
+                }
+                if (event.isSent) {
+                    eventIndex++
+                    continue
+                }
+
                 val now = System.nanoTime()
-                val scheduleUntil = now - startTimeNano + (LOOK_AHEAD_TIME_MILLIS * 1_000_000)
+                // 计算当前播放进度（已经播放了多久）
+                val elapsedNano = now - startTimeNano
 
-                val events = midiEvents.filter {
-                    it.timeNano <= scheduleUntil && !it.isSent
+                // 如果当前进度还没追上事件的预定时间
+                if (elapsedNano < event.timeNano) {
+                    val waitNano = event.timeNano - elapsedNano
+                    val waitMillis = waitNano / 1_000_000
+
+                    // 如果等待时间比较长（比如大于2ms），让协程挂起，节省CPU
+                    if (waitMillis > 2) {
+                        delay(waitMillis)
+                    } else {
+                        // 如果等待时间很短（微秒级），用忙等待（Busy Wait）保证精度
+                        // 这一步对于音乐节奏至关重要，Thread.sleep/delay 精度不够
+                        var loopNow = System.nanoTime()
+                        while (loopNow - startTimeNano < event.timeNano) {
+                            loopNow = System.nanoTime()
+                        }
+                    }
                 }
 
-                events.forEach { event ->
-                    Log.d("DEV", "Sending midi event: ${event}")
-                    val timestamp = startTimeNano + event.timeNano
-                    midiReceiver.send(event.getMidiData(), 0, event.getMidiData().size, timestamp)
-                    event.isSent = true
-                }
-
-                delay(LOOP_INTERVAL_MILLIS)
+                // 时间到了，立即发送
+                midiDriver.queueEvent(event.getMidiData())
+                event.isSent = true
+                eventIndex++
             }
+
+            isPlaying = false
         }
     }
 
