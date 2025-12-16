@@ -79,4 +79,10 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
+    implementation(libs.coil.compose)
+
+    implementation(libs.dom4j)
+    implementation(libs.jaxen)
+
+    implementation(files("libs/MidiDriver-1.29.aar"))
 }

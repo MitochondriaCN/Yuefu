@@ -9,6 +9,8 @@ import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.AppDatabase
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
+import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
+import com.xianliticn.yuefu.utils.getAbsoluteImportPath
 import com.xianliticn.yuefu.utils.getHash
 import com.xianliticn.yuefu.utils.isValidMusicXml
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -67,17 +69,19 @@ class HomePageViewModel @Inject constructor(
 
         try {
             //创建导入子目录
-            val importDir = File(context.filesDir, "import")
+            val importDir = File(context.getAbsoluteImportPath())
             if (!importDir.exists()) {
                 importDir.mkdirs()
             }
 
             //创建导入文件
             val file = File(
-                importDir,
-                "${
-                    DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now())
-                }-import.xml"
+                context.getAbsoluteImportFilePath(
+                    "${
+                        DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
+                            .format(LocalDateTime.now())
+                    }-import.xml"
+                )
             )
 
             //复制文件

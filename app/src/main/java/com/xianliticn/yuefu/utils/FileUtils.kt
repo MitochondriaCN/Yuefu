@@ -1,5 +1,6 @@
 package com.xianliticn.yuefu.utils
 
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -18,3 +19,10 @@ suspend fun File.getHash(): String =
             bytes.toHexString()
         }
     }
+
+fun Context.getAbsoluteImportFilePath(fileName: String): String =
+    this.filesDir.resolve("import/$fileName").absolutePath
+
+
+fun Context.getAbsoluteImportPath(): String =
+    this.filesDir.resolve("import").absolutePath
