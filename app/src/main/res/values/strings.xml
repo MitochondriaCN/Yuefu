@@ -13,9 +13,10 @@
     <string name="search">搜索</string>
     <string name="search_sheets">搜索乐谱</string>
     <string name="delete">删除</string>
-    <string name="title_activity_sheet">SheetActivity</string>
+    <string name="title_activity_sheet">乐谱</string>
     <string name="overview">概览</string>
     <string name="play">演奏</string>
     <string name="sheet_not_found">未找到乐谱</string>
     <string name="unknown">未知</string>
+    <string name="keyboard_scrolling">键盘滚动</string>
 </resources>

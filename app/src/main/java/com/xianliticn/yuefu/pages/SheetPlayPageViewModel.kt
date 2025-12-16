@@ -16,6 +16,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -29,6 +31,7 @@ class SheetPlayPageViewModel @Inject constructor(
 
     private var sheetId: Int = 0
     private var se = SequenceEngine()
+    private var events: List<MidiEvent> = emptyList()
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState = _uiState.asStateFlow()
@@ -36,22 +39,38 @@ class SheetPlayPageViewModel @Inject constructor(
     fun refresh(sheetId: Int) {
         this.sheetId = sheetId
 
-        handlePlay()
-    }
-
-    fun handlePlay() {
         viewModelScope.launch {
             val sheet = appDatabase.sheetDao().getById(sheetId)
             val sheetDoc =
                 readXml(File(context.getAbsoluteImportFilePath(sheet!!.fileName)))
-            val events = Parser().generateMidiEvents(sheetDoc)
+            events = Parser().generateMidiEvents(sheetDoc)
+            se.load(events)
 
             _uiState.emit(uiState.value.copy(notes = generateVisualNoteEvents(events)))
 
-            se.play(events)
-            se.currentProgressMillis.collect { p ->
+            //持续更新进度
+            se.currentProgressMillis.onEach { p ->
                 _uiState.emit(uiState.value.copy(currentProgressMillis = p))
+            }.launchIn(viewModelScope)
+        }
+    }
+
+    fun handlePlayOrPause() {
+        viewModelScope.launch {
+            if (_uiState.value.isPlaying) {
+                _uiState.emit(uiState.value.copy(isPlaying = false))
+                se.pause()
+            } else {
+                _uiState.emit(uiState.value.copy(isPlaying = true))
+                se.play()
             }
+        }
+    }
+
+    fun handleProgressChange(progress: Float) {
+        viewModelScope.launch {
+            _uiState.emit(uiState.value.copy(currentProgressMillis = progress.toLong()))
+            se.changeProgress(progress.toLong())
         }
     }
 
@@ -101,6 +120,7 @@ class SheetPlayPageViewModel @Inject constructor(
 
     data class UiState(
         val notes: List<VisualNoteEvent> = emptyList(),
-        val currentProgressMillis: Long = 0
+        val currentProgressMillis: Long = 0,
+        val isPlaying: Boolean = false
     )
 }
