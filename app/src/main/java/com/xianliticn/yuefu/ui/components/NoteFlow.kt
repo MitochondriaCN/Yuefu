@@ -7,8 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.xianliticn.yuefu.music.VisualNoteEvent
 
 @Composable
 fun NoteFlow(
@@ -91,16 +91,6 @@ fun NoteFlow(
         }
     }
 }
-
-data class VisualNoteEvent(
-    val startTimeMillis: Long,
-    val endTimeMillis: Long,
-    /**
-     * 白键索引，+0.5表示白键右上侧的黑键。
-     */
-    val keyIndex: Float,
-    val color: Color
-)
 
 data class NoteFlowVisibleRange(
     val startPx: Float,

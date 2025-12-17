@@ -40,6 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
+import com.xianliticn.yuefu.music.VisualNoteEvent
 import com.xianliticn.yuefu.ui.theme.Orange800
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -337,7 +338,7 @@ fun PianoKey(
     }
 }
 
-fun findKeyAt(
+private fun findKeyAt(
     position: Offset,
     map: Map<String, Rect>,
     allKeys: List<PianoKeyData>

@@ -16,7 +16,11 @@ class MidiEvent(
     /**
      * 是否已发送
      */
-    var isSent: Boolean
+    var isSent: Boolean,
+    /**
+     * 声部
+     */
+    val part: Int = 0
 ) {
     fun getMidiData(): ByteArray =
         when (note) {

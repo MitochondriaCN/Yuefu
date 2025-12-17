@@ -32,8 +32,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.music.VisualNoteEvent
 import com.xianliticn.yuefu.ui.components.PianoRollNoteFlow
-import com.xianliticn.yuefu.ui.components.VisualNoteEvent
 import com.xianliticn.yuefu.ui.theme.Clouds
 
 @Composable
