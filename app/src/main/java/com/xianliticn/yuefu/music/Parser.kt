@@ -20,108 +20,122 @@ class Parser(
         modifiedBpm: Int? = null
     ): List<MidiEvent> {
         val midiEvents = mutableListOf<MidiEvent>()
-
-        // MusicXML 的根节点通常是 <score-partwise>
         val root = musicXmlDoc.rootElement
-
-        // 声部
         val parts = root.elements("part")
+        var lastNoteDuration: Long = 0
 
-        parts.forEachIndexed { index, part ->
-            val measures = part.elements("measure")
-
-            // 累计时间（纳秒），用于计算每个音符的绝对开始时间
+        parts.forEachIndexed { partIndex, part ->
+            // 每个 Part 独立计时
             var currentTimeNano: Long = 0
-
-            // 假设默认速度，如果 XML 中没有定义
             var currentBpm = modifiedBpm ?: 120
-
-            // divisions 属性通常在第一个小节的 <attributes> 中定义
-            // 它表示四分音符被划分的份数，用于计算 duration
             var divisions = 1
 
+            val measures = part.elements("measure")
             for (measure in measures) {
                 val element = measure as Element
 
-                // 检查 attributes 更新 (如 divisions, key, time signature)
-                val attributes = element.element("attributes")
-                attributes?.elementText("divisions")?.let {
-                    divisions = it.toInt()
+                // 1. 更新属性 (Attributes)
+                element.element("attributes")?.let { attrs ->
+                    attrs.elementText("divisions")?.let { divisions = it.toInt() }
                 }
 
-                // 检查 direction 更新 (如 tempo/BPM)
-                val direction = element.element("direction")
-                if (direction != null) {
-                    val sound = direction.element("sound")
-                    if (sound != null && sound.attributeValue("tempo") != null) {
-                        currentBpm = sound.attributeValue("tempo").toDouble().toInt()
+                // 2. 更新速度 (Direction/Sound)
+                element.elements("direction").forEach { dir ->
+                    dir.element("sound")?.attributeValue("tempo")?.let {
+                        if (modifiedBpm == null) { // 只有没手动指定 BPM 时才更新
+                            currentBpm = it.toDouble().toInt()
+                        }
                     }
                 }
 
-                // 解析该小节内的所有音符 (note)
-                val notes = element.elements("note")
-                for (noteObj in notes) {
-                    val noteElement = noteObj as Element
+                // 3. 遍历小节内的所有子节点 (按顺序处理 note, backup, forward)
+                val children = element.elements()
+                for (child in children) {
+                    when (child.name) {
+                        "note" -> {
+                            val durationTicks = child.elementText("duration")?.toInt() ?: 0
+                            val nanosPerTick =
+                                (60_000_000_000.0 / (divisions * currentBpm)).toLong()
+                            val durationNano = durationTicks * nanosPerTick
 
-                    // 处理 duration (时值)
-                    val durationText = noteElement.elementText("duration") ?: "0"
-                    val durationTicks = durationText.toInt()
+                            val isChord = child.element("chord") != null
 
-                    // 计算该音符持续的纳秒数
-                    // 公式: (duration / divisions) * (60 / BPM) * 1,000,000,000
-                    // = duration * (60_000_000_000 / (divisions * BPM))
-                    // 防止除零
-                    val ticksPerBeat = if (divisions > 0) divisions else 1
-                    val safeBpm = if (currentBpm > 0) currentBpm else 120
-                    val nanosPerTick = (60_000_000_000.0 / (ticksPerBeat * safeBpm)).toLong()
-                    val durationNano = durationTicks * nanosPerTick
+                            // 一个 note 可能既是 stop 也是 start (连续连音中间的音符)
+                            val ties = child.elements("tie")
+                            val isTieStart = ties.any { it.attributeValue("type") == "start" }
+                            val isTieStop = ties.any { it.attributeValue("type") == "stop" }
 
-                    // 处理 pitch (音高)
-                    // 如果是休止符 (<rest>)，则跳过生成事件，但依然要增加时间
-                    if (noteElement.element("rest") != null) {
-                        currentTimeNano += durationNano
-                        continue
-                    }
+                            // 计算实际开始时间
+                            val actualStart = if (isChord) {
+                                currentTimeNano - lastNoteDuration
+                            } else {
+                                currentTimeNano
+                            }
 
-                    val pitchElement = noteElement.element("pitch")
-                    if (pitchElement != null) {
-                        val step = pitchElement.elementText("step") // C, D, E...
-                        val octave = pitchElement.elementText("octave").toInt() // 4, 5...
-                        val alter = pitchElement.elementText("alter")?.toInt() ?: 0 // 升降号: 1, -1
+                            // 处理休止符
+                            if (child.element("rest") != null) {
+                                currentTimeNano += durationNano
+                            } else {
+                                val pitchElement = child.element("pitch")
+                                if (pitchElement != null) {
+                                    val step = pitchElement.elementText("step")
+                                    val octave = pitchElement.elementText("octave").toInt()
+                                    val alter = pitchElement.elementText("alter")?.toInt() ?: 0
+                                    val midiPitch = calculateMidiPitch(step, octave, alter)
 
-                        val midiPitch = calculateMidiPitch(step, octave, alter)
+                                    // 1. 如果不是连音的结束部分（或者是新音符的开始），才生成按下事件
+                                    // 如果是 isTieStop，说明这个音是延续上一个音的，不需要再次 Press
+                                    if (!isTieStop) {
+                                        midiEvents.add(
+                                            MidiEvent(
+                                                midiPitch,
+                                                actualStart,
+                                                Note.PRESS,
+                                                false,
+                                                partIndex // 建议把 partIndex 加上，保持一致
+                                            )
+                                        )
+                                    }
 
-                        // 是否是和弦 (<chord/>)?
-                        // 如果是 chord，它与前一个音符同时开始，不需要增加 currentTimeNano
-                        val isChord = noteElement.element("chord") != null
+                                    // 2. 如果不是连音的开始部分（说明音符在这里结束），才生成释放事件
+                                    // 如果是 isTieStart，说明这个音还要延续到下一个音，暂时不 Release
+                                    if (!isTieStart) {
+                                        midiEvents.add(
+                                            MidiEvent(
+                                                midiPitch,
+                                                actualStart + durationNano,
+                                                Note.RELEASE,
+                                                false,
+                                                partIndex
+                                            )
+                                        )
+                                    }
 
-                        // 创建按下 (PRESS) 事件
-                        val startTime = if (isChord) currentTimeNano else currentTimeNano
-                        midiEvents.add(MidiEvent(midiPitch, startTime, Note.PRESS, false))
+                                    if (!isChord) {
+                                        currentTimeNano += durationNano
+                                        lastNoteDuration = durationNano // 记录用于和弦对齐
+                                    }
+                                }
+                            }
+                        }
 
-                        // 创建释放 (RELEASE) 事件
-                        // 释放时间 = 开始时间 + 持续时间
-                        // 注意：为了连贯性，有时会稍微减少一点持续时间，这里按标准长度处理
-                        midiEvents.add(
-                            MidiEvent(
-                                midiPitch,
-                                startTime + durationNano,
-                                Note.RELEASE,
-                                false,
-                                index
-                            )
-                        )
+                        "backup" -> {
+                            val durationTicks = child.elementText("duration")?.toInt() ?: 0
+                            val nanosPerTick =
+                                (60_000_000_000.0 / (divisions * currentBpm)).toLong()
+                            currentTimeNano -= (durationTicks * nanosPerTick)
+                        }
 
-                        // 只有不是和弦时，才推进时间指针
-                        if (!isChord) {
-                            currentTimeNano += durationNano
+                        "forward" -> {
+                            val durationTicks = child.elementText("duration")?.toInt() ?: 0
+                            val nanosPerTick =
+                                (60_000_000_000.0 / (divisions * currentBpm)).toLong()
+                            currentTimeNano += (durationTicks * nanosPerTick)
                         }
                     }
                 }
             }
         }
-
-        // 按时间排序，确保事件顺序正确 (尤其是处理和弦或多声部时)
         return midiEvents.sortedBy { it.timeNano }
     }
 
