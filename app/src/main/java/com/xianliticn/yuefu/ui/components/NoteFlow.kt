@@ -52,8 +52,8 @@ fun NoteFlow(
             }
 
             // 2. 计算 X 轴位置 (根据 visibleRange 进行偏移)
-            //在键中点绘制
-            val rawMid = (note.keyIndex - 0.5f) * whiteKeyWidth
+            // 在键中点绘制
+            val rawMid = (note.keyIndex + 0.5f) * whiteKeyWidth
             val mid = rawMid + offsetX
             // 简单的宽度计算，实际可能需要根据黑白键调整
             val width = whiteKeyWidth * 0.4f

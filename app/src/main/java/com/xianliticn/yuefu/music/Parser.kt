@@ -140,14 +140,16 @@ class Parser(
 
                 if (startEvent != null) {
                     val noteInOctave = event.pitch % 12
-                    val octave = event.pitch / 12
+                    val octave = event.pitch / 12 - 1
                     val currentOctaveStart = octave * 7
 
+                    // MIDI Pitch将C-1记为0，而keyIndex将A0记为0，
+                    // 所以需要进行一定的偏移
                     val offset = when (noteInOctave) {
                         0 -> 0f; 1 -> 0.5f; 2 -> 1f; 3 -> 1.5f; 4 -> 2f; 5 -> 3f
                         6 -> 3.5f; 7 -> 4f; 8 -> 4.5f; 9 -> 5f; 10 -> 5.5f; 11 -> 6f
                         else -> 0f
-                    }
+                    } + 2f - 7f
 
                     visualNotes.add(
                         VisualNoteEvent(

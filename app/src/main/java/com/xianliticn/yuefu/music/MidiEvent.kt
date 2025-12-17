@@ -2,7 +2,7 @@ package com.xianliticn.yuefu.music
 
 class MidiEvent(
     /**
-     * 音高
+     * 音高，0-127。21代表A0。
      */
     val pitch: Int,
     /**
