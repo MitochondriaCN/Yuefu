@@ -1,6 +1,5 @@
 package com.xianliticn.yuefu.pages
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -79,7 +78,6 @@ fun SheetPlayPageContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.Black)
                     .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)

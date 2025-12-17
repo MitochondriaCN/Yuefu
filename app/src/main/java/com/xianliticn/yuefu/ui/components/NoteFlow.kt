@@ -1,7 +1,7 @@
 package com.xianliticn.yuefu.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -26,7 +26,7 @@ fun NoteFlow(
     // 将速度转换为 像素/毫秒
     val pixelsPerMillis = pixelsPerSecond / 1000f
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(modifier = modifier.fillMaxWidth()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
 
