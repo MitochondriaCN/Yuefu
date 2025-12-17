@@ -12,7 +12,9 @@ import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
 import com.xianliticn.yuefu.utils.getAbsoluteImportPath
 import com.xianliticn.yuefu.utils.getHash
+import com.xianliticn.yuefu.utils.getTitle
 import com.xianliticn.yuefu.utils.isValidMusicXml
+import com.xianliticn.yuefu.utils.readXml
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -123,7 +125,7 @@ class HomePageViewModel @Inject constructor(
                 appDatabase.sheetDao().insert(
                     Sheet(
                         fileName = file.name,
-                        sheetName = file.nameWithoutExtension,
+                        sheetName = readXml(file).getTitle() ?: "Unknown",
                         lastOpenTime = System.currentTimeMillis(),
                         hash = file.getHash()
                     )
