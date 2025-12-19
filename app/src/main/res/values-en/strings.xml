@@ -20,4 +20,9 @@
     <string name="sheet_not_found">Cannot find the sheet</string>
     <string name="unknown">Unknown</string>
     <string name="keyboard_scrolling">Scrolling</string>
+    <string name="select_image_source">Select scan method</string>
+    <string name="take_photo">Take photo</string>
+    <string name="pick_image">Select existing picture</string>
+    <string name="failed_to_omr">Sheet recognition failed</string>
+    <string name="failed_to_get_image">Cannot read image</string>
 </resources>

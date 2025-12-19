@@ -15,6 +15,7 @@ import com.xianliticn.yuefu.utils.getHash
 import com.xianliticn.yuefu.utils.getTitle
 import com.xianliticn.yuefu.utils.isValidMusicXml
 import com.xianliticn.yuefu.utils.readXml
+import com.xianliticn.yuefu.webapi.OmrApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -22,13 +23,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @HiltViewModel
 class HomePageViewModel @Inject constructor(
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val omrApi: OmrApi
 ) : ViewModel() {
     @Inject
     @ApplicationContext
@@ -62,6 +67,10 @@ class HomePageViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 导入MusicXML文件。
+     * @param uri MusicXML文件的Uri，需要用[android.content.ContentResolver]解析。
+     */
     fun handleImportFile(uri: Uri) {
         _uiState.update {
             _uiState.value.copy(
@@ -69,82 +78,147 @@ class HomePageViewModel @Inject constructor(
             )
         }
 
-        try {
-            //创建导入子目录
-            val importDir = File(context.getAbsoluteImportPath())
-            if (!importDir.exists()) {
-                importDir.mkdirs()
+        //创建临时导入文件
+        val file = File(context.cacheDir, "${System.currentTimeMillis()}-import-tmp")
+
+        //复制文件
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { output ->
+                input.copyTo(output)
             }
+        }
 
-            //创建导入文件
-            val file = File(
-                context.getAbsoluteImportFilePath(
-                    "${
-                        DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
-                            .format(LocalDateTime.now())
-                    }-import.xml"
-                )
-            )
+        viewModelScope.launch {
+            try {
+                importMusicXmlFile(file)
 
-            //复制文件
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                file.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-            }
-
-            viewModelScope.launch {
-                //检查合法性
-                if (!isValidMusicXml(file)) {
-                    //不合法
-                    Toast.makeText(context, R.string.invalid_sheet, Toast.LENGTH_LONG).show()
-                    file.delete()
-                    _uiState.update {
-                        _uiState.value.copy(
-                            loading = false
-                        )
-                    }
-                    return@launch
-                }
-                //合法
-                //查重
-                appDatabase.sheetDao().getSameHash(file.getHash()).takeIf { it.isNotEmpty() }
-                    ?.let {
-                        Toast.makeText(context, R.string.import_duplicate, Toast.LENGTH_LONG)
-                            .show()
-                        file.delete()
-                        _uiState.update {
-                            _uiState.value.copy(
-                                loading = false
-                            )
-                        }
-                        return@launch
-                    }
                 Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
-                //插入数据条目
-                appDatabase.sheetDao().insert(
-                    Sheet(
-                        fileName = file.name,
-                        sheetName = readXml(file).getTitle() ?: "Unknown",
-                        lastOpenTime = System.currentTimeMillis(),
-                        hash = file.getHash()
-                    )
-                )
-
                 refresh()
+            } catch (e: Exception) {
+                Log.e("DEV", "handleImportFile", e)
+                Toast.makeText(context, R.string.import_failed, Toast.LENGTH_LONG).show()
+            } finally {
+                file.delete()
                 _uiState.update {
                     _uiState.value.copy(
                         loading = false
                     )
                 }
             }
-        } catch (e: Exception) {
-            Log.d("DEV", "Failed to import: " + e.message.toString())
-            Toast.makeText(context, R.string.import_failed, Toast.LENGTH_LONG).show()
-            _uiState.value = _uiState.value.copy(
-                loading = false
+        }
+
+    }
+
+    fun handleImportPhoto(imageUri: Uri) {
+        _uiState.update {
+            _uiState.value.copy(
+                loading = true
             )
         }
+        viewModelScope.launch {
+            try {
+                val part = getImageMultipartBodyPart(imageUri)
+                val resp = omrApi.getMusicXml(part)
+                if (resp.isSuccessful) {
+                    val musicXmlString = resp.body()?.string()
+
+                    if (musicXmlString.isNullOrEmpty()) {
+                        Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
+                        _uiState.update { _uiState.value.copy(loading = false) }
+                        return@launch
+                    }
+
+                    val file = File(context.cacheDir, "${System.currentTimeMillis()}-download.mxl")
+                    file.writeText(musicXmlString)
+
+                    importMusicXmlFile(file)
+
+                    file.delete()
+                    Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
+                    refresh()
+                }
+            } catch (e: Exception) {
+                Log.e("DEV", "handleImportFile", e)
+                Toast.makeText(context, R.string.import_failed, Toast.LENGTH_LONG).show()
+            } finally {
+                _uiState.update {
+                    _uiState.value.copy(
+                        loading = false
+                    )
+                }
+            }
+        }
+
+    }
+
+    /**
+     * 将外部文件导入为MusicXML。
+     * @param file 外部文件。
+     * @return 导入后的文件。
+     */
+    private suspend fun importMusicXmlFile(file: File): File {
+        //创建导入子目录
+        val importDir = File(context.getAbsoluteImportPath())
+        if (!importDir.exists()) {
+            importDir.mkdirs()
+        }
+
+        //创建导入文件
+        val inFile = File(
+            context.getAbsoluteImportFilePath(
+                "${
+                    DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
+                        .format(LocalDateTime.now())
+                }-import.xml"
+            )
+        )
+
+        inFile.writeText(file.readText())
+
+        //检查合法性
+        if (!isValidMusicXml(inFile)) {
+            //不合法
+            inFile.delete()
+            throw Exception(context.getString(R.string.invalid_sheet))
+        }
+        //合法
+        //查重
+        appDatabase.sheetDao().getSameHash(inFile.getHash()).takeIf { it.isNotEmpty() }
+            ?.let {
+                inFile.delete()
+                throw Exception(context.getString(R.string.import_duplicate))
+            }
+        //插入数据条目
+        appDatabase.sheetDao().insert(
+            Sheet(
+                fileName = inFile.name,
+                sheetName = readXml(inFile).getTitle() ?: "Unknown",
+                lastOpenTime = System.currentTimeMillis(),
+                hash = inFile.getHash()
+            )
+        )
+
+        return inFile
+    }
+
+    private fun getImageMultipartBodyPart(imageUri: Uri): MultipartBody.Part {
+        context.contentResolver.openInputStream(imageUri)?.use { ins ->
+            val imageBytes = ins.readBytes()
+
+            val mimeType = context.contentResolver.getType(imageUri) ?: "image/jpeg"
+            val requestBody = imageBytes.toRequestBody(
+                mimeType.toMediaTypeOrNull(),
+                0,
+                imageBytes.size
+            )
+
+            return MultipartBody.Part.createFormData(
+                "file",
+                "${System.currentTimeMillis()}-img",
+                requestBody
+            )
+        }
+        throw Exception(context.getString(R.string.failed_to_get_image))
     }
 
     data class HomePageState(

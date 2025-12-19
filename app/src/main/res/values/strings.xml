@@ -19,4 +19,9 @@
     <string name="sheet_not_found">未找到乐谱</string>
     <string name="unknown">未知</string>
     <string name="keyboard_scrolling">键盘滚动</string>
+    <string name="select_image_source">选择扫描方法</string>
+    <string name="take_photo">拍照</string>
+    <string name="pick_image">选择现有图片</string>
+    <string name="failed_to_omr">乐谱识别失败。</string>
+    <string name="failed_to_get_image">无法读取图片</string>
 </resources>

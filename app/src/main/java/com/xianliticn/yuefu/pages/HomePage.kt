@@ -1,5 +1,6 @@
 package com.xianliticn.yuefu.pages
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.basicMarquee
@@ -18,24 +19,36 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Photo
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.theme.Amber800
@@ -43,17 +56,38 @@ import com.xianliticn.yuefu.ui.theme.Blue800
 import com.xianliticn.yuefu.ui.theme.Clouds
 import com.xianliticn.yuefu.ui.theme.Grey800
 import com.xianliticn.yuefu.utils.toFriendlyString
+import java.io.File
 import java.time.Instant
 
 @Composable
 fun HomePage(viewModel: HomePageViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val imageUri by remember { mutableStateOf<Uri?>(null) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
             viewModel.handleImportFile(uri)
+        }
+    }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            imageUri?.let {
+                viewModel.handleImportPhoto(it)
+            }
+        }
+    }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            viewModel.handleImportPhoto(it)
         }
     }
 
@@ -64,7 +98,6 @@ fun HomePage(viewModel: HomePageViewModel) {
     HomePageContent(
         loading = uiState.loading,
         recent4 = uiState.recent4,
-        onShotSheetClick = { /*TODO*/ },
         onImportFileClick = {
             filePickerLauncher.launch(
                 arrayOf(
@@ -73,18 +106,34 @@ fun HomePage(viewModel: HomePageViewModel) {
                     "application/octet-stream" //MIDI
                 )
             )
+        },
+        onTakePhotoClick = {
+            val file = File(context.cacheDir, "${System.currentTimeMillis()}-img")
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                file
+            )
+            takePictureLauncher.launch(uri)
+        },
+        onPickImageClick = {
+            pickImageLauncher.launch("image/*")
         }
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomePageContent(
     modifier: Modifier = Modifier,
     loading: Boolean = false,
     recent4: List<Sheet> = emptyList(),
-    onShotSheetClick: () -> Unit = {},
-    onImportFileClick: () -> Unit = {}
+    onImportFileClick: () -> Unit = {},
+    onTakePhotoClick: () -> Unit = {},
+    onPickImageClick: () -> Unit = {}
 ) {
+    var gettingImage by remember { mutableStateOf(false) }
+
     if (loading) {
         Box(
             modifier = modifier.fillMaxSize(),
@@ -93,6 +142,45 @@ fun HomePageContent(
             CircularProgressIndicator()
         }
     } else {
+        if (gettingImage) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    gettingImage = false
+                }
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.select_image_source),
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .basicMarquee()
+                    )
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = { Text(stringResource(R.string.take_photo)) },
+                        leadingContent = { Icon(Icons.Default.PhotoCamera, null) },
+                        modifier = Modifier.clickable {
+                            gettingImage = false
+                            onTakePhotoClick()
+                        }
+                    )
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = { Text(stringResource(R.string.pick_image)) },
+                        leadingContent = { Icon(Icons.Default.Photo, null) },
+                        modifier = Modifier.clickable {
+                            gettingImage = false
+                            onPickImageClick()
+                        }
+                    )
+                }
+            }
+        }
         Column(
             modifier = modifier.fillMaxWidth(),
         ) {
@@ -106,7 +194,7 @@ fun HomePageContent(
                     modifier = Modifier.weight(1f),
                     label = stringResource(R.string.shot_sheet),
                     bgColor = Blue800
-                ) { onShotSheetClick() }
+                ) { gettingImage = true }
                 ButtonCard(
                     icon = Icons.Default.AttachFile,
                     modifier = Modifier.weight(1f),
