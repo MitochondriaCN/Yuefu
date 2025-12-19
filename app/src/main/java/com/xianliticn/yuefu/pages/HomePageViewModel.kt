@@ -48,7 +48,8 @@ class HomePageViewModel @Inject constructor(
     fun refresh() {
         _uiState.update {
             _uiState.value.copy(
-                loading = true
+                loading = true,
+                loadingMessage = context.getString(R.string.loading)
             )
         }
 
@@ -77,7 +78,8 @@ class HomePageViewModel @Inject constructor(
     fun handleImportFile(uri: Uri) {
         _uiState.update {
             _uiState.value.copy(
-                loading = true
+                loading = true,
+                loadingMessage = context.getString(R.string.importing_file)
             )
         }
 
@@ -115,7 +117,8 @@ class HomePageViewModel @Inject constructor(
     fun handleImportPhoto(imageUri: Uri) {
         _uiState.update {
             _uiState.value.copy(
-                loading = true
+                loading = true,
+                loadingMessage = context.getString(R.string.scanning_sheet)
             )
         }
         viewModelScope.launch {
@@ -278,6 +281,7 @@ class HomePageViewModel @Inject constructor(
 
     data class HomePageState(
         val loading: Boolean = false,
+        val loadingMessage: String = "",
         val recent4: List<Sheet> = emptyList()
     )
 }

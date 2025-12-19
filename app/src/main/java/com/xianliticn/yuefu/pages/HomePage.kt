@@ -97,6 +97,7 @@ fun HomePage(viewModel: HomePageViewModel) {
 
     HomePageContent(
         loading = uiState.loading,
+        loadingMessage = uiState.loadingMessage,
         recent4 = uiState.recent4,
         onImportFileClick = {
             filePickerLauncher.launch(
@@ -128,6 +129,7 @@ fun HomePage(viewModel: HomePageViewModel) {
 fun HomePageContent(
     modifier: Modifier = Modifier,
     loading: Boolean = false,
+    loadingMessage: String? = null,
     recent4: List<Sheet> = emptyList(),
     onImportFileClick: () -> Unit = {},
     onTakePhotoClick: () -> Unit = {},
@@ -140,7 +142,18 @@ fun HomePageContent(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator()
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator()
+                Text(
+                    text = loadingMessage.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     } else {
         if (gettingImage) {
@@ -338,5 +351,8 @@ enum class FileCardType {
 @Preview(showBackground = true, locale = "en")
 @Composable
 fun HomePagePreview() {
-    HomePageContent()
+    HomePageContent(
+        loading = true,
+        loadingMessage = "AI识别乐谱中\n可能需要约1分钟。"
+    )
 }

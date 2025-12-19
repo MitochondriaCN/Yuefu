@@ -24,4 +24,7 @@
     <string name="pick_image">选择现有图片</string>
     <string name="failed_to_omr">乐谱识别失败。</string>
     <string name="failed_to_get_image">无法读取图片</string>
+    <string name="loading">加载中</string>
+    <string name="scanning_sheet">AI识别乐谱中\n可能需要约1分钟时间。</string>
+    <string name="importing_file">导入乐谱中</string>
 </resources>
