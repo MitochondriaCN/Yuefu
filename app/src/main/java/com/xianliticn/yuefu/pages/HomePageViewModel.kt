@@ -3,6 +3,7 @@ package com.xianliticn.yuefu.pages
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,8 +28,10 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.zip.ZipInputStream
 
 @HiltViewModel
 class HomePageViewModel @Inject constructor(
@@ -95,7 +98,7 @@ class HomePageViewModel @Inject constructor(
                 Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
                 refresh()
             } catch (e: Exception) {
-                Log.e("DEV", "handleImportFile", e)
+                Log.e("DEV", "handleImportFile: ${e.message}", e)
                 Toast.makeText(context, R.string.import_failed, Toast.LENGTH_LONG).show()
             } finally {
                 file.delete()
@@ -120,25 +123,26 @@ class HomePageViewModel @Inject constructor(
                 val part = getImageMultipartBodyPart(imageUri)
                 val resp = omrApi.getMusicXml(part)
                 if (resp.isSuccessful) {
-                    val musicXmlString = resp.body()?.string()
-
-                    if (musicXmlString.isNullOrEmpty()) {
-                        Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-                        _uiState.update { _uiState.value.copy(loading = false) }
-                        return@launch
+                    val file = File(context.cacheDir, "${System.currentTimeMillis()}-download.mxl")
+                    resp.body()?.byteStream()?.use { inputStream ->
+                        file.outputStream().use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
                     }
 
-                    val file = File(context.cacheDir, "${System.currentTimeMillis()}-download.mxl")
-                    file.writeText(musicXmlString)
-
-                    importMusicXmlFile(file)
-
-                    file.delete()
-                    Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
-                    refresh()
+                    if (file.exists() && file.length() > 0) {
+                        importMusicXmlFile(file)
+                        file.delete()
+                        Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
                 }
+                refresh()
             } catch (e: Exception) {
-                Log.e("DEV", "handleImportFile", e)
+                Log.e("DEV", "handleImportFile: ${e.message}", e)
                 Toast.makeText(context, R.string.import_failed, Toast.LENGTH_LONG).show()
             } finally {
                 _uiState.update {
@@ -173,7 +177,46 @@ class HomePageViewModel @Inject constructor(
             )
         )
 
-        inFile.writeText(file.readText())
+        //判断是否被压缩
+        //被压缩的MusicXML本质上是zip文件，因此
+        //前两字节必然为50 4B
+        //据此判断
+        if (file.readBytes().sliceArray(0..1).contentEquals(byteArrayOf(0x50, 0x4B))) {
+            //解压
+            ZipInputStream(file.inputStream()).use { zis ->
+                var entry = zis.nextEntry
+                var foundMusicXml = false
+                while (entry != null) {
+                    //不要META-INF/container.xml
+                    if (!entry.isDirectory && (entry.name.endsWith(".xml")
+                                || entry.name.endsWith(".musicxml"))
+                        && !entry.name.startsWith("META-INF")
+                    ) {
+                        //找到了，将其内容写入目标文件
+                        FileOutputStream(inFile).use { fos ->
+                            zis.copyTo(fos)
+                        }
+                        foundMusicXml = true
+                        break // 假设一个.mxl中只有一个主要的musicxml文件
+                    }
+                    zis.closeEntry()
+                    entry = zis.nextEntry
+                }
+                if (!foundMusicXml) {
+                    throw Exception("在压缩包中未找到有效的MusicXML文件。")
+                }
+            }
+        } else { //不是压缩过的
+            //直接写入
+            inFile.writeText(file.readText())
+        }
+
+        //打印前几行看看内容
+        inFile.readLines().forEachIndexed { index, s ->
+            if (index < 10) {
+                Log.d("DEV", "importMusicXmlFile: $s")
+            }
+        }
 
         //检查合法性
         if (!isValidMusicXml(inFile)) {
@@ -205,7 +248,19 @@ class HomePageViewModel @Inject constructor(
         context.contentResolver.openInputStream(imageUri)?.use { ins ->
             val imageBytes = ins.readBytes()
 
-            val mimeType = context.contentResolver.getType(imageUri) ?: "image/jpeg"
+            var mimeType = context.contentResolver.getType(imageUri)
+            // 推断：文件扩展名
+            if (mimeType.isNullOrBlank() || mimeType == "application/octet-stream") {
+                val fileExtension = MimeTypeMap.getFileExtensionFromUrl(imageUri.toString())
+                if (!fileExtension.isNullOrBlank()) {
+                    mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
+                }
+            }
+            // 推断失败，视为JPEG
+            if (mimeType.isNullOrBlank() || mimeType == "application/octet-stream") {
+                mimeType = "image/jpeg"
+            }
+
             val requestBody = imageBytes.toRequestBody(
                 mimeType.toMediaTypeOrNull(),
                 0,

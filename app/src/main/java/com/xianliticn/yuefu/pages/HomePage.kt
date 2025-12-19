@@ -63,7 +63,7 @@ import java.time.Instant
 fun HomePage(viewModel: HomePageViewModel) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val imageUri by remember { mutableStateOf<Uri?>(null) }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -114,6 +114,7 @@ fun HomePage(viewModel: HomePageViewModel) {
                 "${context.packageName}.provider",
                 file
             )
+            imageUri = uri
             takePictureLauncher.launch(uri)
         },
         onPickImageClick = {
