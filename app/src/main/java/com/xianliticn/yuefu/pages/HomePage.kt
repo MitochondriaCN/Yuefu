@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
+import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
 import com.xianliticn.yuefu.ui.theme.Amber800
 import com.xianliticn.yuefu.ui.theme.Blue800
 import com.xianliticn.yuefu.ui.theme.Clouds
@@ -135,6 +136,7 @@ fun HomePageContent(
     onTakePhotoClick: () -> Unit = {},
     onPickImageClick: () -> Unit = {}
 ) {
+    var showingTutorial by remember { mutableStateOf(false) }
     var gettingImage by remember { mutableStateOf(false) }
 
     if (loading) {
@@ -156,7 +158,7 @@ fun HomePageContent(
             }
         }
     } else {
-        if (gettingImage) {
+        if (gettingImage)
             ModalBottomSheet(
                 onDismissRequest = {
                     gettingImage = false
@@ -194,7 +196,13 @@ fun HomePageContent(
                     )
                 }
             }
-        }
+        if (showingTutorial)
+            ScanningTutorialBottomSheet(
+                onDismissRequest = {
+                    showingTutorial = false
+                    gettingImage = true
+                }
+            )
         Column(
             modifier = modifier.fillMaxWidth(),
         ) {
@@ -208,7 +216,7 @@ fun HomePageContent(
                     modifier = Modifier.weight(1f),
                     label = stringResource(R.string.shot_sheet),
                     bgColor = Blue800
-                ) { gettingImage = true }
+                ) { showingTutorial = true }
                 ButtonCard(
                     icon = Icons.Default.AttachFile,
                     modifier = Modifier.weight(1f),
