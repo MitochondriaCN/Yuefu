@@ -13,9 +13,24 @@
     <string name="search">搜索</string>
     <string name="search_sheets">搜索乐谱</string>
     <string name="delete">删除</string>
-    <string name="title_activity_sheet">SheetActivity</string>
+    <string name="title_activity_sheet">乐谱</string>
     <string name="overview">概览</string>
     <string name="play">演奏</string>
     <string name="sheet_not_found">未找到乐谱</string>
     <string name="unknown">未知</string>
+    <string name="keyboard_scrolling">键盘滚动</string>
+    <string name="select_image_source">选择扫描方法</string>
+    <string name="take_photo">拍照</string>
+    <string name="pick_image">选择现有图片</string>
+    <string name="failed_to_omr">乐谱识别失败。</string>
+    <string name="failed_to_get_image">无法读取图片</string>
+    <string name="loading">加载中</string>
+    <string name="scanning_sheet">AI识别乐谱中\n可能需要约1 - 2分钟时间。</string>
+    <string name="importing_file">导入乐谱中</string>
+    <string name="scanning_tutorial_title">扫描乐谱的最佳方式</string>
+    <string name="next_step">下一步</string>
+    <string name="shoot_vertically">垂直拍摄</string>
+    <string name="shoot_vertically_desc">将乐谱平放在桌面上，然后使用手机从上向下垂直拍摄。若您的相机上有水平仪，请将其置于完全水平状态，然后按拍摄键。</string>
+    <string name="align_staff_left">对齐谱表左侧</string>
+    <string name="align_staff_left_desc">使所有谱表的左侧边平行于屏幕左侧边缘。</string>
 </resources>

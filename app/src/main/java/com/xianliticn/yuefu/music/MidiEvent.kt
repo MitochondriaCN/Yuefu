@@ -2,7 +2,7 @@ package com.xianliticn.yuefu.music
 
 class MidiEvent(
     /**
-     * 音高
+     * 音高，0-127。21代表A0。
      */
     val pitch: Int,
     /**
@@ -16,7 +16,11 @@ class MidiEvent(
     /**
      * 是否已发送
      */
-    var isSent: Boolean
+    var isSent: Boolean,
+    /**
+     * 声部
+     */
+    val part: Int = 0
 ) {
     fun getMidiData(): ByteArray =
         when (note) {

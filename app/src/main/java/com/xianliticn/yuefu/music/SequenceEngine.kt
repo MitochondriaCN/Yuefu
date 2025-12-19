@@ -17,6 +17,9 @@ class SequenceEngine {
     private var sequence: List<MidiEvent>? = null
     private var isPlaying = false
     private var startTimeNano = 0L
+    private var pausedProgressNano = 0L
+    private var eventIndex = 0
+
     private val scope = CoroutineScope(Dispatchers.IO + Job())
 
     private var playJob: Job? = null
@@ -31,34 +34,41 @@ class SequenceEngine {
         midiDriver.setOnMidiStartListener {
             Log.d("DEV", "MidiDriver started")
         }
-    }
-
-    fun play(midiEvents: List<MidiEvent>) {
-        sequence = midiEvents.sortedBy { it.timeNano }
-        isPlaying = true
-        startTimeNano = System.nanoTime()
-
-        playJob?.cancel()
-        progressJob?.cancel()
-
         midiDriver.start()
 
         progressJob = scope.launch {
-            while (isPlaying) {
-                val now = System.nanoTime()
-                val elapsedMillis = (now - startTimeNano) / 1_000_000
-                _currentProgressMillis.emit(elapsedMillis)
+            while (true) {
+                if (isPlaying) {
+                    val now = System.nanoTime()
+                    val elapsedMillis = (now - startTimeNano) / 1_000_000
+                    _currentProgressMillis.emit(elapsedMillis)
+                } else {
+                    _currentProgressMillis.emit(pausedProgressNano / 1_000_000)
+                }
 
                 // 1000ms / 32ms = 31.25
                 // 即以31.25Hz更新当前进度
                 delay(32)
             }
         }
+    }
+
+    fun load(midiEvents: List<MidiEvent>) {
+        sequence = midiEvents.sortedBy { it.timeNano }
+    }
+
+    fun play() {
+        if (sequence == null)
+            throw Exception("尚未加载音频序列")
+
+        if (isPlaying)
+            return
+
+        isPlaying = true
+        changeProgress(pausedProgressNano / 1_000_000)
 
         playJob = scope.launch {
-            Log.d("DEV", "Sequence engine started")
-
-            var eventIndex = 0
+            eventIndex = 0
 
             while (isPlaying && eventIndex < (sequence?.size ?: -1)) {
                 val event = sequence?.get(eventIndex)
@@ -99,14 +109,39 @@ class SequenceEngine {
                 eventIndex++
             }
 
-            stop()
+            //全播完
+            pause()
         }
     }
 
     fun stop() {
-        isPlaying = false
+        //stop() = changeProgress(0L) + pause()
+        changeProgress(0L)
+        pause()
+    }
+
+    fun pause() {
         playJob?.cancel()
-        progressJob?.cancel()
-        midiDriver.stop()
+        isPlaying = false
+        pausedProgressNano = System.nanoTime() - startTimeNano
+    }
+
+    fun changeProgress(targetMillis: Long) {
+        //要使elapsedMillis = now - startMillis = targetMillis，
+        //只需startMillis = now - targetMillis
+        val now = System.nanoTime()
+        startTimeNano = now - targetMillis * 1_000_000
+        pausedProgressNano = targetMillis * 1_000_000
+
+        //设置音符状态
+        sequence?.forEach {
+            if (it.timeNano >= targetMillis * 1_000_000) { //在指针后
+                it.isSent = false
+            } else { //在指针前
+                it.isSent = true
+            }
+        }
+
+        eventIndex = 0
     }
 }

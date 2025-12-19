@@ -1,6 +1,9 @@
 package com.xianliticn.yuefu.ui.components
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -21,9 +24,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
@@ -35,8 +40,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
+import com.xianliticn.yuefu.music.VisualNoteEvent
 import com.xianliticn.yuefu.ui.theme.Orange800
 
+@OptIn(ExperimentalFoundationApi::class)
+@SuppressLint("FrequentlyChangingValue")
 @Composable
 fun PianoRollNoteFlow(
     modifier: Modifier = Modifier,
@@ -69,178 +77,121 @@ fun PianoRollNoteFlow(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(400.dp) // 稍微增加高度以容纳控制栏或其他内容
     ) {
         val maxWidthPx = with(density) { maxWidth.toPx() }
 
-        // --- 层级 1: 音符瀑布流 (NoteFlow) ---
-        // 它位于底层，并且不需要 Modifier.horizontalScroll，
-        // 因为它内部通过 visibleRange.startPx 来处理偏移。
         NoteFlow(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 200.dp),
+                .padding(bottom = 200.dp)
+                .clipToBounds(),
             whiteKeyWidth = whiteKeyWidthPx,
             keyCount = whiteKeys.size,
             notes = notes,
             currentProgressMillis = currentProgressMillis,
-            // [关键] 同步滚动：将 ScrollState 的值传给 NoteFlow
+            //同步滚动
             visibleRange = NoteFlowVisibleRange(
                 startPx = scrollState.value.toFloat(),
                 endPx = scrollState.value.toFloat() + maxWidthPx
             )
         )
 
-        // --- 层级 2: 键盘区域 ---
-        // 将键盘固定在底部
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(200.dp) // [修改] 给键盘一个固定高度，给上方留出空间
                 .align(Alignment.BottomCenter) // [修改] 对齐到底部
         ) {
-            // 核心键盘区域
-            Row(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    // 关键点：根据模式决定是否允许滚动
-                    .then(if (isScrollMode) Modifier.horizontalScroll(scrollState) else Modifier)
-                    // 关键点：处理滑奏 (Glissando) 的触摸事件
-                    .pointerInput(isScrollMode) {
-                        if (!isScrollMode) {
-                            awaitEachGesture {
-                                val down = awaitFirstDown()
-                                // 计算当前的滚动偏移量，因为 pointerInput 坐标是相对于控件可见区域的
-                                // 而我们需要相对于内容的绝对坐标
-                                var touchPosition =
-                                    down.position.copy(x = down.position.x + scrollState.value)
+            CompositionLocalProvider(LocalOverscrollFactory provides null) {
+                // 核心键盘区域
+                Row(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        // 根据模式决定是否允许滚动
+                        .horizontalScroll(scrollState, isScrollMode)
+                        // 处理滑奏的触摸事件
+                        .pointerInput(isScrollMode) {
+                            if (!isScrollMode) {
+                                awaitEachGesture {
+                                    val down = awaitFirstDown()
+                                    // 计算当前的滚动偏移量，因为 pointerInput 坐标是相对于控件可见区域的
+                                    // 而我们需要相对于内容的绝对坐标
+                                    var touchPosition =
+                                        down.position.copy(x = down.position.x + scrollState.value)
 
-                                // 查找被按下的键
-                                var currentKey = findKeyAt(touchPosition, keysLayoutMap, allKeys)
-                                currentKey?.let {
-                                    onKeyPressed(it)
-                                }
-
-                                // 持续追踪移动
-                                while (true) {
-                                    val event = awaitPointerEvent()
-                                    val change = event.changes.lastOrNull() ?: break
-
-                                    if (change.pressed) {
-                                        touchPosition =
-                                            change.position.copy(x = change.position.x + scrollState.value)
-                                        val newKey =
-                                            findKeyAt(touchPosition, keysLayoutMap, allKeys)
-
-                                        if (newKey != null && newKey.id != currentKey?.id) {
-                                            // 释放旧键，按下新键
-                                            currentKey?.let { onKeyReleased(it) }
-                                            currentKey = newKey
-                                            onKeyPressed(newKey)
-                                        }
-                                    } else {
-                                        break // 手指抬起
+                                    // 查找被按下的键
+                                    var currentKey =
+                                        findKeyAt(touchPosition, keysLayoutMap, allKeys)
+                                    currentKey?.let {
+                                        onKeyPressed(it)
                                     }
-                                }
-                                // 循环结束（手指抬起），释放最后的键
-                                currentKey?.let {
-                                    onKeyReleased(it)
+
+                                    // 持续追踪移动
+                                    while (true) {
+                                        val event = awaitPointerEvent()
+                                        val change = event.changes.lastOrNull() ?: break
+
+                                        if (change.pressed) {
+                                            touchPosition =
+                                                change.position.copy(x = change.position.x + scrollState.value)
+                                            val newKey =
+                                                findKeyAt(touchPosition, keysLayoutMap, allKeys)
+
+                                            if (newKey != null && newKey.id != currentKey?.id) {
+                                                // 释放旧键，按下新键
+                                                currentKey?.let { onKeyReleased(it) }
+                                                currentKey = newKey
+                                                onKeyPressed(newKey)
+                                            }
+                                        } else {
+                                            break // 手指抬起
+                                        }
+                                    }
+                                    // 循环结束（手指抬起），释放最后的键
+                                    currentKey?.let {
+                                        onKeyReleased(it)
+                                    }
                                 }
                             }
                         }
-                    }
-            ) {
-                // 使用 Box 来进行复杂的层叠布局 (白键底层，黑键上层)
-                // 计算总宽度
-                val totalWidthDp = whiteKeyWidth * whiteKeys.size
-
-                Box(
-                    modifier = Modifier
-                        .width(totalWidthDp)
-                        .fillMaxHeight()
                 ) {
-                    // --- 绘制白键 ---
-                    whiteKeys.forEachIndexed { index, keyData ->
-                        // 白键的 X 偏移量很简单：索引 * 宽度
-                        val offsetX = whiteKeyWidth * index
+                    // 使用 Box 来进行复杂的层叠布局 (白键底层，黑键上层)
+                    // 计算总宽度
+                    val totalWidthDp = whiteKeyWidth * whiteKeys.size
 
-                        PianoKey(
-                            modifier = Modifier
-                                .width(whiteKeyWidth)
-                                .fillMaxHeight()
-                                .offset(x = offsetX)
-                                .onGloballyPositioned { layoutCoordinates ->
-                                    // 记录白键的区域 (用于命中测试)
-                                    val rect = layoutCoordinates.size.toSize()
-                                    // 注意：这里的offset是相对父容器的，需要结合我们在Box里的布局逻辑
-                                    // 在 Box 中使用 offset 修饰符，layoutCoordinates 拿到的位置通常是准确的相对位置
-                                    // 但最稳妥的是手动计算 Rect，因为我们知道确切的数学位置
-                                    with(density) {
-                                        keysLayoutMap[keyData.id] = Rect(
-                                            offsetX.toPx(),
-                                            0f,
-                                            (offsetX + whiteKeyWidth).toPx(),
-                                            200.dp.toPx() // 假设键盘高200
-                                        )
-                                    }
-                                },
-                            keyType = PianoKeyType.White,
-                            isPressed = pressedKeyIds.contains(keyData.id) && !isScrollMode, // 只有非滚动模式才显示按下效果
-                            // 单击模式 (如果是滚动模式，点击依然可以发声，这取决于你的需求，这里保留)
-                            onPressed = {
-                                if (isScrollMode) {
-                                    onKeyPressed(keyData)
-                                }
-                            },
-                            onReleased = {
-                                if (isScrollMode) {
-                                    onKeyReleased(keyData)
-                                }
-                            }
-                        )
-                    }
-
-                    // --- 绘制黑键 ---
-                    // 必须在白键之后绘制，确保 z-index 更高 (或者显式设置 zIndex)
-                    var currentWhiteKeyIndex = 0
-                    allKeys.forEach { keyData ->
-                        if (keyData.type == PianoKeyType.White) {
-                            currentWhiteKeyIndex++
-                        } else {
-                            // 是黑键。它位于当前白键索引 (currentWhiteKeyIndex) 和前一个之间。
-                            // 实际上，黑键总是位于它前一个白键的右侧边界中心。
-                            // 比如 C# 位于 C (第0个白键) 和 D (第1个白键) 之间。
-                            // 此时 currentWhiteKeyIndex 已经指向了 D (因为 C 已经被遍历过了)。
-                            // 所以黑键中心位置 = (currentWhiteKeyIndex - 1 + 1) * whiteWidth - (blackWidth / 2) ???
-                            // 让我们简化逻辑：
-                            // 如果当前遍历到的是 C#，之前遍历过 C (whiteIndex=1)。C# 应该跨越 C 和 D。
-                            // C 的右边界是 1 * whiteWidth。
-                            // 所以 C# 的左边界 = (1 * whiteWidth) - (blackWidth / 2)。
-
-                            val leftAnchorWhiteKeyIndex = currentWhiteKeyIndex
-                            val offsetXDp =
-                                (whiteKeyWidth * leftAnchorWhiteKeyIndex) - (blackKeyWidth / 2)
+                    Box(
+                        modifier = Modifier
+                            .width(totalWidthDp)
+                            .fillMaxHeight()
+                    ) {
+                        // --- 绘制白键 ---
+                        whiteKeys.forEachIndexed { index, keyData ->
+                            // 白键的 X 偏移量很简单：索引 * 宽度
+                            val offsetX = whiteKeyWidth * index
 
                             PianoKey(
                                 modifier = Modifier
-                                    .zIndex(1f) // 确保在白键上面
-                                    .width(blackKeyWidth)
-                                    .height(120.dp) // 黑键较短
-                                    .offset(x = offsetXDp)
-                                    .onGloballyPositioned {
-                                        // 手动计算黑键区域
+                                    .width(whiteKeyWidth)
+                                    .fillMaxHeight()
+                                    .offset(x = offsetX)
+                                    .onGloballyPositioned { layoutCoordinates ->
+                                        // 记录白键的区域 (用于命中测试)
+                                        val rect = layoutCoordinates.size.toSize()
+                                        // 注意：这里的offset是相对父容器的，需要结合我们在Box里的布局逻辑
+                                        // 在 Box 中使用 offset 修饰符，layoutCoordinates 拿到的位置通常是准确的相对位置
+                                        // 但最稳妥的是手动计算 Rect，因为我们知道确切的数学位置
                                         with(density) {
-                                            keysLayoutMap[keyData.id] =
-                                                Rect(
-                                                    offsetXDp.toPx(),
-                                                    0f,
-                                                    (offsetXDp + blackKeyWidth).toPx(),
-                                                    120.dp.toPx()
-                                                )
+                                            keysLayoutMap[keyData.id] = Rect(
+                                                offsetX.toPx(),
+                                                0f,
+                                                (offsetX + whiteKeyWidth).toPx(),
+                                                200.dp.toPx() // 假设键盘高200
+                                            )
                                         }
                                     },
-                                keyType = PianoKeyType.Black,
-                                isPressed = pressedKeyIds.contains(keyData.id) && !isScrollMode,
+                                keyType = PianoKeyType.White,
+                                isPressed = pressedKeyIds.contains(keyData.id) && !isScrollMode, // 只有非滚动模式才显示按下效果
+                                // 单击模式 (如果是滚动模式，点击依然可以发声，这取决于你的需求，这里保留)
                                 onPressed = {
                                     if (isScrollMode) {
                                         onKeyPressed(keyData)
@@ -252,6 +203,61 @@ fun PianoRollNoteFlow(
                                     }
                                 }
                             )
+                        }
+
+                        // --- 绘制黑键 ---
+                        // 必须在白键之后绘制，确保 z-index 更高 (或者显式设置 zIndex)
+                        var currentWhiteKeyIndex = 0
+                        allKeys.forEach { keyData ->
+                            if (keyData.type == PianoKeyType.White) {
+                                currentWhiteKeyIndex++
+                            } else {
+                                // 是黑键。它位于当前白键索引 (currentWhiteKeyIndex) 和前一个之间。
+                                // 实际上，黑键总是位于它前一个白键的右侧边界中心。
+                                // 比如 C# 位于 C (第0个白键) 和 D (第1个白键) 之间。
+                                // 此时 currentWhiteKeyIndex 已经指向了 D (因为 C 已经被遍历过了)。
+                                // 所以黑键中心位置 = (currentWhiteKeyIndex - 1 + 1) * whiteWidth - (blackWidth / 2) ???
+                                // 让我们简化逻辑：
+                                // 如果当前遍历到的是 C#，之前遍历过 C (whiteIndex=1)。C# 应该跨越 C 和 D。
+                                // C 的右边界是 1 * whiteWidth。
+                                // 所以 C# 的左边界 = (1 * whiteWidth) - (blackWidth / 2)。
+
+                                val leftAnchorWhiteKeyIndex = currentWhiteKeyIndex
+                                val offsetXDp =
+                                    (whiteKeyWidth * leftAnchorWhiteKeyIndex) - (blackKeyWidth / 2)
+
+                                PianoKey(
+                                    modifier = Modifier
+                                        .zIndex(1f) // 确保在白键上面
+                                        .width(blackKeyWidth)
+                                        .height(120.dp) // 黑键较短
+                                        .offset(x = offsetXDp)
+                                        .onGloballyPositioned {
+                                            // 手动计算黑键区域
+                                            with(density) {
+                                                keysLayoutMap[keyData.id] =
+                                                    Rect(
+                                                        offsetXDp.toPx(),
+                                                        0f,
+                                                        (offsetXDp + blackKeyWidth).toPx(),
+                                                        120.dp.toPx()
+                                                    )
+                                            }
+                                        },
+                                    keyType = PianoKeyType.Black,
+                                    isPressed = pressedKeyIds.contains(keyData.id) && !isScrollMode,
+                                    onPressed = {
+                                        if (isScrollMode) {
+                                            onKeyPressed(keyData)
+                                        }
+                                    },
+                                    onReleased = {
+                                        if (isScrollMode) {
+                                            onKeyReleased(keyData)
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -332,7 +338,7 @@ fun PianoKey(
     }
 }
 
-fun findKeyAt(
+private fun findKeyAt(
     position: Offset,
     map: Map<String, Rect>,
     allKeys: List<PianoKeyData>

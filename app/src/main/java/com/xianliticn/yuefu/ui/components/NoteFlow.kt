@@ -1,14 +1,14 @@
 package com.xianliticn.yuefu.ui.components
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.xianliticn.yuefu.music.VisualNoteEvent
 
 @Composable
 fun NoteFlow(
@@ -26,7 +26,7 @@ fun NoteFlow(
     // 将速度转换为 像素/毫秒
     val pixelsPerMillis = pixelsPerSecond / 1000f
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(modifier = modifier.fillMaxWidth()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
 
@@ -52,8 +52,8 @@ fun NoteFlow(
             }
 
             // 2. 计算 X 轴位置 (根据 visibleRange 进行偏移)
-            //在键中点绘制
-            val rawMid = (note.keyIndex - 0.5f) * whiteKeyWidth
+            // 在键中点绘制
+            val rawMid = (note.keyIndex + 0.5f) * whiteKeyWidth
             val mid = rawMid + offsetX
             // 简单的宽度计算，实际可能需要根据黑白键调整
             val width = whiteKeyWidth * 0.4f
@@ -91,16 +91,6 @@ fun NoteFlow(
         }
     }
 }
-
-data class VisualNoteEvent(
-    val startTimeMillis: Long,
-    val endTimeMillis: Long,
-    /**
-     * 白键索引，+0.5表示白键右上侧的黑键。
-     */
-    val keyIndex: Float,
-    val color: Color
-)
 
 data class NoteFlowVisibleRange(
     val startPx: Float,
