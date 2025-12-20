@@ -123,6 +123,39 @@ class ScanStudioPageViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    fun handleCrop(xOffset: Float) {
+        val currentBitmap = _imageModel.value as Bitmap
+        val originalWidth = currentBitmap.width
+        val originalHeight = currentBitmap.height
+
+        // 确定裁切的起始点和裁切后的宽度
+        val (offsetX, croppedWidth) = if (xOffset < originalWidth / 2) {
+            // 裁切左边部分
+            // 裁切的起始 x 坐标为 xOffset，宽度为原图宽度减去 xOffset
+            Pair(xOffset.toInt(), originalWidth - xOffset.toInt())
+        } else {
+            // 裁切右边部分
+            // 裁切的起始 x 坐标为 0，宽度为 xOffset
+            Pair(0, xOffset.toInt())
+        }
+
+        // 确保裁切参数不会超出图片边界
+        val finalOffsetX = offsetX.coerceIn(0, originalWidth)
+        val finalCroppedWidth = croppedWidth.coerceIn(0, originalWidth - finalOffsetX)
+
+        if (finalCroppedWidth > 0 && originalHeight > 0) {
+            // 创建一个新的、经过裁切的 Bitmap
+            val croppedBitmap = Bitmap.createBitmap(
+                currentBitmap,
+                finalOffsetX,
+                0, // y 坐标从顶部开始，不进行垂直裁切
+                finalCroppedWidth,
+                originalHeight
+            )
+            _imageModel.value = croppedBitmap
+        }
+    }
+
     data class ImageParam(
         val nameResId: Int,
         val descResId: Int,

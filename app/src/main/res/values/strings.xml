@@ -46,4 +46,5 @@
     <string name="shadows_desc">阴影描述</string>
     <string name="highlights">高光</string>
     <string name="highlights_desc">高光描述</string>
+    <string name="crop">裁剪</string>
 </resources>
