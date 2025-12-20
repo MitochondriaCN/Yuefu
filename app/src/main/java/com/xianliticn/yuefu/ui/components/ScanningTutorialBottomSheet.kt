@@ -44,12 +44,12 @@ fun ScanningTutorialBottomSheet(
         TutorialStep(
             title = stringResource(R.string.shoot_vertically),
             description = stringResource(R.string.shoot_vertically_desc),
-            imageResInt = R.drawable.sheet_placeholder
+            imageResInt = null
         ),
         TutorialStep(
             title = stringResource(R.string.align_staff_left),
             description = stringResource(R.string.align_staff_left_desc),
-            imageResInt = R.drawable.sheet_placeholder
+            imageResInt = null
         )
     )
 
@@ -100,7 +100,7 @@ private fun TutorialItem(
     modifier: Modifier = Modifier,
     title: String,
     description: String,
-    imageResInt: Int,
+    imageResInt: Int?,
 ) {
     Column(
         modifier = modifier
@@ -108,11 +108,13 @@ private fun TutorialItem(
             .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            modifier = Modifier.height(200.dp),
-            painter = painterResource(imageResInt),
-            contentDescription = null,
-        )
+        imageResInt?.let {
+            Image(
+                modifier = Modifier.height(200.dp),
+                painter = painterResource(it),
+                contentDescription = null,
+            )
+        }
         Spacer(Modifier.height(32.dp))
         Text(
             text = title,
@@ -131,5 +133,5 @@ private fun TutorialItem(
 private data class TutorialStep(
     val title: String,
     val description: String,
-    val imageResInt: Int
+    val imageResInt: Int?
 )

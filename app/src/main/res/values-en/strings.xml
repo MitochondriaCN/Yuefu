@@ -26,7 +26,7 @@
     <string name="failed_to_omr">Sheet recognition failed</string>
     <string name="failed_to_get_image">Cannot read image</string>
     <string name="loading">Loading</string>
-    <string name="scanning_sheet">AI is recognizing the sheet music\nThis may take approximately 1–2 minutes.</string>
+    <string name="scanning_sheet">AI is recognizing the sheet music\nThis may take approximately 1–2 minutes</string>
     <string name="importing_file">Importing sheet</string>
     <string name="scanning_tutorial_title">The best way to scan sheet</string>
     <string name="next_step">Next</string>
@@ -34,4 +34,24 @@
     <string name="shoot_vertically_desc">Place the sheet music flat on the table, then use your phone to take a vertical photo from top to bottom. If your camera has a level indicator, ensure it is perfectly level before pressing the shutter button.</string>
     <string name="align_staff_left">Align the left side of the staff</string>
     <string name="align_staff_left_desc">Align the left edges of all staves parallel to the left edge of the screen.</string>
+    <string name="optimize_sheet">Optimize sheet</string>
+    <string name="brightness">Brightness</string>
+    <string name="brightness_desc">Before adjusting the brightness, first adjust the shadows and highlights. When adjusting brightness, always proceed with caution and reserve it as the final step for fine-tuning.</string>
+    <string name="contrast">Contrast</string>
+    <string name="contrast_desc">Adjust the contrast appropriately until the background is almost pure white and the dark areas are nearly pure black.</string>
+    <string name="saturation">Saturation</string>
+    <string name="saturation_desc">Reduce the saturation to the minimum.</string>
+    <string name="sharpen">Sharpen</string>
+    <string name="sharpen_desc">Apply a moderate amount of sharpening, but be careful to avoid \"white halos\" or noise along the edges.</string>
+    <string name="shadows">Shadows</string>
+    <string name="shadows_desc">Significantly increase the shadows to make dark details (such as paper wrinkles and shadows) disappear, while preserving the text.</string>
+    <string name="highlights">Highlights</string>
+    <string name="highlights_desc">Fine-tune the highlights to prevent the background from becoming too bright and losing the texture of the paper.</string>
+    <string name="crop">Crop</string>
+    <string name="scanning_tip_1">Deciphering da Vinci\'s manuscripts</string>
+    <string name="scanning_tip_2">Proving Fermat\'s Last Theorem</string>
+    <string name="scanning_tip_3">Calculating the Digits of Pi</string>
+    <string name="scanning_tip_4">Proofreading Bach\'s polyphony</string>
+    <string name="scanning_tip_5">Awaiting Archimedes\' inspiration</string>
+    <string name="scanning_tip_6">Recreating the Miller–Urey experiment</string>
 </resources>
