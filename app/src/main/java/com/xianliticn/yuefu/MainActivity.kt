@@ -105,7 +105,12 @@ class MainActivity : ComponentActivity() {
                         navController.popBackStack()
                         return@composable
                     }
-                    ScanStudioPage(hiltViewModel(), imageUri)
+                    ScanStudioPage(
+                        viewModel = hiltViewModel(),
+                        imageUri = imageUri,
+                        onFinished = {
+                            navController.popBackStack()
+                        })
                 }
             }
         }

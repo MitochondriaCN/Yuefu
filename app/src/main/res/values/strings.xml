@@ -25,7 +25,7 @@
     <string name="failed_to_omr">乐谱识别失败。</string>
     <string name="failed_to_get_image">无法读取图片</string>
     <string name="loading">加载中</string>
-    <string name="scanning_sheet">AI识别乐谱中\n可能需要约1 – 2分钟时间。</string>
+    <string name="scanning_sheet">AI识别乐谱中\n可能需要约1–2分钟时间。</string>
     <string name="importing_file">导入乐谱中</string>
     <string name="scanning_tutorial_title">扫描乐谱的最佳方式</string>
     <string name="next_step">下一步</string>
@@ -35,16 +35,22 @@
     <string name="align_staff_left_desc">使所有谱表的左侧边平行于屏幕左侧边缘。</string>
     <string name="optimize_sheet">优化乐谱</string>
     <string name="brightness">亮度</string>
-    <string name="brightness_desc">使图片较为明亮，但不至于过曝。</string>
+    <string name="brightness_desc">在调整亮度之前，先调整阴影和高光。调整亮度时务必谨慎，请将其作为最后一步的精细控制。</string>
     <string name="contrast">对比度</string>
-    <string name="contrast_desc">对比度描述</string>
+    <string name="contrast_desc">适当提高对比度，直到背景接近纯白，深色部分接近纯黑。</string>
     <string name="saturation">饱和度</string>
-    <string name="saturation_desc">饱和度描述</string>
+    <string name="saturation_desc">将饱和度降至最低。</string>
     <string name="sharpen">锐化</string>
-    <string name="sharpen_desc">锐化描述</string>
+    <string name="sharpen_desc">适当增加锐化，注意避免边缘出现“白边”或噪点。</string>
     <string name="shadows">阴影</string>
-    <string name="shadows_desc">阴影描述</string>
+    <string name="shadows_desc">大幅提升阴影值，使暗部细节（如纸张褶皱、阴影）消失，但保留文字。</string>
     <string name="highlights">高光</string>
-    <string name="highlights_desc">高光描述</string>
+    <string name="highlights_desc">微调高光，防止背景过亮导致纸张质感丢失。</string>
     <string name="crop">裁剪</string>
+    <string name="scanning_tip_1">正在破译达芬奇手稿</string>
+    <string name="scanning_tip_2">正在证明费马大定理</string>
+    <string name="scanning_tip_3">正在计算圆周率</string>
+    <string name="scanning_tip_4">正在校对巴赫的复调</string>
+    <string name="scanning_tip_5">正在等待阿基米德的灵感</string>
+    <string name="scanning_tip_6">正在重现米勒—尤里实验</string>
 </resources>
