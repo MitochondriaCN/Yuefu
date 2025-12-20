@@ -25,7 +25,7 @@
     <string name="failed_to_omr">乐谱识别失败。</string>
     <string name="failed_to_get_image">无法读取图片</string>
     <string name="loading">加载中</string>
-    <string name="scanning_sheet">AI识别乐谱中\n可能需要约1 - 2分钟时间。</string>
+    <string name="scanning_sheet">AI识别乐谱中\n可能需要约1 – 2分钟时间。</string>
     <string name="importing_file">导入乐谱中</string>
     <string name="scanning_tutorial_title">扫描乐谱的最佳方式</string>
     <string name="next_step">下一步</string>
@@ -33,4 +33,17 @@
     <string name="shoot_vertically_desc">将乐谱平放在桌面上，然后使用手机从上向下垂直拍摄。若您的相机上有水平仪，请将其置于完全水平状态，然后按拍摄键。</string>
     <string name="align_staff_left">对齐谱表左侧</string>
     <string name="align_staff_left_desc">使所有谱表的左侧边平行于屏幕左侧边缘。</string>
+    <string name="optimize_sheet">优化乐谱</string>
+    <string name="brightness">亮度</string>
+    <string name="brightness_desc">使图片较为明亮，但不至于过曝。</string>
+    <string name="contrast">对比度</string>
+    <string name="contrast_desc">对比度描述</string>
+    <string name="saturation">饱和度</string>
+    <string name="saturation_desc">饱和度描述</string>
+    <string name="sharpen">锐化</string>
+    <string name="sharpen_desc">锐化描述</string>
+    <string name="shadows">阴影</string>
+    <string name="shadows_desc">阴影描述</string>
+    <string name="highlights">高光</string>
+    <string name="highlights_desc">高光描述</string>
 </resources>

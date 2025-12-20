@@ -61,7 +61,10 @@ import java.io.File
 import java.time.Instant
 
 @Composable
-fun HomePage(viewModel: HomePageViewModel) {
+fun HomePage(
+    viewModel: HomePageViewModel,
+    onImageSelected: (Uri) -> Unit
+) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
@@ -79,7 +82,7 @@ fun HomePage(viewModel: HomePageViewModel) {
     ) { success ->
         if (success) {
             imageUri?.let {
-                viewModel.handleImportPhoto(it)
+                onImageSelected(it)
             }
         }
     }
@@ -88,7 +91,7 @@ fun HomePage(viewModel: HomePageViewModel) {
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            viewModel.handleImportPhoto(it)
+            onImageSelected(it)
         }
     }
 
@@ -97,6 +100,7 @@ fun HomePage(viewModel: HomePageViewModel) {
     }
 
     HomePageContent(
+        modifier = Modifier.padding(horizontal = 16.dp),
         loading = uiState.loading,
         loadingMessage = uiState.loadingMessage,
         recent4 = uiState.recent4,

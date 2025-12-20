@@ -34,4 +34,17 @@
     <string name="shoot_vertically_desc">Place the sheet music flat on the table, then use your phone to take a vertical photo from top to bottom. If your camera has a level indicator, ensure it is perfectly level before pressing the shutter button.</string>
     <string name="align_staff_left">Align the left side of the staff</string>
     <string name="align_staff_left_desc">Align the left edges of all staves parallel to the left edge of the screen.</string>
+    <string name="optimize_sheet">优化乐谱</string>
+    <string name="brightness">亮度</string>
+    <string name="brightness_desc">使图片较为明亮，但不至于过曝。</string>
+    <string name="contrast">对比度</string>
+    <string name="contrast_desc">对比度描述</string>
+    <string name="saturation">饱和度</string>
+    <string name="saturation_desc">饱和度描述</string>
+    <string name="sharpen">锐化</string>
+    <string name="sharpen_desc">锐化描述</string>
+    <string name="shadows">阴影</string>
+    <string name="shadows_desc">阴影描述</string>
+    <string name="highlights">高光</string>
+    <string name="highlights_desc">高光描述</string>
 </resources>

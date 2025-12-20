@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -53,6 +54,7 @@ fun SheetPage(viewModel: SheetPageViewModel) {
     }
 
     SheetPageContent(
+        modifier = Modifier.padding(16.dp),
         sheets = uiState.sheets,
         onRefresh = { viewModel.refresh() },
         loading = uiState.loading,
