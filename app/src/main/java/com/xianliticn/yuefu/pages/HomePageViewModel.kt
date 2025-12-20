@@ -3,7 +3,6 @@ package com.xianliticn.yuefu.pages
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,7 +15,6 @@ import com.xianliticn.yuefu.utils.getHash
 import com.xianliticn.yuefu.utils.getTitle
 import com.xianliticn.yuefu.utils.isValidMusicXml
 import com.xianliticn.yuefu.utils.readXml
-import com.xianliticn.yuefu.webapi.OmrApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -24,9 +22,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
@@ -36,7 +31,6 @@ import java.util.zip.ZipInputStream
 @HiltViewModel
 class HomePageViewModel @Inject constructor(
     private val appDatabase: AppDatabase,
-    private val omrApi: OmrApi
 ) : ViewModel() {
     @Inject
     @ApplicationContext
@@ -104,50 +98,6 @@ class HomePageViewModel @Inject constructor(
                 Toast.makeText(context, R.string.import_failed, Toast.LENGTH_LONG).show()
             } finally {
                 file.delete()
-                _uiState.update {
-                    _uiState.value.copy(
-                        loading = false
-                    )
-                }
-            }
-        }
-
-    }
-
-    fun handleImportPhoto(imageUri: Uri) {
-        _uiState.update {
-            _uiState.value.copy(
-                loading = true,
-                loadingMessage = context.getString(R.string.scanning_sheet)
-            )
-        }
-        viewModelScope.launch {
-            try {
-                val part = getImageMultipartBodyPart(imageUri)
-                val resp = omrApi.getMusicXml(part)
-                if (resp.isSuccessful) {
-                    val file = File(context.cacheDir, "${System.currentTimeMillis()}-download.mxl")
-                    resp.body()?.byteStream()?.use { inputStream ->
-                        file.outputStream().use { outputStream ->
-                            inputStream.copyTo(outputStream)
-                        }
-                    }
-
-                    if (file.exists() && file.length() > 0) {
-                        importMusicXmlFile(file)
-                        file.delete()
-                        Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
-                    } else {
-                        Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-                    }
-                } else {
-                    Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-                }
-                refresh()
-            } catch (e: Exception) {
-                Log.e("DEV", "handleImportFile: ${e.message}", e)
-                Toast.makeText(context, R.string.import_failed, Toast.LENGTH_LONG).show()
-            } finally {
                 _uiState.update {
                     _uiState.value.copy(
                         loading = false
@@ -245,38 +195,6 @@ class HomePageViewModel @Inject constructor(
         )
 
         return inFile
-    }
-
-    private fun getImageMultipartBodyPart(imageUri: Uri): MultipartBody.Part {
-        context.contentResolver.openInputStream(imageUri)?.use { ins ->
-            val imageBytes = ins.readBytes()
-
-            var mimeType = context.contentResolver.getType(imageUri)
-            // 推断：文件扩展名
-            if (mimeType.isNullOrBlank() || mimeType == "application/octet-stream") {
-                val fileExtension = MimeTypeMap.getFileExtensionFromUrl(imageUri.toString())
-                if (!fileExtension.isNullOrBlank()) {
-                    mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
-                }
-            }
-            // 推断失败，视为JPEG
-            if (mimeType.isNullOrBlank() || mimeType == "application/octet-stream") {
-                mimeType = "image/jpeg"
-            }
-
-            val requestBody = imageBytes.toRequestBody(
-                mimeType.toMediaTypeOrNull(),
-                0,
-                imageBytes.size
-            )
-
-            return MultipartBody.Part.createFormData(
-                "file",
-                "${System.currentTimeMillis()}-img",
-                requestBody
-            )
-        }
-        throw Exception(context.getString(R.string.failed_to_get_image))
     }
 
     data class HomePageState(
