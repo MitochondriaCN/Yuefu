@@ -123,35 +123,47 @@ class ScanStudioPageViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    fun handleCrop(xOffset: Float) {
-        val currentBitmap = _imageModel.value as Bitmap
+    fun handleCrop(xOffset: Float, yOffset: Float) {
+        val currentBitmap = _imageModel.value as? Bitmap ?: return
         val originalWidth = currentBitmap.width
         val originalHeight = currentBitmap.height
 
-        // 确定裁切的起始点和裁切后的宽度
+        // 确定水平裁切的起始点和宽度
         val (offsetX, croppedWidth) = if (xOffset < originalWidth / 2) {
-            // 裁切左边部分
-            // 裁切的起始 x 坐标为 xOffset，宽度为原图宽度减去 xOffset
+            // 从左侧开始裁切，保留右侧部分
             Pair(xOffset.toInt(), originalWidth - xOffset.toInt())
         } else {
-            // 裁切右边部分
-            // 裁切的起始 x 坐标为 0，宽度为 xOffset
+            // 从右侧开始裁切，保留左侧部分
             Pair(0, xOffset.toInt())
         }
 
-        // 确保裁切参数不会超出图片边界
-        val finalOffsetX = offsetX.coerceIn(0, originalWidth)
-        val finalCroppedWidth = croppedWidth.coerceIn(0, originalWidth - finalOffsetX)
+        // 确定垂直裁切的起始点和高度
+        val (offsetY, croppedHeight) = if (yOffset < originalHeight / 2) {
+            // 从顶部开始裁切，保留下半部分
+            Pair(yOffset.toInt(), originalHeight - yOffset.toInt())
+        } else {
+            // 从底部开始裁切，保留上半部分
+            Pair(0, yOffset.toInt())
+        }
 
-        if (finalCroppedWidth > 0 && originalHeight > 0) {
+        // 确保所有裁切参数不会超出图片边界
+        val finalOffsetX = offsetX.coerceIn(0, originalWidth)
+        val finalOffsetY = offsetY.coerceIn(0, originalHeight)
+        val finalCroppedWidth = croppedWidth.coerceIn(0, originalWidth - finalOffsetX)
+        val finalCroppedHeight = croppedHeight.coerceIn(0, originalHeight - finalOffsetY)
+
+        // 只有当裁切后的尺寸大于0时才创建新的Bitmap
+        if (finalCroppedWidth > 0 && finalCroppedHeight > 0) {
             // 创建一个新的、经过裁切的 Bitmap
             val croppedBitmap = Bitmap.createBitmap(
                 currentBitmap,
                 finalOffsetX,
-                0, // y 坐标从顶部开始，不进行垂直裁切
+                finalOffsetY,
                 finalCroppedWidth,
-                originalHeight
+                finalCroppedHeight
             )
+            // 更新图像
+            _originalBitmap = croppedBitmap
             _imageModel.value = croppedBitmap
         }
     }

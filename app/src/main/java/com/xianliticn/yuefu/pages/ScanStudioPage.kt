@@ -69,7 +69,7 @@ fun ScanStudioPage(
         onImageParamChange = { param, value ->
             viewModel.handleImageParamChange(param, value)
         },
-        onCrop = { viewModel.handleCrop(it) }
+        onCrop = { x, y -> viewModel.handleCrop(x, y) }
     )
 
 }
@@ -82,11 +82,12 @@ fun ScanStudioContent(
     imageParams: Map<ImageParam, Float> = emptyMap(),
     onImageParamChange: (ImageParam, Float) -> Unit = { _, _ -> },
     onConfirm: (Bitmap) -> Unit = {},
-    onCrop: (xOffset: Float) -> Unit = {}
+    onCrop: (xOffset: Float, yOffset: Float) -> Unit = { _, _ -> }
 ) {
     var selectedParam by remember { mutableStateOf<ImageParam?>(null) }
     var clippingMode by remember { mutableStateOf(false) }
     var clipLeftLineX by remember { mutableStateOf(0f) }
+    var clipTopLineY by remember { mutableStateOf(0f) }
 
     // AsyncImage大小
     var imageComponentSize by remember { mutableStateOf(IntSize.Zero) }
@@ -170,6 +171,23 @@ fun ScanStudioContent(
                                 scaledImageHeight
                             )
                         )
+
+                        drawLine(
+                            color = Orange800,
+                            start = Offset(x = 0f, y = clipTopLineY),
+                            end = Offset(x = scaledImageWidth, y = clipTopLineY),
+                            strokeWidth = 10f
+                        )
+                        drawRect(
+                            color = androidx.compose.ui.graphics.Color.Gray.copy(alpha = 0.7f),
+                            topLeft = if (clipTopLineY < scaledImageHeight / 2) Offset.Zero else
+                                Offset(0f, clipTopLineY),
+                            size = Size(
+                                scaledImageWidth,
+                                if (clipTopLineY < scaledImageHeight / 2) clipTopLineY else
+                                    (scaledImageHeight - clipTopLineY)
+                            )
+                        )
                     }
                 }
         }
@@ -212,15 +230,29 @@ fun ScanStudioContent(
                 }
             }
         else
-            Slider(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 40.dp),
-                value = clipLeftLineX,
-                valueRange = 0f..scaledImageWidth,
-                onValueChange = {
-                    clipLeftLineX = it
-                })
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Slider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp),
+                    value = clipLeftLineX,
+                    valueRange = 0f..scaledImageWidth,
+                    onValueChange = {
+                        clipLeftLineX = it
+                    })
+                Slider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp),
+                    value = clipTopLineY,
+                    valueRange = 0f..scaledImageHeight,
+                    onValueChange = {
+                        clipTopLineY = it
+                    })
+            }
 
         Spacer(Modifier.height(12.dp))
 
@@ -254,8 +286,10 @@ fun ScanStudioContent(
         else
             Button(onClick = {
                 clippingMode = !clippingMode
-                val actualDistance = clipLeftLineX * (originalImageSize.width / scaledImageWidth)
-                onCrop(actualDistance)
+                val ratio = originalImageSize.width / scaledImageWidth
+                val actualX = clipLeftLineX * ratio
+                val actualY = clipTopLineY * ratio
+                onCrop(actualX, actualY)
             }) { Text(stringResource(R.string.crop)) }
     }
 }
