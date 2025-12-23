@@ -60,4 +60,7 @@
     <string name="name_could_not_be_empty">名称不能为空</string>
     <string name="keep_staffs_parallel">保持谱表平行</string>
     <string name="keep_staffs_parallel_desc">使所有谱表的谱线平行，避免边缘卷曲、倾斜等。</string>
+    <string name="settings">设置</string>
+    <string name="about">关于</string>
+    <string name="developers">开发者</string>
 </resources>
