@@ -2,9 +2,11 @@ package com.xianliticn.yuefu.pages
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.AppDatabase
+import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.SheetActivity
 import com.xianliticn.yuefu.entities.Sheet
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -88,6 +90,17 @@ class SheetPageViewModel @Inject constructor(
         if (deleteJob?.isActive == true) return
         deleteJob = viewModelScope.launch {
             appDatabase.sheetDao().delete(sheet)
+            refresh()
+        }
+    }
+
+    fun handleRenameSheet(sheet: Sheet, newName: String) {
+        if (newName.isEmpty()) {
+            Toast.makeText(context, R.string.name_could_not_be_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        viewModelScope.launch {
+            appDatabase.sheetDao().update(sheet.copy(sheetName = newName))
             refresh()
         }
     }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Piano
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
+import com.xianliticn.yuefu.ui.components.InputDialog
 import com.xianliticn.yuefu.utils.toFriendlyString
 import java.time.Instant
 
@@ -61,7 +63,10 @@ fun SheetPage(viewModel: SheetPageViewModel) {
         onItemClick = { viewModel.handleItemClick(it) },
         onSearchQueryChanged = { viewModel.handleSearchQueryChanged(it) },
         onSearch = { viewModel.handleSearch(it) },
-        onDeleteSheet = { viewModel.handleDeleteSheet(it) }
+        onDeleteSheet = { viewModel.handleDeleteSheet(it) },
+        onRenameSheet = { sheet, newName ->
+            viewModel.handleRenameSheet(sheet, newName)
+        }
     )
 }
 
@@ -75,10 +80,12 @@ fun SheetPageContent(
     onItemClick: (Sheet) -> Unit = {},
     onSearchQueryChanged: (String) -> Unit = {},
     onSearch: (String) -> Unit = {},
-    onDeleteSheet: (Sheet) -> Unit = {}
+    onDeleteSheet: (Sheet) -> Unit = {},
+    onRenameSheet: (Sheet, String) -> Unit = { _, _ -> }
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var optionSheet by remember { mutableStateOf<Sheet?>(null) }
+    var renamingSheet by remember { mutableStateOf<Sheet?>(null) }
 
     optionSheet?.let {
         ModalBottomSheet(
@@ -105,10 +112,27 @@ fun SheetPageContent(
                             optionSheet = null
                         }
                     )
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = { Text(stringResource(R.string.rename)) },
+                        leadingContent = { Icon(Icons.Default.Edit, null) },
+                        modifier = Modifier.clickable {
+                            renamingSheet = it
+                            optionSheet = null
+                        }
+                    )
                 }
             }
         )
     }
+
+    InputDialog(
+        showDialog = renamingSheet != null,
+        title = "${stringResource(R.string.rename)} ${renamingSheet?.sheetName}",
+        placeholder = stringResource(R.string.enter_new_name),
+        onDismiss = { renamingSheet = null },
+        onConfirm = { onRenameSheet(renamingSheet!!, it) }
+    )
 
     PullToRefreshBox(
         modifier = modifier.fillMaxSize(),
