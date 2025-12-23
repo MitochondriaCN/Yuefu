@@ -183,7 +183,7 @@ fun SheetPageContent(
                         Icon(
                             imageVector = when (sheets[it].fileName.substringAfterLast('.')
                                 .lowercase()) {
-                                "musicxml", "xml" -> Icons.Default.LibraryMusic
+                                "musicxml", "xml", "mxl" -> Icons.Default.LibraryMusic
                                 "mid", "midi" -> Icons.Default.Piano
                                 else -> Icons.Default.QuestionMark
                             },

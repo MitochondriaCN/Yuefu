@@ -1,6 +1,7 @@
 package com.xianliticn.yuefu.pages
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
@@ -8,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.AppDatabase
 import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.SheetActivity
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
 import com.xianliticn.yuefu.utils.getAbsoluteImportPath
@@ -195,6 +197,13 @@ class HomePageViewModel @Inject constructor(
         )
 
         return inFile
+    }
+
+    fun handleRecentSheetClick(sheet: Sheet) {
+        val intent = Intent(context, SheetActivity::class.java)
+        intent.putExtra("sheetId", sheet.id)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
     }
 
     data class HomePageState(
