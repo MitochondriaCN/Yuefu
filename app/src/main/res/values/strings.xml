@@ -58,4 +58,6 @@
     <string name="cancel">取消</string>
     <string name="enter_new_name">请输入新名称</string>
     <string name="name_could_not_be_empty">名称不能为空</string>
+    <string name="keep_staffs_parallel">保持谱表平行</string>
+    <string name="keep_staffs_parallel_desc">使所有谱表的谱线平行，避免边缘卷曲、倾斜等。</string>
 </resources>

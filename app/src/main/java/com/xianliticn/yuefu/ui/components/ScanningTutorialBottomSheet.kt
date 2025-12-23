@@ -50,6 +50,11 @@ fun ScanningTutorialBottomSheet(
             title = stringResource(R.string.align_staff_left),
             description = stringResource(R.string.align_staff_left_desc),
             imageResInt = null
+        ),
+        TutorialStep(
+            title = stringResource(R.string.keep_staffs_parallel),
+            description = stringResource(R.string.keep_staffs_parallel_desc),
+            imageResInt = null
         )
     )
 
