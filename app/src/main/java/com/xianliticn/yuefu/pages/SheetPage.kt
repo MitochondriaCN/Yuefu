@@ -131,7 +131,10 @@ fun SheetPageContent(
         title = "${stringResource(R.string.rename)} ${renamingSheet?.sheetName}",
         placeholder = stringResource(R.string.enter_new_name),
         onDismiss = { renamingSheet = null },
-        onConfirm = { onRenameSheet(renamingSheet!!, it) }
+        onConfirm = {
+            onRenameSheet(renamingSheet!!, it)
+            renamingSheet = null
+        }
     )
 
     PullToRefreshBox(
