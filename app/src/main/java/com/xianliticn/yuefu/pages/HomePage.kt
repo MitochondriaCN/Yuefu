@@ -125,6 +125,9 @@ fun HomePage(
         },
         onPickImageClick = {
             pickImageLauncher.launch("image/*")
+        },
+        onRecentSheetClick = {
+            viewModel.handleRecentSheetClick(it)
         }
     )
 }
@@ -138,7 +141,8 @@ fun HomePageContent(
     recent4: List<Sheet> = emptyList(),
     onImportFileClick: () -> Unit = {},
     onTakePhotoClick: () -> Unit = {},
-    onPickImageClick: () -> Unit = {}
+    onPickImageClick: () -> Unit = {},
+    onRecentSheetClick: (Sheet) -> Unit = {}
 ) {
     var showingTutorial by remember { mutableStateOf(false) }
     var gettingImage by remember { mutableStateOf(false) }
@@ -231,7 +235,8 @@ fun HomePageContent(
             Spacer(Modifier.height(20.dp))
             RecentlyUsedFile(
                 modifier = Modifier.fillMaxWidth(),
-                recent4 = recent4
+                recent4 = recent4,
+                onItemClick = { onRecentSheetClick(it) }
             )
         }
     }
@@ -240,7 +245,8 @@ fun HomePageContent(
 @Composable
 fun RecentlyUsedFile(
     modifier: Modifier = Modifier,
-    recent4: List<Sheet> = emptyList()
+    recent4: List<Sheet> = emptyList(),
+    onItemClick: (Sheet) -> Unit = {}
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -260,7 +266,8 @@ fun RecentlyUsedFile(
                     FileCard(
                         modifier = Modifier.weight(1f),
                         label = it.sheetName,
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime).toFriendlyString()
+                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime).toFriendlyString(),
+                        onClick = { onItemClick(it) }
                     )
                 }
         }
@@ -273,7 +280,8 @@ fun RecentlyUsedFile(
                     FileCard(
                         modifier = Modifier.weight(1f),
                         label = it.sheetName,
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime).toFriendlyString()
+                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime).toFriendlyString(),
+                        onClick = { onItemClick(it) }
                     )
                 }
         }
@@ -289,7 +297,8 @@ private fun ButtonCard(
     onClick: () -> Unit = {}
 ) {
     ElevatedCard(
-        modifier = modifier.clickable { onClick() },
+        modifier = modifier,
+        onClick = { onClick() },
         colors = CardDefaults.elevatedCardColors(
             containerColor = bgColor,
             contentColor = Clouds
@@ -319,9 +328,13 @@ fun FileCard(
     modifier: Modifier = Modifier,
     label: String,
     type: FileCardType = FileCardType.MusicXml,
-    lastOpenTime: String
+    lastOpenTime: String,
+    onClick: () -> Unit = {}
 ) {
-    ElevatedCard(modifier = modifier) {
+    ElevatedCard(
+        modifier = modifier,
+        onClick = { onClick() }
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

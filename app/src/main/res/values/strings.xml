@@ -53,4 +53,14 @@
     <string name="scanning_tip_4">正在校对巴赫的复调</string>
     <string name="scanning_tip_5">正在等待阿基米德的灵感</string>
     <string name="scanning_tip_6">正在重现米勒—尤里实验</string>
+    <string name="rename">重命名</string>
+    <string name="confirm">确认</string>
+    <string name="cancel">取消</string>
+    <string name="enter_new_name">请输入新名称</string>
+    <string name="name_could_not_be_empty">名称不能为空</string>
+    <string name="keep_staffs_parallel">保持谱表平行</string>
+    <string name="keep_staffs_parallel_desc">使所有谱表的谱线平行，避免边缘卷曲、倾斜等。</string>
+    <string name="settings">设置</string>
+    <string name="about">关于</string>
+    <string name="developers">开发者</string>
 </resources>

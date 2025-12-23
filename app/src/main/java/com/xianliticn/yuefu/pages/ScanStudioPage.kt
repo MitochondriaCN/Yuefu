@@ -192,7 +192,13 @@ fun ScanStudioContent(
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = {
                     clippingMode = !clippingMode
-                }) { Icon(Icons.Default.Crop, null) }
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Crop,
+                        contentDescription = null,
+                        tint = if (clippingMode) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                    )
+                }
                 IconButton(onClick = {
                     onConfirm(imageModel as Bitmap)
                 }) { Icon(Icons.Default.Check, null) }
@@ -361,6 +367,8 @@ fun ScanStudioContent(
                     val actualX = clipLeftLineX * ratio
                     val actualY = clipTopLineY * ratio
                     onCrop(actualX, actualY)
+                    clipLeftLineX = 0f
+                    clipTopLineY = 0f
                 }) { Text(stringResource(R.string.crop)) }
         }
 }

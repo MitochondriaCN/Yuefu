@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -29,6 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.xianliticn.yuefu.pages.HomePage
 import com.xianliticn.yuefu.pages.ScanStudioPage
+import com.xianliticn.yuefu.pages.SettingsPage
 import com.xianliticn.yuefu.pages.SheetPage
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -49,7 +51,8 @@ class MainActivity : ComponentActivity() {
     fun MainActivityFramework(modifier: Modifier = Modifier) {
         val navItems = listOf(
             NavItem("home", R.string.home, Icons.Filled.Home),
-            NavItem("sheet", R.string.sheet, Icons.Filled.MusicNote)
+            NavItem("sheet", R.string.sheet, Icons.Filled.MusicNote),
+            NavItem("settings", R.string.about, Icons.Filled.Info)
         )
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -112,6 +115,8 @@ class MainActivity : ComponentActivity() {
                             navController.popBackStack()
                         })
                 }
+
+                composable("settings") { SettingsPage(hiltViewModel()) }
             }
         }
     }
