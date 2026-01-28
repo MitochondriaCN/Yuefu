@@ -55,7 +55,7 @@ fun SettingsPageContent(
     ) {
         Image(
             modifier = Modifier.fillMaxWidth(),
-            painter = painterResource(R.drawable.ic_launcher_foreground),
+            painter = painterResource(R.mipmap.ic_launcher_foreground),
             contentDescription = null
         )
         Text(
