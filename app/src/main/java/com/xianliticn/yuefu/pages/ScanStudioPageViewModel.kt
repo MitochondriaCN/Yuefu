@@ -208,30 +208,42 @@ class ScanStudioPageViewModel @Inject constructor(
             delay(1000)
             try {
                 val part = image.toMultipartBodyPart()
-                val resp = omrApi.getMusicXml(part)
-
-                if (resp.isSuccessful) {
-                    val file = File(context.cacheDir, "${System.currentTimeMillis()}-download.mxl")
-                    resp.body()?.byteStream()?.use { inputStream ->
-                        file.outputStream().use { outputStream ->
-                            inputStream.copyTo(outputStream)
-                        }
-                    }
-
-                    if (file.exists() && file.length() > 0) {
-                        importMusicXmlFile(file)
-                        file.delete()
-                        Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
-                        _omrRunning.value = false
-                        _finished.value = true
-                    } else {
-                        Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-                        _omrRunning.value = false
-                    }
-                } else {
-                    Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
+                //提交OMR任务
+                omrApi.submitSheetImage(part).data?.let { taskId ->
+                    //创建乐谱实体
+                    val sheet = Sheet(
+                        taskId = taskId,
+                        isDownloaded = false,
+                        createTime = System.currentTimeMillis(),
+                    )
+                    appDatabase.sheetDao().insert(sheet)
+                    Toast.makeText(context, R.string.omr_task_submitted, Toast.LENGTH_LONG).show()
                     _omrRunning.value = false
+                    _finished.value = true
                 }
+
+//                if (resp.isSuccessful) {
+//                    val file = File(context.cacheDir, "${System.currentTimeMillis()}-download.mxl")
+//                    resp.body()?.byteStream()?.use { inputStream ->
+//                        file.outputStream().use { outputStream ->
+//                            inputStream.copyTo(outputStream)
+//                        }
+//                    }
+//
+//                    if (file.exists() && file.length() > 0) {
+//                        importMusicXmlFile(file)
+//                        file.delete()
+//                        Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
+//                        _omrRunning.value = false
+//                        _finished.value = true
+//                    } else {
+//                        Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
+//                        _omrRunning.value = false
+//                    }
+//                } else {
+//                    Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
+//                    _omrRunning.value = false
+//                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
@@ -323,7 +335,9 @@ class ScanStudioPageViewModel @Inject constructor(
                 fileName = inFile.name,
                 sheetName = readXml(inFile).getTitle() ?: "Unknown",
                 lastOpenTime = System.currentTimeMillis(),
-                hash = inFile.getHash()
+                hash = inFile.getHash(),
+                taskId = 0,
+                createTime = System.currentTimeMillis()
             )
         )
 

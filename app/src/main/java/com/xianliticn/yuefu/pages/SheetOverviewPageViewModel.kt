@@ -38,7 +38,7 @@ class SheetOverviewPageViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val sheet = appDatabase.sheetDao().getById(sheetId)
-            if (sheet == null) {
+            if (sheet == null || sheet.fileName == null) {
                 _uiState.update {
                     _uiState.value.copy(
                         errorMessage = context.getString(R.string.sheet_not_found),

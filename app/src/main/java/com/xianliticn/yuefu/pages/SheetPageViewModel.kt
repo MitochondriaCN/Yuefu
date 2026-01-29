@@ -9,6 +9,8 @@ import com.xianliticn.yuefu.AppDatabase
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.SheetActivity
 import com.xianliticn.yuefu.entities.Sheet
+import com.xianliticn.yuefu.vo.TaskStatus
+import com.xianliticn.yuefu.webapi.OmrApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -21,7 +23,8 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class SheetPageViewModel @Inject constructor(
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val omrApi: OmrApi
 ) : ViewModel() {
     @Inject
     @ApplicationContext
@@ -41,14 +44,26 @@ class SheetPageViewModel @Inject constructor(
             )
         }
         viewModelScope.launch {
-            //乐谱
-            val sheets = appDatabase.sheetDao().getAllOpenTimeDesc()
+            //获取所有乐谱
+            val downloaded = appDatabase.sheetDao().getAllDownloaded().map { it to null }
+            val notDownloaded = appDatabase.sheetDao().getAllNotDownloaded()
+            //获取所有未下载乐谱的识别状态，并map到TaskStatus
+            val notDownloadedWithStatus = notDownloaded.map {
+                it to try {
+                    omrApi.getTaskStatus(it.id).data ?: TaskStatus.FAILED
+                } catch (_: Exception) {
+                    Toast.makeText(context, R.string.network_error, Toast.LENGTH_SHORT)
+                        .show()
+                    TaskStatus.FAILED
+                }
+            }
+            //合并
+            val sheets = downloaded + notDownloadedWithStatus
             _uiState.update {
                 _uiState.value.copy(
                     sheets = sheets
                 )
             }
-
             //完成
             _uiState.update {
                 _uiState.value.copy(
@@ -77,7 +92,7 @@ class SheetPageViewModel @Inject constructor(
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(300) //防抖动
-            val result = appDatabase.sheetDao().getLikeFileName(keyword)
+            val result = appDatabase.sheetDao().getLikeFileName(keyword).map { it to null }
             _uiState.update {
                 _uiState.value.copy(
                     sheets = result
@@ -107,6 +122,6 @@ class SheetPageViewModel @Inject constructor(
 
     data class SheetPageState(
         val loading: Boolean = false,
-        val sheets: List<Sheet> = emptyList()
+        val sheets: List<Pair<Sheet, TaskStatus?>> = emptyList()
     )
 }

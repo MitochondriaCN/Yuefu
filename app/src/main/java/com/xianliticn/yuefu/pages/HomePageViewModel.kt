@@ -51,7 +51,7 @@ class HomePageViewModel @Inject constructor(
 
         viewModelScope.launch {
             //获取最近用过的四个文件
-            val recent4 = appDatabase.sheetDao().getAllOpenTimeDesc().take(4)
+            val recent4 = appDatabase.sheetDao().getAllDownloaded().take(4)
             _uiState.update {
                 it.copy(
                     recent4 = recent4
@@ -192,7 +192,9 @@ class HomePageViewModel @Inject constructor(
                 fileName = inFile.name,
                 sheetName = readXml(inFile).getTitle() ?: "Unknown",
                 lastOpenTime = System.currentTimeMillis(),
-                hash = inFile.getHash()
+                hash = inFile.getHash(),
+                taskId = 0,
+                createTime = System.currentTimeMillis()
             )
         )
 

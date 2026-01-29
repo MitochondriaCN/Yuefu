@@ -265,8 +265,9 @@ fun RecentlyUsedFile(
                 recent4.getOrNull(i)?.let {
                     FileCard(
                         modifier = Modifier.weight(1f),
-                        label = it.sheetName,
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime).toFriendlyString(),
+                        label = it.sheetName ?: stringResource(R.string.unknown_sheet),
+                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime ?: it.createTime)
+                            .toFriendlyString(),
                         onClick = { onItemClick(it) }
                     )
                 }
@@ -279,8 +280,9 @@ fun RecentlyUsedFile(
                 recent4.getOrNull(i)?.let {
                     FileCard(
                         modifier = Modifier.weight(1f),
-                        label = it.sheetName,
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime).toFriendlyString(),
+                        label = it.sheetName ?: stringResource(R.string.unknown_sheet),
+                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime ?: it.createTime)
+                            .toFriendlyString(),
                         onClick = { onItemClick(it) }
                     )
                 }

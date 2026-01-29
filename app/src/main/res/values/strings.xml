@@ -63,4 +63,12 @@
     <string name="settings">设置</string>
     <string name="about">关于</string>
     <string name="developers">开发者</string>
+    <string name="omr_task_submitted">云端AI识别乐谱中</string>
+    <string name="unknown_sheet">未知乐谱</string>
+    <string name="network_error">网络错误</string>
+    <string name="pending_to_scan">等待扫描</string>
+    <string name="scanned_successfully">等待下载</string>
+    <string name="waiting_to_download">等待下载</string>
+    <string name="scanning_failed">识别失败</string>
+    <string name="unknown_status">未知状态</string>
 </resources>

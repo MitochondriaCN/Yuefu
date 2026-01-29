@@ -41,7 +41,7 @@ class SheetPlayPageViewModel @Inject constructor(
         viewModelScope.launch {
             val sheet = appDatabase.sheetDao().getById(sheetId)
             val sheetDoc =
-                readXml(File(context.getAbsoluteImportFilePath(sheet!!.fileName)))
+                readXml(File(context.getAbsoluteImportFilePath(sheet!!.fileName!!)))
             events = Parser().generateMidiEvents(sheetDoc)
             se.load(events)
 
