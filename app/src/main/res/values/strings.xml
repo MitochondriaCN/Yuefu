@@ -73,4 +73,5 @@
     <string name="unknown_status">未知状态</string>
     <string name="already_downloading">已有任务正在下载</string>
     <string name="downloading">下载中：</string>
+    <string name="download_complete">下载完成：</string>
 </resources>

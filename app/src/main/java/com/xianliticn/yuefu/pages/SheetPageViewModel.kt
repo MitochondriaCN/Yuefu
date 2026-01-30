@@ -2,6 +2,7 @@ package com.xianliticn.yuefu.pages
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +10,12 @@ import com.xianliticn.yuefu.AppDatabase
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.SheetActivity
 import com.xianliticn.yuefu.entities.Sheet
+import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
+import com.xianliticn.yuefu.utils.getAbsoluteImportPath
+import com.xianliticn.yuefu.utils.getHash
+import com.xianliticn.yuefu.utils.getTitle
+import com.xianliticn.yuefu.utils.isValidMusicXml
+import com.xianliticn.yuefu.utils.readXml
 import com.xianliticn.yuefu.vo.TaskStatus
 import com.xianliticn.yuefu.webapi.OmrApi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +27,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.zip.ZipInputStream
 
 @HiltViewModel
 class SheetPageViewModel @Inject constructor(
@@ -93,9 +105,25 @@ class SheetPageViewModel @Inject constructor(
                     downloadingSheet = sheet.first
                 )
             }
+
+            //开始下载并导入
             downloadJob = viewModelScope.launch {
-                omrApi.downloadSheet(sheet.first.id)
+                downloadSheetAndImport(sheet.first)
                 refresh()
+                //完成下载
+                _uiState.update {
+                    _uiState.value.copy(
+                        downloadingSheet = null
+                    )
+                }
+                //提示用户下载完成
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.download_complete) +
+                            (appDatabase.sheetDao().getById(sheet.first.id)?.sheetName
+                                ?: "Unknown"),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -137,6 +165,116 @@ class SheetPageViewModel @Inject constructor(
         viewModelScope.launch {
             appDatabase.sheetDao().update(sheet.copy(sheetName = newName))
             refresh()
+        }
+    }
+
+    /**
+     * 下载乐谱并导入到数据库
+     *
+     * @throws Exception 下载失败
+     */
+    suspend fun downloadSheetAndImport(sheet: Sheet) {
+        if (sheet.isDownloaded)
+            throw Exception("乐谱已下载")
+
+        val resp = omrApi.downloadSheet(sheet.id)
+        if (resp.isSuccessful) {
+            resp.body()?.let { body ->
+                //存到临时文件
+                val file =
+                    File(context.cacheDir, "${System.currentTimeMillis()}-download.mxl")
+                body.byteStream().use { input ->
+                    file.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                //创建导入目录
+                val importDir = File(context.getAbsoluteImportPath())
+                if (!importDir.exists()) {
+                    importDir.mkdirs()
+                }
+
+                //创建导入文件
+                val inFile = File(
+                    context.getAbsoluteImportFilePath(
+                        "${
+                            DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
+                                .format(LocalDateTime.now())
+                        }-import.xml"
+                    )
+                )
+
+                //判断是否被压缩
+                //被压缩的MusicXML本质上是zip文件，因此
+                //前两字节必然为50 4B
+                //据此判断
+                if (file.readBytes().sliceArray(0..1).contentEquals(byteArrayOf(0x50, 0x4B))) {
+                    //解压
+                    ZipInputStream(file.inputStream()).use { zis ->
+                        var entry = zis.nextEntry
+                        var foundMusicXml = false
+                        while (entry != null) {
+                            //不要META-INF/container.xml
+                            if (!entry.isDirectory && (entry.name.endsWith(".xml")
+                                        || entry.name.endsWith(".musicxml"))
+                                && !entry.name.startsWith("META-INF")
+                            ) {
+                                //找到了，将其内容写入目标文件
+                                FileOutputStream(inFile).use { fos ->
+                                    zis.copyTo(fos)
+                                }
+                                foundMusicXml = true
+                                break // 假设一个.mxl中只有一个主要的musicxml文件
+                            }
+                            zis.closeEntry()
+                            entry = zis.nextEntry
+                        }
+                        if (!foundMusicXml) {
+                            throw Exception("在压缩包中未找到有效的MusicXML文件。")
+                        }
+                    }
+                } else { //不是压缩过的
+                    //直接写入
+                    inFile.writeText(file.readText())
+                }
+
+                //检查合法性
+                if (!isValidMusicXml(inFile)) {
+                    //不合法
+                    inFile.delete()
+                    throw Exception(context.getString(R.string.invalid_sheet))
+                }
+                //合法
+                //查重
+                appDatabase.sheetDao().getSameHash(inFile.getHash()).takeIf { it.isNotEmpty() }
+                    ?.let {
+                        inFile.delete()
+                        throw Exception(context.getString(R.string.import_duplicate))
+                    }
+
+                file.delete()
+
+                //打印前几行看看内容
+                inFile.readLines().forEachIndexed { index, s ->
+                    if (index < 10) {
+                        Log.d("DEV", "importMusicXmlFile: $s")
+                    }
+                }
+
+                //导入数据库
+                appDatabase.sheetDao().update(
+                    sheet.copy(
+                        isDownloaded = true,
+                        fileName = inFile.name,
+                        sheetName = readXml(inFile).getTitle() ?: "Unknown",
+                        lastOpenTime = System.currentTimeMillis(),
+                        hash = inFile.getHash(),
+                    )
+                )
+            }
+        } else {
+            throw Exception("下载乐谱失败")
         }
     }
 

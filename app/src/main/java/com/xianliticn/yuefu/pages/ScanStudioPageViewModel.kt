@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessMedium
@@ -21,12 +20,6 @@ import com.xianliticn.yuefu.AppDatabase
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.utils.ColorFilterTransformation
-import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
-import com.xianliticn.yuefu.utils.getAbsoluteImportPath
-import com.xianliticn.yuefu.utils.getHash
-import com.xianliticn.yuefu.utils.getTitle
-import com.xianliticn.yuefu.utils.isValidMusicXml
-import com.xianliticn.yuefu.utils.readXml
 import com.xianliticn.yuefu.webapi.OmrApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -42,11 +35,6 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.zip.ZipInputStream
 
 @HiltViewModel
 class ScanStudioPageViewModel @Inject constructor(
@@ -221,127 +209,12 @@ class ScanStudioPageViewModel @Inject constructor(
                     _omrRunning.value = false
                     _finished.value = true
                 }
-
-//                if (resp.isSuccessful) {
-//                    val file = File(context.cacheDir, "${System.currentTimeMillis()}-download.mxl")
-//                    resp.body()?.byteStream()?.use { inputStream ->
-//                        file.outputStream().use { outputStream ->
-//                            inputStream.copyTo(outputStream)
-//                        }
-//                    }
-//
-//                    if (file.exists() && file.length() > 0) {
-//                        importMusicXmlFile(file)
-//                        file.delete()
-//                        Toast.makeText(context, R.string.import_success, Toast.LENGTH_LONG).show()
-//                        _omrRunning.value = false
-//                        _finished.value = true
-//                    } else {
-//                        Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-//                        _omrRunning.value = false
-//                    }
-//                } else {
-//                    Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-//                    _omrRunning.value = false
-//                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
                 _omrRunning.value = false
             }
         }
-    }
-
-    /**
-     * 将外部文件导入为MusicXML。
-     * @param file 外部文件。
-     * @return 导入后的文件。
-     * @throws Exception 如果导入失败，则抛出异常。
-     */
-    private suspend fun importMusicXmlFile(file: File): File {
-        //创建导入子目录
-        val importDir = File(context.getAbsoluteImportPath())
-        if (!importDir.exists()) {
-            importDir.mkdirs()
-        }
-
-        //创建导入文件
-        val inFile = File(
-            context.getAbsoluteImportFilePath(
-                "${
-                    DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
-                        .format(LocalDateTime.now())
-                }-import.xml"
-            )
-        )
-
-        //判断是否被压缩
-        //被压缩的MusicXML本质上是zip文件，因此
-        //前两字节必然为50 4B
-        //据此判断
-        if (file.readBytes().sliceArray(0..1).contentEquals(byteArrayOf(0x50, 0x4B))) {
-            //解压
-            ZipInputStream(file.inputStream()).use { zis ->
-                var entry = zis.nextEntry
-                var foundMusicXml = false
-                while (entry != null) {
-                    //不要META-INF/container.xml
-                    if (!entry.isDirectory && (entry.name.endsWith(".xml")
-                                || entry.name.endsWith(".musicxml"))
-                        && !entry.name.startsWith("META-INF")
-                    ) {
-                        //找到了，将其内容写入目标文件
-                        FileOutputStream(inFile).use { fos ->
-                            zis.copyTo(fos)
-                        }
-                        foundMusicXml = true
-                        break // 假设一个.mxl中只有一个主要的musicxml文件
-                    }
-                    zis.closeEntry()
-                    entry = zis.nextEntry
-                }
-                if (!foundMusicXml) {
-                    throw Exception("在压缩包中未找到有效的MusicXML文件。")
-                }
-            }
-        } else { //不是压缩过的
-            //直接写入
-            inFile.writeText(file.readText())
-        }
-
-        //打印前几行看看内容
-        inFile.readLines().forEachIndexed { index, s ->
-            if (index < 10) {
-                Log.d("DEV", "importMusicXmlFile: $s")
-            }
-        }
-
-        //检查合法性
-        if (!isValidMusicXml(inFile)) {
-            //不合法
-            inFile.delete()
-            throw Exception(context.getString(R.string.invalid_sheet))
-        }
-        //合法
-        //查重
-        appDatabase.sheetDao().getSameHash(inFile.getHash()).takeIf { it.isNotEmpty() }
-            ?.let {
-                inFile.delete()
-                throw Exception(context.getString(R.string.import_duplicate))
-            }
-        //插入数据条目
-        appDatabase.sheetDao().insert(
-            Sheet(
-                fileName = inFile.name,
-                sheetName = readXml(inFile).getTitle() ?: "Unknown",
-                lastOpenTime = System.currentTimeMillis(),
-                hash = inFile.getHash(),
-                taskId = 0,
-                createTime = System.currentTimeMillis()
-            )
-        )
-
-        return inFile
     }
 
     private suspend fun Bitmap.toMultipartBodyPart(): MultipartBody.Part =
