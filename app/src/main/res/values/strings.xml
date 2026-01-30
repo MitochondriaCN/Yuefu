@@ -71,4 +71,6 @@
     <string name="waiting_to_download">等待下载</string>
     <string name="scanning_failed">识别失败</string>
     <string name="unknown_status">未知状态</string>
+    <string name="already_downloading">已有任务正在下载</string>
+    <string name="downloading">下载中：</string>
 </resources>

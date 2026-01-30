@@ -9,6 +9,7 @@ import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.Path
 
 interface OmrApi {
 
@@ -32,5 +33,13 @@ interface OmrApi {
      * @return OMR任务状态
      */
     @GET("omr/status/{taskId}")
-    suspend fun getTaskStatus(@Part taskId: Int): ApiResponse<TaskStatus>
+    suspend fun getTaskStatus(@Path("taskId") taskId: Int): ApiResponse<TaskStatus>
+
+    /**
+     * 下载OMR任务结果
+     *
+     * @return OMR任务结果文件流
+     */
+    @GET("omr/download/{taskId}")
+    suspend fun downloadSheet(@Path("taskId") taskId: Int): Response<ResponseBody>
 }

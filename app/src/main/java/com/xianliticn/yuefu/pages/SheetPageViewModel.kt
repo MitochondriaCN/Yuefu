@@ -32,6 +32,7 @@ class SheetPageViewModel @Inject constructor(
 
     private var searchJob: Job? = null
     private var deleteJob: Job? = null
+    private var downloadJob: Job? = null
 
     private val _uiState = MutableStateFlow(SheetPageState())
     val uiState: StateFlow<SheetPageState> = _uiState
@@ -73,11 +74,30 @@ class SheetPageViewModel @Inject constructor(
         }
     }
 
-    fun handleItemClick(sheet: Sheet) {
-        val intent = Intent(context, SheetActivity::class.java)
-        intent.putExtra("sheetId", sheet.id)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
+    fun handleItemClick(sheet: Pair<Sheet, TaskStatus?>) {
+        if (sheet.first.isDownloaded) {
+            val intent = Intent(context, SheetActivity::class.java)
+            intent.putExtra("sheetId", sheet.first.id)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } else if (sheet.second == TaskStatus.COMPLETED) { //未下载且已完成识别
+            //防止多线程下载
+            downloadJob?.let {
+                Toast.makeText(context, R.string.already_downloading, Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            //更新UI状态
+            _uiState.update {
+                _uiState.value.copy(
+                    downloadingSheet = sheet.first
+                )
+            }
+            downloadJob = viewModelScope.launch {
+                omrApi.downloadSheet(sheet.first.id)
+                refresh()
+            }
+        }
     }
 
     fun handleSearchQueryChanged(keyword: String) {
@@ -122,6 +142,7 @@ class SheetPageViewModel @Inject constructor(
 
     data class SheetPageState(
         val loading: Boolean = false,
+        val downloadingSheet: Sheet? = null,
         val sheets: List<Pair<Sheet, TaskStatus?>> = emptyList()
     )
 }
