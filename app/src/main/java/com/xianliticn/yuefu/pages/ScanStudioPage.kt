@@ -159,7 +159,7 @@ fun ScanStudioContent(
             ) {
                 CircularProgressIndicator()
                 Text(
-                    text = stringResource(R.string.scanning_sheet),
+                    text = stringResource(R.string.updating_sheet),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.headlineSmall
                 )

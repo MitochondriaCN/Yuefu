@@ -44,4 +44,7 @@ interface SheetDao {
 
     @Query("SELECT * FROM sheet WHERE file_name LIKE '%' || :fileName || '%' AND is_downloaded = 1")
     suspend fun getLikeFileName(fileName: String): List<Sheet>
+
+    @Query("SELECT * FROM sheet WHERE sheet_name LIKE '%' || :sheetName || '%' AND is_downloaded = 1")
+    suspend fun getLikeSheetName(sheetName: String): List<Sheet>
 }

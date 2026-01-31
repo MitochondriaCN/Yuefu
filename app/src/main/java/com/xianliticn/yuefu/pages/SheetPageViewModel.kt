@@ -63,7 +63,7 @@ class SheetPageViewModel @Inject constructor(
             //获取所有未下载乐谱的识别状态，并map到TaskStatus
             val notDownloadedWithStatus = notDownloaded.map {
                 it to try {
-                    omrApi.getTaskStatus(it.id).data ?: TaskStatus.FAILED
+                    omrApi.getTaskStatus(it.taskId).data ?: TaskStatus.FAILED
                 } catch (_: Exception) {
                     Toast.makeText(context, R.string.network_error, Toast.LENGTH_SHORT)
                         .show()
@@ -140,7 +140,8 @@ class SheetPageViewModel @Inject constructor(
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(300) //防抖动
-            val result = appDatabase.sheetDao().getLikeFileName(keyword).map { it to null }
+            val result = (appDatabase.sheetDao().getLikeFileName(keyword).map { it to null } +
+                    appDatabase.sheetDao().getLikeSheetName(keyword).map { it to null }).distinct()
             _uiState.update {
                 _uiState.value.copy(
                     sheets = result
@@ -177,7 +178,7 @@ class SheetPageViewModel @Inject constructor(
         if (sheet.isDownloaded)
             throw Exception("乐谱已下载")
 
-        val resp = omrApi.downloadSheet(sheet.id)
+        val resp = omrApi.downloadSheet(sheet.taskId)
         if (resp.isSuccessful) {
             resp.body()?.let { body ->
                 //存到临时文件

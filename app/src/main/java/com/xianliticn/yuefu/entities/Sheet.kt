@@ -8,9 +8,9 @@ import androidx.room.PrimaryKey
 data class Sheet(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     /**
-     * OMR任务ID
+     * OMR任务ID（UUID）
      */
-    @ColumnInfo(name = "task_id") val taskId: Int,
+    @ColumnInfo(name = "task_id") val taskId: String,
     /**
      * 是否已下载
      */

@@ -197,10 +197,10 @@ class ScanStudioPageViewModel @Inject constructor(
             try {
                 val part = image.toMultipartBodyPart()
                 //提交OMR任务
-                omrApi.submitSheetImage(part).data?.let { taskId ->
+                omrApi.submitSheetImage(part).data?.let { vo ->
                     //创建乐谱实体
                     val sheet = Sheet(
-                        taskId = taskId,
+                        taskId = vo.taskId,
                         isDownloaded = false,
                         createTime = System.currentTimeMillis(),
                     )

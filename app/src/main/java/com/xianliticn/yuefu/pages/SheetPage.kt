@@ -1,13 +1,14 @@
 package com.xianliticn.yuefu.pages
 
 import android.annotation.SuppressLint
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -15,7 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -44,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,6 +61,7 @@ import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import com.xianliticn.yuefu.utils.toFriendlyString
 import com.xianliticn.yuefu.vo.TaskStatus
 import java.time.Instant
+import java.util.UUID
 
 @Composable
 fun SheetPage(viewModel: SheetPageViewModel) {
@@ -68,7 +72,7 @@ fun SheetPage(viewModel: SheetPageViewModel) {
     }
 
     SheetPageContent(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.padding(horizontal = 20.dp),
         sheets = uiState.sheets,
         downloadingSheet = uiState.downloadingSheet,
         onRefresh = { viewModel.refresh() },
@@ -164,83 +168,56 @@ fun SheetPageContent(
     ) {
         PullToRefreshBox(
             modifier = modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp),
+                .fillMaxSize(),
             isRefreshing = loading,
             onRefresh = onRefresh
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            LazyVerticalGrid(
+                modifier = Modifier.fillMaxSize(),
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                contentPadding = PaddingValues(bottom = 20.dp)
             ) {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    state = list1State
-                ) {
-                    item {
-                        Spacer(Modifier.height(80.dp))
-                    }
-
-                    // 第一列元素数为：总数/2并向上取整
-                    items(
-                        count = (sheets.size + 1) / 2,
-                        key = { sheets[it].first.id }) { index ->
-                        // 只取偶数索引的元素
-                        val sheetIndex = index * 2
-                        SheetCard(onItemClick, sheets[sheetIndex])
-                    }
+                stickyHeader {
+                    SearchBar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp),
+                        state = rememberSearchBarState(),
+                        shadowElevation = 8.dp,
+                        inputField = {
+                            InputField(
+                                query = searchQuery,
+                                onQueryChange = {
+                                    searchQuery = it
+                                    onSearchQueryChanged(it)
+                                },
+                                onSearch = { onSearch(searchQuery) },
+                                expanded = false,
+                                onExpandedChange = {},
+                                placeholder = { Text(stringResource(R.string.search_sheets)) },
+                                leadingIcon = { Icon(Icons.Default.Search, null) }
+                            )
+                        }
+                    )
                 }
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
-                    state = list2State
-                ) {
-                    item {
-                        Spacer(Modifier.height(80.dp))
-                    }
 
-                    // 第二列元素数为：总数/2并向下取整
-                    items(
-                        count = sheets.size / 2,
-                        key = { sheets[it].first.id }) { index ->
-                        // 只取奇数索引的元素
-                        val sheetIndex = index * 2 + 1
-                        SheetCard(onItemClick, sheets[sheetIndex])
-
-                    }
+                items(sheets.size, key = { sheets[it].first.id }) { index ->
+                    SheetCard(
+                        sheet = sheets[index],
+                        onItemClick = onItemClick,
+                        onItemHold = { optionSheet = it.first })
                 }
             }
         }
-
-        SearchBar(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            state = rememberSearchBarState(),
-            inputField = {
-                InputField(
-                    query = searchQuery,
-                    onQueryChange = {
-                        searchQuery = it
-                        onSearchQueryChanged(it)
-                    },
-                    onSearch = { onSearch(searchQuery) },
-                    expanded = false,
-                    onExpandedChange = {},
-                    placeholder = { Text(stringResource(R.string.search_sheets)) },
-                    leadingIcon = { Icon(Icons.Default.Search, null) }
-                )
-            }
-        )
 
         downloadingSheet?.let {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp)
+                    .shadow(elevation = 8.dp)
                     .align(Alignment.BottomCenter)
             ) {
                 Row(
@@ -263,13 +240,17 @@ fun SheetPageContent(
 
 @Composable
 private fun SheetCard(
+    sheet: Pair<Sheet, TaskStatus?>,
     onItemClick: (Pair<Sheet, TaskStatus?>) -> Unit,
-    sheet: Pair<Sheet, TaskStatus?>
+    onItemHold: (Pair<Sheet, TaskStatus?>) -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onItemClick(sheet) },
+            .combinedClickable(
+                onClick = { onItemClick(sheet) },
+                onLongClick = { onItemHold(sheet) }
+            )
     ) {
         // 封面
         ElevatedCard(
@@ -327,14 +308,20 @@ fun SheetPagePreview() {
                 Sheet(
                     id = 1,
                     isDownloaded = false,
-                    taskId = 1,
+                    taskId = UUID.randomUUID().toString(),
                     createTime = System.currentTimeMillis(),
-                ) to TaskStatus.PENDING
+                ) to TaskStatus.PENDING,
+                Sheet(
+                    id = 2,
+                    isDownloaded = false,
+                    taskId = UUID.randomUUID().toString(),
+                    createTime = System.currentTimeMillis(),
+                ) to TaskStatus.PENDING,
             ),
             downloadingSheet = Sheet(
                 id = 1,
                 isDownloaded = false,
-                taskId = 1,
+                taskId = UUID.randomUUID().toString(),
                 createTime = System.currentTimeMillis(),
             ),
         )
