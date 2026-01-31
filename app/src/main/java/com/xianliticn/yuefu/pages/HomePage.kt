@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Photo
@@ -52,7 +51,6 @@ import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
-import com.xianliticn.yuefu.ui.theme.Amber800
 import com.xianliticn.yuefu.ui.theme.Blue800
 import com.xianliticn.yuefu.ui.theme.Clouds
 import com.xianliticn.yuefu.ui.theme.Grey800
@@ -68,14 +66,6 @@ fun HomePage(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     var imageUri by remember { mutableStateOf<Uri?>(null) }
-
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let {
-            viewModel.handleImportFile(uri)
-        }
-    }
 
     val takePictureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -104,15 +94,6 @@ fun HomePage(
         loading = uiState.loading,
         loadingMessage = uiState.loadingMessage,
         recent4 = uiState.recent4,
-        onImportFileClick = {
-            filePickerLauncher.launch(
-                arrayOf(
-                    "text/xml",
-                    "application/xml",
-                    "application/octet-stream" //MIDI
-                )
-            )
-        },
         onTakePhotoClick = {
             val file = File(context.cacheDir, "${System.currentTimeMillis()}-img")
             val uri = FileProvider.getUriForFile(
@@ -139,7 +120,6 @@ fun HomePageContent(
     loading: Boolean = false,
     loadingMessage: String? = null,
     recent4: List<Sheet> = emptyList(),
-    onImportFileClick: () -> Unit = {},
     onTakePhotoClick: () -> Unit = {},
     onPickImageClick: () -> Unit = {},
     onRecentSheetClick: (Sheet) -> Unit = {}
@@ -225,12 +205,6 @@ fun HomePageContent(
                     label = stringResource(R.string.shot_sheet),
                     bgColor = Blue800
                 ) { showingTutorial = true }
-                ButtonCard(
-                    icon = Icons.Default.AttachFile,
-                    modifier = Modifier.weight(1f),
-                    label = stringResource(R.string.import_file),
-                    bgColor = Amber800
-                ) { onImportFileClick() }
             }
             Spacer(Modifier.height(20.dp))
             RecentlyUsedFile(
@@ -265,8 +239,9 @@ fun RecentlyUsedFile(
                 recent4.getOrNull(i)?.let {
                     FileCard(
                         modifier = Modifier.weight(1f),
-                        label = it.sheetName,
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime).toFriendlyString(),
+                        label = it.sheetName ?: stringResource(R.string.unknown_sheet),
+                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime ?: it.createTime)
+                            .toFriendlyString(),
                         onClick = { onItemClick(it) }
                     )
                 }
@@ -279,8 +254,9 @@ fun RecentlyUsedFile(
                 recent4.getOrNull(i)?.let {
                     FileCard(
                         modifier = Modifier.weight(1f),
-                        label = it.sheetName,
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime).toFriendlyString(),
+                        label = it.sheetName ?: stringResource(R.string.unknown_sheet),
+                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime ?: it.createTime)
+                            .toFriendlyString(),
                         onClick = { onItemClick(it) }
                     )
                 }

@@ -64,4 +64,16 @@
     <string name="settings">Settings</string>
     <string name="about">About</string>
     <string name="developers">Developers</string>
+    <string name="omr_task_submitted">Cloud AI scanning</string>
+    <string name="unknown_sheet">Unknown sheet</string>
+    <string name="network_error">Network error</string>
+    <string name="pending_to_scan">Waiting for scanning</string>
+    <string name="scanned_successfully">Waiting for downloading</string>
+    <string name="waiting_to_download">Waiting for downloading</string>
+    <string name="scanning_failed">Failed to scan</string>
+    <string name="unknown_status">Unknown status</string>
+    <string name="already_downloading">There is already a task</string>
+    <string name="downloading">"Downloading: "</string>
+    <string name="download_complete">"Download completed: "</string>
+    <string name="updating_sheet">Updating the sheet…</string>
 </resources>

@@ -1,25 +1,33 @@
 package com.xianliticn.yuefu.pages
 
+import android.annotation.SuppressLint
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Piano
-import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -36,16 +44,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.InputDialog
+import com.xianliticn.yuefu.ui.theme.Grey800
+import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import com.xianliticn.yuefu.utils.toFriendlyString
+import com.xianliticn.yuefu.vo.TaskStatus
 import java.time.Instant
+import java.util.UUID
 
 @Composable
 fun SheetPage(viewModel: SheetPageViewModel) {
@@ -56,8 +72,9 @@ fun SheetPage(viewModel: SheetPageViewModel) {
     }
 
     SheetPageContent(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier.padding(horizontal = 20.dp),
         sheets = uiState.sheets,
+        downloadingSheet = uiState.downloadingSheet,
         onRefresh = { viewModel.refresh() },
         loading = uiState.loading,
         onItemClick = { viewModel.handleItemClick(it) },
@@ -70,14 +87,16 @@ fun SheetPage(viewModel: SheetPageViewModel) {
     )
 }
 
+@SuppressLint("FrequentlyChangingValue")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SheetPageContent(
     modifier: Modifier = Modifier,
-    sheets: List<Sheet>,
+    sheets: List<Pair<Sheet, TaskStatus?>> = emptyList(),
+    downloadingSheet: Sheet? = null,
     loading: Boolean = false,
     onRefresh: () -> Unit = {},
-    onItemClick: (Sheet) -> Unit = {},
+    onItemClick: (Pair<Sheet, TaskStatus?>) -> Unit = {},
     onSearchQueryChanged: (String) -> Unit = {},
     onSearch: (String) -> Unit = {},
     onDeleteSheet: (Sheet) -> Unit = {},
@@ -86,6 +105,13 @@ fun SheetPageContent(
     var searchQuery by remember { mutableStateOf("") }
     var optionSheet by remember { mutableStateOf<Sheet?>(null) }
     var renamingSheet by remember { mutableStateOf<Sheet?>(null) }
+    val list1State = rememberLazyListState()
+    val list2State = rememberLazyListState()
+
+    LaunchedEffect(sheets) {
+        list1State.scrollToItem(0)
+        list2State.scrollToItem(0)
+    }
 
     optionSheet?.let {
         ModalBottomSheet(
@@ -96,7 +122,7 @@ fun SheetPageContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = it.sheetName,
+                        text = it.sheetName ?: stringResource(R.string.unknown_sheet),
                         style = MaterialTheme.typography.titleLarge,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -137,73 +163,167 @@ fun SheetPageContent(
         }
     )
 
-    PullToRefreshBox(
-        modifier = modifier.fillMaxSize(),
-        isRefreshing = loading,
-        onRefresh = onRefresh
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp)
+        PullToRefreshBox(
+            modifier = modifier
+                .fillMaxSize(),
+            isRefreshing = loading,
+            onRefresh = onRefresh
         ) {
-            stickyHeader {
-                SearchBar(
-                    state = rememberSearchBarState(),
-                    inputField = {
-                        InputField(
-                            query = searchQuery,
-                            onQueryChange = {
-                                searchQuery = it
-                                onSearchQueryChanged(it)
-                            },
-                            onSearch = { onSearch(searchQuery) },
-                            expanded = false,
-                            onExpandedChange = {},
-                            placeholder = { Text(stringResource(R.string.search_sheets)) },
-                            leadingIcon = { Icon(Icons.Default.Search, null) }
-                        )
-                    }
-                )
-            }
-            items(count = sheets.size, key = { sheets[it].id }) {
-                ListItem(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            onItemClick(sheets[it])
-                        },
-                    headlineContent = {
-                        Text(
-                            text = sheets[it].sheetName,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = when (sheets[it].fileName.substringAfterLast('.')
-                                .lowercase()) {
-                                "musicxml", "xml", "mxl" -> Icons.Default.LibraryMusic
-                                "mid", "midi" -> Icons.Default.Piano
-                                else -> Icons.Default.QuestionMark
-                            },
-                            contentDescription = null
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            "${stringResource(R.string.last_open_time)}${
-                                Instant.ofEpochMilli(sheets[it].lastOpenTime).toFriendlyString()
-                            }"
-                        )
-                    },
-                    trailingContent = {
-                        IconButton(onClick = {
-                            optionSheet = sheets[it]
-                        }) { Icon(Icons.Default.MoreVert, null) }
-                    }
-                )
+            LazyVerticalGrid(
+                modifier = Modifier.fillMaxSize(),
+                columns = GridCells.Fixed(2),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                contentPadding = PaddingValues(bottom = 20.dp)
+            ) {
+                stickyHeader {
+                    SearchBar(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp),
+                        state = rememberSearchBarState(),
+                        shadowElevation = 8.dp,
+                        inputField = {
+                            InputField(
+                                query = searchQuery,
+                                onQueryChange = {
+                                    searchQuery = it
+                                    onSearchQueryChanged(it)
+                                },
+                                onSearch = { onSearch(searchQuery) },
+                                expanded = false,
+                                onExpandedChange = {},
+                                placeholder = { Text(stringResource(R.string.search_sheets)) },
+                                leadingIcon = { Icon(Icons.Default.Search, null) }
+                            )
+                        }
+                    )
+                }
+
+                items(sheets.size, key = { sheets[it].first.id }) { index ->
+                    SheetCard(
+                        sheet = sheets[index],
+                        onItemClick = onItemClick,
+                        onItemHold = { optionSheet = it.first })
+                }
             }
         }
+
+        downloadingSheet?.let {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+                    .shadow(elevation = 8.dp)
+                    .align(Alignment.BottomCenter)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.Downloading, contentDescription = null)
+                    Text(
+                        text = stringResource(R.string.downloading) +
+                                (it.sheetName ?: stringResource(R.string.unknown_sheet))
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SheetCard(
+    sheet: Pair<Sheet, TaskStatus?>,
+    onItemClick: (Pair<Sheet, TaskStatus?>) -> Unit,
+    onItemHold: (Pair<Sheet, TaskStatus?>) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = { onItemClick(sheet) },
+                onLongClick = { onItemHold(sheet) }
+            )
+    ) {
+        // 封面
+        ElevatedCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.fyx),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        // 标题
+        Text(
+            text = sheet.first.sheetName
+                ?: stringResource(R.string.unknown_sheet),
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            modifier = Modifier
+                .fillMaxWidth()
+                .basicMarquee()
+        )
+        //上次打开日期或识别状态
+        Text(
+            text = if (sheet.first.isDownloaded)
+                Instant.ofEpochMilli(
+                    sheet.first.lastOpenTime
+                        ?: sheet.first.createTime
+                ).toFriendlyString()
+            else when (sheet.second) {
+                TaskStatus.PENDING -> stringResource(R.string.pending_to_scan)
+                TaskStatus.PROCESSING -> stringResource(R.string.scanning_sheet)
+                TaskStatus.COMPLETED -> stringResource(R.string.waiting_to_download)
+                TaskStatus.FAILED -> stringResource(R.string.scanning_failed)
+                else -> stringResource(R.string.unknown_status)
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = Grey800,
+            maxLines = 1,
+            modifier = Modifier
+                .fillMaxWidth()
+                .basicMarquee()
+        )
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun SheetPagePreview() {
+    YuefuTheme {
+        SheetPageContent(
+            sheets = listOf(
+                Sheet(
+                    id = 1,
+                    isDownloaded = false,
+                    taskId = UUID.randomUUID().toString(),
+                    createTime = System.currentTimeMillis(),
+                ) to TaskStatus.PENDING,
+                Sheet(
+                    id = 2,
+                    isDownloaded = false,
+                    taskId = UUID.randomUUID().toString(),
+                    createTime = System.currentTimeMillis(),
+                ) to TaskStatus.PENDING,
+            ),
+            downloadingSheet = Sheet(
+                id = 1,
+                isDownloaded = false,
+                taskId = UUID.randomUUID().toString(),
+                createTime = System.currentTimeMillis(),
+            ),
+        )
     }
 }

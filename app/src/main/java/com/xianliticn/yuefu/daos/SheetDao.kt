@@ -12,8 +12,17 @@ interface SheetDao {
     @Query("SELECT * FROM sheet")
     suspend fun getAll(): List<Sheet>
 
-    @Query("SELECT * FROM sheet ORDER BY last_open_time DESC")
-    suspend fun getAllOpenTimeDesc(): List<Sheet>
+    /**
+     * 获取未下载的乐谱，按创建时间降序排序
+     */
+    @Query("SELECT * FROM sheet WHERE is_downloaded = 0 ORDER BY create_time DESC")
+    suspend fun getAllNotDownloaded(): List<Sheet>
+
+    /**
+     * 获取已下载的乐谱，按最后打开时间降序排序
+     */
+    @Query("SELECT * FROM sheet WHERE is_downloaded = 1 ORDER BY last_open_time DESC")
+    suspend fun getAllDownloaded(): List<Sheet>
 
     @Query("SELECT * FROM sheet WHERE file_name = :fileName")
     suspend fun getByFileName(fileName: String): Sheet?
@@ -33,6 +42,9 @@ interface SheetDao {
     @Query("SELECT * FROM sheet WHERE hash = :hash")
     suspend fun getSameHash(hash: String): List<Sheet>
 
-    @Query("SELECT * FROM sheet WHERE file_name LIKE '%' || :fileName || '%'")
+    @Query("SELECT * FROM sheet WHERE file_name LIKE '%' || :fileName || '%' AND is_downloaded = 1")
     suspend fun getLikeFileName(fileName: String): List<Sheet>
+
+    @Query("SELECT * FROM sheet WHERE sheet_name LIKE '%' || :sheetName || '%' AND is_downloaded = 1")
+    suspend fun getLikeSheetName(sheetName: String): List<Sheet>
 }
