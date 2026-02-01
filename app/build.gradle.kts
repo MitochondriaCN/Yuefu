@@ -17,8 +17,8 @@ android {
         applicationId = "com.xianliticn.yuefu"
         minSdk = 28
         targetSdk = 36
-        versionCode = 1
-        versionName = "v0.1-beta"
+        versionCode = 2
+        versionName = "v0.2-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
