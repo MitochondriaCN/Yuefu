@@ -124,6 +124,7 @@ class SheetPageViewModel @Inject constructor(
                                 ?: "Unknown"),
                     Toast.LENGTH_SHORT
                 ).show()
+                downloadJob = null
             }
         }
     }

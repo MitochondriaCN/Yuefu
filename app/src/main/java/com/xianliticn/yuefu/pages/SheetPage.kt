@@ -1,7 +1,6 @@
 package com.xianliticn.yuefu.pages
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -23,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
@@ -48,7 +48,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,6 +57,7 @@ import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.InputDialog
 import com.xianliticn.yuefu.ui.theme.Grey800
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
+import com.xianliticn.yuefu.utils.getRandomPrettyColor
 import com.xianliticn.yuefu.utils.toFriendlyString
 import com.xianliticn.yuefu.vo.TaskStatus
 import java.time.Instant
@@ -258,10 +258,13 @@ private fun SheetCard(
                 .fillMaxWidth()
                 .aspectRatio(1f)
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.fyx),
+            Icon(
+                imageVector = Icons.Default.LibraryMusic,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(52.dp),
+                tint = Color(getRandomPrettyColor())
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
