@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -77,16 +79,15 @@ fun SettingsPageContent(
         ListItem(
             headlineContent = {
                 Text(
-                    text = "线粒体XianlitiCN",
+                    text = "线粒体",
                     style = MaterialTheme.typography.titleLarge
                 )
             },
-            supportingContent = { Text("中南大学法学院") },
+            supportingContent = { Text("程序") },
             trailingContent = {
-                Image(
-                    painter = painterResource(R.drawable.fyx),
+                Icon(
+                    imageVector = Icons.Default.Person,
                     contentDescription = null,
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .clip(CircleShape)
                         .size(48.dp)
@@ -96,16 +97,15 @@ fun SettingsPageContent(
         ListItem(
             headlineContent = {
                 Text(
-                    text = "Flutter-Misdreavus",
+                    text = "发发",
                     style = MaterialTheme.typography.titleLarge
                 )
             },
-            supportingContent = { Text("中南大学计算机学院") },
+            supportingContent = { Text("策划") },
             trailingContent = {
-                Image(
-                    painter = painterResource(R.drawable.ctm),
+                Icon(
+                    imageVector = Icons.Default.Person,
                     contentDescription = null,
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .clip(CircleShape)
                         .size(48.dp)
@@ -115,16 +115,15 @@ fun SettingsPageContent(
         ListItem(
             headlineContent = {
                 Text(
-                    text = "velixun",
+                    text = "冰寻卿",
                     style = MaterialTheme.typography.titleLarge
                 )
             },
-            supportingContent = { Text("中南大学计算机学院") },
+            supportingContent = { Text("策划") },
             trailingContent = {
-                Image(
-                    painter = painterResource(R.drawable.qhm),
+                Icon(
+                    imageVector = Icons.Default.Person,
                     contentDescription = null,
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .clip(CircleShape)
                         .size(48.dp)
@@ -134,16 +133,15 @@ fun SettingsPageContent(
         ListItem(
             headlineContent = {
                 Text(
-                    text = "QiChen",
+                    text = "柒晨",
                     style = MaterialTheme.typography.titleLarge
                 )
             },
-            supportingContent = { Text("中南大学计算机学院") },
+            supportingContent = { Text("程序") },
             trailingContent = {
-                Image(
-                    painter = painterResource(R.drawable.lcr),
+                Icon(
+                    imageVector = Icons.Default.Person,
                     contentDescription = null,
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .clip(CircleShape)
                         .size(48.dp)
