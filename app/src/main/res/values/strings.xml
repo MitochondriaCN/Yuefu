@@ -75,4 +75,7 @@
     <string name="downloading">下载中：</string>
     <string name="download_complete">下载完成：</string>
     <string name="updating_sheet">上传乐谱中…</string>
+    <string name="backend_status">服务器状态</string>
+    <string name="timestamp">时间戳：</string>
+    <string name="cache_size">缓存：</string>
 </resources>

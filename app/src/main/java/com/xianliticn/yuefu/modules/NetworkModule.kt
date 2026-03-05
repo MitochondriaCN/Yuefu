@@ -1,6 +1,7 @@
 package com.xianliticn.yuefu.modules
 
 import com.xianliticn.yuefu.webapi.OmrApi
+import com.xianliticn.yuefu.webapi.SystemInfoApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,7 +19,7 @@ import javax.inject.Singleton
 @Module
 object NetworkModule {
 
-    private const val BASE_URL = "http://yf.qingshuige.ink/api/"
+    const val BASE_URL = "https://yf.qingshuige.ink/api/"
 
     @Provides
     @Singleton
@@ -45,4 +46,8 @@ object NetworkModule {
     fun provideOmrApi(retrofit: Retrofit): OmrApi =
         retrofit.create(OmrApi::class.java)
 
+    @Provides
+    @Singleton
+    fun provideSystemInfoApi(retrofit: Retrofit): SystemInfoApi =
+        retrofit.create(SystemInfoApi::class.java)
 }

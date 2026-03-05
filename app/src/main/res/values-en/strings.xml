@@ -76,4 +76,7 @@
     <string name="downloading">"Downloading: "</string>
     <string name="download_complete">"Download completed: "</string>
     <string name="updating_sheet">Updating the sheet…</string>
+    <string name="backend_status">Server Status</string>
+    <string name="timestamp">"Timestamp: "</string>
+    <string name="cache_size">"Cache: "</string>
 </resources>
