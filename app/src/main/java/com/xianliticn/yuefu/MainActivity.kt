@@ -17,6 +17,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -28,15 +29,22 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.xianliticn.yuefu.modules.SettingsManager
 import com.xianliticn.yuefu.pages.HomePage
 import com.xianliticn.yuefu.pages.ScanStudioPage
 import com.xianliticn.yuefu.pages.SettingsPage
 import com.xianliticn.yuefu.pages.SheetPage
+import com.xianliticn.yuefu.pages.SurveyPage
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import dagger.hilt.android.AndroidEntryPoint
+import jakarta.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var settingsManager: SettingsManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -49,6 +57,8 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun MainActivityFramework(modifier: Modifier = Modifier) {
+        val isSurveyShown = settingsManager.isSurveyShown.collectAsState(initial = false)
+
         val navItems = listOf(
             NavItem("home", R.string.home, Icons.Filled.Home),
             NavItem("sheet", R.string.sheet, Icons.Filled.MusicNote),
@@ -83,7 +93,7 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier
                     .padding(innerPadding),
                 navController = navController,
-                startDestination = "home"
+                startDestination = "survey"
             ) {
                 composable("home") {
                     HomePage(
@@ -100,8 +110,7 @@ class MainActivity : ComponentActivity() {
                 composable(
                     route = "studio/{imageUri}",
                     arguments = listOf(navArgument("imageUri") { type = NavType.StringType })
-                )
-                { backStackEntry ->
+                ) { backStackEntry ->
                     val imageUriString = backStackEntry.arguments?.getString("imageUri")
                     val imageUri = imageUriString?.let { Uri.decode(it).toUri() }
                     if (imageUri == null) {
@@ -113,10 +122,22 @@ class MainActivity : ComponentActivity() {
                         imageUri = imageUri,
                         onFinished = {
                             navController.popBackStack()
-                        })
+                            if (!isSurveyShown.value) { // 如果没有展示过调研，就展示调研
+                                navController.navigate("survey")
+                            }
+                        }
+                    )
                 }
 
                 composable("settings") { SettingsPage(hiltViewModel()) }
+
+                composable("survey") {
+                    SurveyPage(
+                        viewModel = hiltViewModel(),
+                        onFinished = {
+                            navController.popBackStack()
+                        })
+                }
             }
         }
     }
