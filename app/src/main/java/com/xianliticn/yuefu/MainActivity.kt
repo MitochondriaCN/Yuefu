@@ -38,6 +38,7 @@ import com.xianliticn.yuefu.pages.SurveyPage
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
+import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -134,9 +135,13 @@ class MainActivity : ComponentActivity() {
                 composable("survey") {
                     SurveyPage(
                         viewModel = hiltViewModel(),
-                        onFinished = {
+                        onFinished = { isSubmitted ->
+                            if (isSubmitted) {
+                                runBlocking { settingsManager.setIsSurveyShown(true) }
+                            }
                             navController.popBackStack()
-                        })
+                        }
+                    )
                 }
             }
         }

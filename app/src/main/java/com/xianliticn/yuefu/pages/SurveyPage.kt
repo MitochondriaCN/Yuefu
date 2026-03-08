@@ -17,6 +17,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
@@ -36,14 +38,36 @@ fun SurveyPage(
     viewModel: SurveyPageViewModel = hiltViewModel(),
     onFinished: (Boolean) -> Unit
 ) {
-    SurveyPageContent()
+
+    val isFinished by viewModel.isFinished.collectAsState()
+
+    LaunchedEffect(isFinished) {
+        if (isFinished) {
+            onFinished(true)
+        }
+    }
+
+    SurveyPageContent(
+        onFinished = {
+            if (it.isNotEmpty()) {
+                viewModel.handleFinished(it)
+            } else {
+                onFinished(false)
+            }
+        }
+    )
 }
 
+/**
+ * 问卷内容
+ *
+ * 这个函数比较乱，不过因为这项功能只用一小段时间，所以先这样了
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun SurveyPageContent(
     modifier: Modifier = Modifier,
-    onFinished: (Boolean) -> Unit = {}
+    onFinished: (Map<String, List<String>>) -> Unit = {}
 ) {
     var currentIndex by remember { mutableStateOf(0) }
 
@@ -155,7 +179,7 @@ fun SurveyPageContent(
                         .padding(horizontal = 16.dp),
                     onClick = {
                         if (index == steps.size - 1) {
-                            onFinished(true)
+                            onFinished(stepStatusMap.mapKeys { it.key.title })
                         } else {
                             if (currentIndex != -1
                                 && stepStatusMap[steps[index]]?.isEmpty() == true

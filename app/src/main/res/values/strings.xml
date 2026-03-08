@@ -78,4 +78,6 @@
     <string name="backend_status">服务器状态</string>
     <string name="timestamp">时间戳：</string>
     <string name="cache_size">缓存：</string>
+    <string name="survey_submit_failed">问卷提交失败</string>
+    <string name="survey_submit_success">问卷提交成功</string>
 </resources>

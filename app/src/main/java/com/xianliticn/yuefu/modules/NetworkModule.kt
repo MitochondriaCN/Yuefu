@@ -1,6 +1,7 @@
 package com.xianliticn.yuefu.modules
 
 import com.xianliticn.yuefu.webapi.OmrApi
+import com.xianliticn.yuefu.webapi.SurveyApi
 import com.xianliticn.yuefu.webapi.SystemInfoApi
 import dagger.Module
 import dagger.Provides
@@ -50,4 +51,9 @@ object NetworkModule {
     @Singleton
     fun provideSystemInfoApi(retrofit: Retrofit): SystemInfoApi =
         retrofit.create(SystemInfoApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideSurveyApi(retrofit: Retrofit): SurveyApi =
+        retrofit.create(SurveyApi::class.java)
 }
