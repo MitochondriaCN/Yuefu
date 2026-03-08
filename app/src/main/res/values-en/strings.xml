@@ -79,4 +79,6 @@
     <string name="backend_status">Server Status</string>
     <string name="timestamp">"Timestamp: "</string>
     <string name="cache_size">"Cache: "</string>
+    <string name="survey_submit_failed">Failed to submit survey</string>
+    <string name="survey_submit_success">Survey has successfully submitted</string>
 </resources>
