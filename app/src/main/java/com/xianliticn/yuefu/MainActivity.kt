@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
                 modifier = Modifier
                     .padding(innerPadding),
                 navController = navController,
-                startDestination = "survey"
+                startDestination = "home"
             ) {
                 composable("home") {
                     HomePage(

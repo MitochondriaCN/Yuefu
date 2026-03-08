@@ -69,37 +69,9 @@ fun SurveyPageContent(
     modifier: Modifier = Modifier,
     onFinished: (Map<String, List<String>>) -> Unit = {}
 ) {
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by remember { mutableStateOf(-1) }
 
-    val steps = listOf(
-        SurveyPageStep(
-            title = "您的音乐背景是？",
-            description = "",
-            options = listOf(
-                "音乐初学者（学习时间 < 1年）",
-                "业余音乐学习者（1–5年）",
-                "进阶学习者 / 音乐爱好者",
-                "音乐专业学生",
-                "专业音乐从业者（教师 / 演奏者 / 编曲等）"
-            ),
-            isMultipleChoice = false,
-            allowOther = false
-        ),
-        SurveyPageStep(
-            title = "您主要使用的乐器是？",
-            description = "",
-            options = listOf(
-                "钢琴",
-                "小提琴",
-                "吉他",
-                "管乐器",
-                "声乐",
-                "作曲/编曲"
-            ),
-            isMultipleChoice = true,
-            allowOther = true
-        )
-    )
+    val steps = getSurveySteps()
     val stepStatusMap = remember {
         mutableStateMapOf<SurveyPageStep, MutableList<String>>().apply {
             putAll(steps.associateWith { mutableStateListOf() })
@@ -117,8 +89,8 @@ fun SurveyPageContent(
         AnimatedContent(
             targetState = currentIndex,
             transitionSpec = {
-                slideInHorizontally(initialOffsetX = { -it })
-                    .togetherWith(slideOutHorizontally(targetOffsetX = { it }))
+                slideInHorizontally(initialOffsetX = { it })
+                    .togetherWith(slideOutHorizontally(targetOffsetX = { -it }))
             }
         ) { index ->
             Column(
@@ -172,7 +144,7 @@ fun SurveyPageContent(
                                 - step.options.toSet()).firstOrNull()
                     )
                 }
-                Spacer(Modifier.weight(1f))
+                Spacer(if (index != -1) Modifier.weight(1f) else Modifier.height(32.dp))
                 Button(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -201,6 +173,151 @@ fun SurveyPageContent(
         }
     }
 }
+
+private fun getSurveySteps() = listOf(
+    SurveyPageStep(
+        title = "您的音乐背景是？",
+        description = "",
+        options = listOf(
+            "音乐初学者（学习时间 < 1年）",
+            "业余音乐学习者（1–5年）",
+            "进阶学习者 / 音乐爱好者",
+            "音乐专业学生",
+            "专业音乐从业者（教师 / 演奏者 / 编曲等）"
+        ),
+        isMultipleChoice = false,
+        allowOther = false
+    ),
+    SurveyPageStep(
+        title = "您主要使用的乐器是？",
+        description = "",
+        options = listOf(
+            "钢琴",
+            "小提琴",
+            "吉他",
+            "管乐器",
+            "声乐",
+            "作曲/编曲"
+        ),
+        isMultipleChoice = true,
+        allowOther = true
+    ),
+    SurveyPageStep(
+        title = "您平时获取乐谱的方式是？",
+        description = "",
+        options = listOf(
+            "纸质教材 / 书籍",
+            "PDF乐谱",
+            "图片 / 拍照",
+            "乐谱网站下载",
+            "音乐软件自带乐谱",
+            "自己编写"
+        ),
+        isMultipleChoice = true,
+        allowOther = true
+    ),
+    SurveyPageStep(
+        title = "当你拿到一份新乐谱时，你最希望做的事情是？",
+        description = "",
+        options = listOf(
+            "立即试听整体效果",
+            "分析旋律与节奏结构",
+            "直接开始练习",
+            "查看难度是否适合",
+            "进行改编 / 编曲"
+        ),
+        isMultipleChoice = true,
+        allowOther = true
+    ),
+    SurveyPageStep(
+        title = "你在理解新乐谱时通常遇到哪些困难？",
+        description = "",
+        options = listOf(
+            "很难快速想象音乐整体效果",
+            "识谱速度慢",
+            "乐谱复杂（多声部 / 节奏复杂）",
+            "没有方便的试听工具",
+            "图片或纸质乐谱无法直接播放",
+            "需要手动输入乐谱才能试听"
+        ),
+        isMultipleChoice = true,
+        allowOther = true
+    ),
+    SurveyPageStep(
+        title = "您是否希望软件提供图片乐谱识别？",
+        description = "系统能够自动识别图片或PDF中的五线谱，并将其转换为可播放、可编辑的数字乐谱。",
+        options = listOf(
+            "非常希望",
+            "可以有",
+            "无所谓",
+            "不需要"
+        ),
+        isMultipleChoice = false,
+        allowOther = false
+    ),
+    SurveyPageStep(
+        title = "您是否希望软件能提供乐谱即时试听功能？",
+        description = "系统能够根据识别结果自动生成音频播放，使用户无需演奏即可快速了解乐曲整体效果。",
+        options = listOf(
+            "非常希望",
+            "可以有",
+            "无所谓",
+            "不需要"
+        ),
+        isMultipleChoice = false,
+        allowOther = false
+    ),
+    SurveyPageStep(
+        title = "您是否希望软件提供乐谱可视化功能？",
+        description = "系统通过动态图形方式展示乐谱结构，帮助用户更直观地理解旋律、节奏和音高变化。",
+        options = listOf(
+            "非常希望",
+            "可以有",
+            "无所谓",
+            "不需要"
+        ),
+        isMultipleChoice = false,
+        allowOther = false
+    ),
+    SurveyPageStep(
+        title = "您是否希望软件提供乐谱编辑功能？",
+        description = "系统支持用户对识别后的乐谱进行修改和简单编辑，以满足个性化学习或创作需求。",
+        options = listOf(
+            "非常希望",
+            "可以有",
+            "无所谓",
+            "不需要"
+        ),
+        isMultipleChoice = false,
+        allowOther = false
+    ),
+    SurveyPageStep(
+        title = "你是否希望软件提供 AI 辅助音乐功能？",
+        description = "",
+        options = listOf(
+            "非常希望",
+            "可以有",
+            "无所谓",
+            "不需要"
+        ),
+        isMultipleChoice = false,
+        allowOther = false
+    ),
+    SurveyPageStep(
+        title = "在音乐领域，你最感兴趣的 AI 功能是？",
+        description = "",
+        options = listOf(
+            "AI自动编曲",
+            "AI旋律润色",
+            "AI生成伴奏",
+            "AI分析乐曲难度",
+            "AI推荐练习方式",
+            "AI风格转换（古典 / 流行等）"
+        ),
+        isMultipleChoice = true,
+        allowOther = false
+    ),
+)
 
 @Preview(showBackground = true)
 @Composable
