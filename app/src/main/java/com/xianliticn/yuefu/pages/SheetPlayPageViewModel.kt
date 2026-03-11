@@ -31,6 +31,8 @@ class SheetPlayPageViewModel @Inject constructor(
     private var sheetId: Int = 0
     private var se = SequenceEngine()
     private var events: List<MidiEvent> = emptyList()
+    private var measureTimeline: List<Pair<Int, Long>> = emptyList()
+    private var measureStartMillisByMeasure: Map<Int, Long> = emptyMap()
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState = _uiState.asStateFlow()
@@ -44,12 +46,25 @@ class SheetPlayPageViewModel @Inject constructor(
                 readXml(File(context.getAbsoluteImportFilePath(sheet!!.fileName!!)))
             events = Parser().generateMidiEvents(sheetDoc)
             se.load(events)
+            measureTimeline = buildMeasureTimeline(events)
+            measureStartMillisByMeasure = measureTimeline.toMap()
 
-            _uiState.emit(uiState.value.copy(notes = Parser().generateVisualNoteEvents(events)))
+            _uiState.emit(
+                uiState.value.copy(
+                    notes = Parser().generateVisualNoteEvents(events),
+                    currentMeasure = resolveCurrentMeasure(0L),
+                    maxMeasure = measureTimeline.maxOfOrNull { it.first } ?: 1
+                )
+            )
 
             //持续更新进度
             se.currentProgressMillis.onEach { p ->
-                _uiState.emit(uiState.value.copy(currentProgressMillis = p))
+                _uiState.emit(
+                    uiState.value.copy(
+                        currentProgressMillis = p,
+                        currentMeasure = resolveCurrentMeasure(p)
+                    )
+                )
             }.launchIn(viewModelScope)
         }
     }
@@ -68,14 +83,57 @@ class SheetPlayPageViewModel @Inject constructor(
 
     fun handleProgressChange(progress: Float) {
         viewModelScope.launch {
-            _uiState.emit(uiState.value.copy(currentProgressMillis = progress.toLong()))
+            _uiState.emit(
+                uiState.value.copy(
+                    currentProgressMillis = progress.toLong(),
+                    currentMeasure = resolveCurrentMeasure(progress.toLong())
+                )
+            )
             se.changeProgress(progress.toLong())
         }
+    }
+
+    fun handleMeasureChange(measure: Int) {
+        val target = measureStartMillisByMeasure[measure]
+            ?: measureStartMillisByMeasure.entries
+                .minByOrNull { (m, _) -> kotlin.math.abs(m - measure) }
+                ?.value
+            ?: 0L
+        handleProgressChange(target.toFloat())
+    }
+
+    private fun buildMeasureTimeline(events: List<MidiEvent>): List<Pair<Int, Long>> {
+        val measureToStartNano = mutableMapOf<Int, Long>()
+        events.forEach { event ->
+            val measure = event.measure ?: return@forEach
+            val currentStart = measureToStartNano[measure]
+            if (currentStart == null || event.timeNano < currentStart) {
+                measureToStartNano[measure] = event.timeNano
+            }
+        }
+        return measureToStartNano
+            .map { (measure, startNano) -> measure to (startNano / 1_000_000) }
+            .sortedBy { it.second }
+    }
+
+    private fun resolveCurrentMeasure(progressMillis: Long): Int {
+        if (measureTimeline.isEmpty()) return 1
+        var currentMeasure = measureTimeline.first().first
+        for ((measure, startMillis) in measureTimeline) {
+            if (progressMillis >= startMillis) {
+                currentMeasure = measure
+            } else {
+                break
+            }
+        }
+        return currentMeasure
     }
 
     data class UiState(
         val notes: List<VisualNoteEvent> = emptyList(),
         val currentProgressMillis: Long = 0,
-        val isPlaying: Boolean = false
+        val isPlaying: Boolean = false,
+        val currentMeasure: Int = 1,
+        val maxMeasure: Int = 1
     )
 }

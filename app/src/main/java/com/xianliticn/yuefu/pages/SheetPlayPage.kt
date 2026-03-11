@@ -53,8 +53,11 @@ fun SheetPlayPage(
         notes = uiState.notes,
         currentProgressMillis = uiState.currentProgressMillis,
         isPlaying = uiState.isPlaying,
+        currentMeasure = uiState.currentMeasure,
+        maxMeasure = uiState.maxMeasure,
         onPlayButtonClick = { viewModel.handlePlayOrPause() },
-        onProgressChange = { viewModel.handleProgressChange(it) }
+        onProgressChange = { viewModel.handleProgressChange(it) },
+        onMeasureChange = { viewModel.handleMeasureChange(it) }
     )
 }
 
@@ -64,8 +67,11 @@ fun SheetPlayPageContent(
     notes: List<VisualNoteEvent> = emptyList(),
     currentProgressMillis: Long = 0,
     isPlaying: Boolean = false,
+    currentMeasure: Int = 1,
+    maxMeasure: Int = 1,
     onPlayButtonClick: () -> Unit = {},
-    onProgressChange: (Float) -> Unit = {}
+    onProgressChange: (Float) -> Unit = {},
+    onMeasureChange: (Int) -> Unit = {}
 ) {
     var isScrollMode by remember { mutableStateOf(false) }
     val keyboardHeight = LocalConfiguration.current.screenHeightDp.dp * 0.2f
@@ -96,6 +102,17 @@ fun SheetPlayPageContent(
                     valueRange = 0f..(notes.lastOrNull()?.endTimeMillis?.toFloat() ?: 0f),
                     modifier = Modifier.weight(1f),
                     onValueChange = { onProgressChange(it) }
+                )
+                Text(
+                    text = "小节 $currentMeasure/$maxMeasure",
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Slider(
+                    value = currentMeasure.toFloat(),
+                    valueRange = 1f..maxMeasure.toFloat(),
+                    steps = (maxMeasure - 2).coerceAtLeast(0),
+                    modifier = Modifier.width(120.dp),
+                    onValueChange = { onMeasureChange(it.toInt()) }
                 )
                 IconButton(
                     onClick = { onPlayButtonClick() }

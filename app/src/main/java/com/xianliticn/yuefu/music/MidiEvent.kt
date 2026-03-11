@@ -20,7 +20,11 @@ class MidiEvent(
     /**
      * 声部
      */
-    val part: Int = 0
+    val part: Int = 0,
+    /**
+     * 所属小节
+     */
+    val measure: Int? = null
 ) {
     fun getMidiData(): ByteArray =
         when (note) {
