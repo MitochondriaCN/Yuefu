@@ -11,7 +11,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,7 +24,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -35,10 +37,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
 import com.xianliticn.yuefu.music.VisualNoteEvent
 import com.xianliticn.yuefu.ui.theme.Orange800
@@ -49,6 +52,7 @@ import com.xianliticn.yuefu.ui.theme.Orange800
 fun PianoRollNoteFlow(
     modifier: Modifier = Modifier,
     isScrollMode: Boolean = false,
+    keyboardHeight: Dp = 200.dp,
     pressedKeyIds: List<String> = emptyList(),
     scrollState: ScrollState = rememberScrollState(),
     notes: List<VisualNoteEvent> = emptyList(),
@@ -73,17 +77,19 @@ fun PianoRollNoteFlow(
     // 存储每个白键和黑键的布局区域，用于命中测试
     val keysLayoutMap = remember { mutableMapOf<String, Rect>() }
 
+    val blackKeyHeight = keyboardHeight * 0.6f
+    var viewportWidthPx by remember { mutableFloatStateOf(0f) }
+
     // 这是一个包含滚动逻辑和绘制逻辑的大容器
-    BoxWithConstraints(
+    Box(
         modifier = modifier
             .fillMaxWidth()
+            .onSizeChanged { viewportWidthPx = it.width.toFloat() }
     ) {
-        val maxWidthPx = with(density) { maxWidth.toPx() }
-
         NoteFlow(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = 200.dp)
+                .padding(bottom = keyboardHeight)
                 .clipToBounds(),
             whiteKeyWidth = whiteKeyWidthPx,
             keyCount = whiteKeys.size,
@@ -92,14 +98,14 @@ fun PianoRollNoteFlow(
             //同步滚动
             visibleRange = NoteFlowVisibleRange(
                 startPx = scrollState.value.toFloat(),
-                endPx = scrollState.value.toFloat() + maxWidthPx
+                endPx = scrollState.value.toFloat() + viewportWidthPx
             )
         )
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp) // [修改] 给键盘一个固定高度，给上方留出空间
+                .height(keyboardHeight)
                 .align(Alignment.BottomCenter) // [修改] 对齐到底部
         ) {
             CompositionLocalProvider(LocalOverscrollFactory provides null) {
@@ -174,18 +180,16 @@ fun PianoRollNoteFlow(
                                     .width(whiteKeyWidth)
                                     .fillMaxHeight()
                                     .offset(x = offsetX)
-                                    .onGloballyPositioned { layoutCoordinates ->
-                                        // 记录白键的区域 (用于命中测试)
-                                        val rect = layoutCoordinates.size.toSize()
+                                    .onGloballyPositioned {
                                         // 注意：这里的offset是相对父容器的，需要结合我们在Box里的布局逻辑
                                         // 在 Box 中使用 offset 修饰符，layoutCoordinates 拿到的位置通常是准确的相对位置
                                         // 但最稳妥的是手动计算 Rect，因为我们知道确切的数学位置
                                         with(density) {
-                                            keysLayoutMap[keyData.id] = Rect(
+                                                keysLayoutMap[keyData.id] = Rect(
                                                 offsetX.toPx(),
                                                 0f,
                                                 (offsetX + whiteKeyWidth).toPx(),
-                                                200.dp.toPx() // 假设键盘高200
+                                                keyboardHeight.toPx()
                                             )
                                         }
                                     },
@@ -230,7 +234,7 @@ fun PianoRollNoteFlow(
                                     modifier = Modifier
                                         .zIndex(1f) // 确保在白键上面
                                         .width(blackKeyWidth)
-                                        .height(120.dp) // 黑键较短
+                                        .height(blackKeyHeight)
                                         .offset(x = offsetXDp)
                                         .onGloballyPositioned {
                                             // 手动计算黑键区域
@@ -240,7 +244,7 @@ fun PianoRollNoteFlow(
                                                         offsetXDp.toPx(),
                                                         0f,
                                                         (offsetXDp + blackKeyWidth).toPx(),
-                                                        120.dp.toPx()
+                                                        blackKeyHeight.toPx()
                                                     )
                                             }
                                         },

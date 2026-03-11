@@ -15,9 +15,12 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -54,26 +57,44 @@ class SheetActivity : ComponentActivity() {
         )
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
+        val isPlayRoute = currentRoute == "play"
+
+        DisposableEffect(isPlayRoute) {
+            val insetsController = WindowInsetsControllerCompat(window, window.decorView)
+            if (isPlayRoute) {
+                insetsController.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                insetsController.hide(WindowInsetsCompat.Type.systemBars())
+            } else {
+                insetsController.show(WindowInsetsCompat.Type.systemBars())
+            }
+            onDispose {
+                insetsController.show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
 
         Scaffold(
             modifier = modifier,
             bottomBar = {
-                NavigationBar {
-                    navItems.forEach { item ->
-                        NavigationBarItem(
-                            selected = navBackStackEntry?.destination?.route == item.route,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
+                if (!isPlayRoute) {
+                    NavigationBar {
+                        navItems.forEach { item ->
+                            NavigationBarItem(
+                                selected = currentRoute == item.route,
+                                onClick = {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.startDestinationId) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
                                     }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { Icon(item.icon, null) },
-                            label = { Text(stringResource(item.labelStringRes)) }
-                        )
+                                },
+                                icon = { Icon(item.icon, null) },
+                                label = { Text(stringResource(item.labelStringRes)) }
+                            )
+                        }
                     }
                 }
             }) { innerPadding ->
@@ -89,4 +110,3 @@ class SheetActivity : ComponentActivity() {
         }
     }
 }
-

@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -67,11 +68,11 @@ fun SheetPlayPageContent(
     onProgressChange: (Float) -> Unit = {}
 ) {
     var isScrollMode by remember { mutableStateOf(false) }
+    val keyboardHeight = LocalConfiguration.current.screenHeightDp.dp * 0.2f
 
     Column(modifier = modifier.fillMaxSize()) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             color = Color.Black,
             contentColor = Clouds,
         ) {
@@ -110,6 +111,7 @@ fun SheetPlayPageContent(
         PianoRollNoteFlow(
             modifier = Modifier.weight(1f),
             isScrollMode = isScrollMode,
+            keyboardHeight = keyboardHeight,
             notes = notes,
             currentProgressMillis = currentProgressMillis
         )
