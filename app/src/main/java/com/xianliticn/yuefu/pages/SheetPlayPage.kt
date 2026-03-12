@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -52,8 +53,11 @@ fun SheetPlayPage(
         notes = uiState.notes,
         currentProgressMillis = uiState.currentProgressMillis,
         isPlaying = uiState.isPlaying,
+        currentMeasure = uiState.currentMeasure,
+        maxMeasure = uiState.maxMeasure,
         onPlayButtonClick = { viewModel.handlePlayOrPause() },
-        onProgressChange = { viewModel.handleProgressChange(it) }
+        onProgressChange = { viewModel.handleProgressChange(it) },
+        onMeasureChange = { viewModel.handleMeasureChange(it) }
     )
 }
 
@@ -63,15 +67,18 @@ fun SheetPlayPageContent(
     notes: List<VisualNoteEvent> = emptyList(),
     currentProgressMillis: Long = 0,
     isPlaying: Boolean = false,
+    currentMeasure: Int = 1,
+    maxMeasure: Int = 1,
     onPlayButtonClick: () -> Unit = {},
-    onProgressChange: (Float) -> Unit = {}
+    onProgressChange: (Float) -> Unit = {},
+    onMeasureChange: (Int) -> Unit = {}
 ) {
     var isScrollMode by remember { mutableStateOf(false) }
+    val keyboardHeight = LocalConfiguration.current.screenHeightDp.dp * 0.2f
 
     Column(modifier = modifier.fillMaxSize()) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             color = Color.Black,
             contentColor = Clouds,
         ) {
@@ -96,6 +103,17 @@ fun SheetPlayPageContent(
                     modifier = Modifier.weight(1f),
                     onValueChange = { onProgressChange(it) }
                 )
+                Text(
+                    text = "小节 $currentMeasure/$maxMeasure",
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Slider(
+                    value = currentMeasure.toFloat(),
+                    valueRange = 1f..maxMeasure.toFloat(),
+                    steps = (maxMeasure - 2).coerceAtLeast(0),
+                    modifier = Modifier.width(120.dp),
+                    onValueChange = { onMeasureChange(it.toInt()) }
+                )
                 IconButton(
                     onClick = { onPlayButtonClick() }
                 ) {
@@ -110,6 +128,7 @@ fun SheetPlayPageContent(
         PianoRollNoteFlow(
             modifier = Modifier.weight(1f),
             isScrollMode = isScrollMode,
+            keyboardHeight = keyboardHeight,
             notes = notes,
             currentProgressMillis = currentProgressMillis
         )

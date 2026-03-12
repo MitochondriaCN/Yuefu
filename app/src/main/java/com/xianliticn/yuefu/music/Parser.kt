@@ -31,8 +31,9 @@ class Parser(
             var divisions = 1
 
             val measures = part.elements("measure")
-            for (measure in measures) {
+            for ((measureIndex, measure) in measures.withIndex()) {
                 val element = measure as Element
+                val currentMeasure = element.attributeValue("number")?.toIntOrNull() ?: (measureIndex + 1)
 
                 // 1. 更新属性 (Attributes)
                 element.element("attributes")?.let { attrs ->
@@ -92,7 +93,8 @@ class Parser(
                                                 actualStart,
                                                 Note.PRESS,
                                                 false,
-                                                partIndex // 建议把 partIndex 加上，保持一致
+                                                partIndex, // 建议把 partIndex 加上，保持一致
+                                                currentMeasure
                                             )
                                         )
                                     }
@@ -106,7 +108,8 @@ class Parser(
                                                 actualStart + durationNano,
                                                 Note.RELEASE,
                                                 false,
-                                                partIndex
+                                                partIndex,
+                                                currentMeasure
                                             )
                                         )
                                     }
