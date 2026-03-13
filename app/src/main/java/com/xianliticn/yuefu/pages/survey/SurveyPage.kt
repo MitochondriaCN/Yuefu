@@ -1,4 +1,4 @@
-package com.xianliticn.yuefu.pages
+package com.xianliticn.yuefu.pages.survey
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi

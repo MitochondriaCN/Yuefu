@@ -1,4 +1,4 @@
-package com.xianliticn.yuefu.pages
+package com.xianliticn.yuefu.pages.home
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult

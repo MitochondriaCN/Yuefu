@@ -1,4 +1,4 @@
-package com.xianliticn.yuefu.pages
+package com.xianliticn.yuefu.pages.sheetplay
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.abs
 
 @HiltViewModel
 class SheetPlayPageViewModel @Inject constructor(
@@ -96,7 +97,7 @@ class SheetPlayPageViewModel @Inject constructor(
     fun handleMeasureChange(measure: Int) {
         val target = measureStartMillisByMeasure[measure]
             ?: measureStartMillisByMeasure.entries
-                .minByOrNull { (m, _) -> kotlin.math.abs(m - measure) }
+                .minByOrNull { (m, _) -> abs(m - measure) }
                 ?.value
             ?: 0L
         handleProgressChange(target.toFloat())

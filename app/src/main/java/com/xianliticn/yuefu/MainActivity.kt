@@ -30,11 +30,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.xianliticn.yuefu.modules.SettingsManager
-import com.xianliticn.yuefu.pages.HomePage
-import com.xianliticn.yuefu.pages.ScanStudioPage
-import com.xianliticn.yuefu.pages.SettingsPage
-import com.xianliticn.yuefu.pages.SheetPage
-import com.xianliticn.yuefu.pages.SurveyPage
+import com.xianliticn.yuefu.pages.home.HomePage
+import com.xianliticn.yuefu.pages.scanstudio.ScanStudioPage
+import com.xianliticn.yuefu.pages.settings.SettingsPage
+import com.xianliticn.yuefu.pages.sheet.SheetPage
+import com.xianliticn.yuefu.pages.survey.SurveyPage
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
