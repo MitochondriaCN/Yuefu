@@ -65,7 +65,8 @@ fun CompositionPageContent(
     selectedKey: String = "C Major",
     onKeyChange: (String) -> Unit = {},
     selectedInstrument: String = "钢琴",
-    onInstrumentChange: (String) -> Unit = {}
+    onInstrumentChange: (String) -> Unit = {},
+    playbackMode: Boolean = false
 ) {
     var keyExpanded by remember { mutableStateOf(false) }
     var instrumentExpanded by remember { mutableStateOf(false) }
