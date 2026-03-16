@@ -1,0 +1,17 @@
+package com.xianliticn.yuefu.webapi.lyria
+
+enum class Scale {
+    C_MAJOR_A_MINOR,
+    D_FLAT_MAJOR_B_FLAT_MINOR,
+    D_MAJOR_B_MINOR,
+    E_FLAT_MAJOR_C_MINOR,
+    E_MAJOR_D_FLAT_MINOR,
+    F_MAJOR_D_MINOR,
+    G_FLAT_MAJOR_E_FLAT_MINOR,
+    G_MAJOR_E_MINOR,
+    A_FLAT_MAJOR_F_MINOR,
+    A_MAJOR_G_FLAT_MINOR,
+    B_FLAT_MAJOR_G_MINOR,
+    B_MAJOR_A_FLAT_MINOR,
+    SCALE_UNSPECIFIED
+}

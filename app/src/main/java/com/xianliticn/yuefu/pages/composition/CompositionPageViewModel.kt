@@ -3,13 +3,18 @@ package com.xianliticn.yuefu.pages.composition
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.util.Base64
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.webapi.lyria.ClientContent
+import com.xianliticn.yuefu.webapi.lyria.ConfigMessage
+import com.xianliticn.yuefu.webapi.lyria.LyriaResponse
+import com.xianliticn.yuefu.webapi.lyria.MusicGenerationConfig
 import com.xianliticn.yuefu.webapi.lyria.PlaybackControl
 import com.xianliticn.yuefu.webapi.lyria.PlaybackMessage
 import com.xianliticn.yuefu.webapi.lyria.PromptMessage
+import com.xianliticn.yuefu.webapi.lyria.Scale
 import com.xianliticn.yuefu.webapi.lyria.WeightedPrompt
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
@@ -34,6 +39,10 @@ class CompositionPageViewModel @Inject constructor(
     private val isWsReady = MutableStateFlow(false)
 
     private var audioTrack: AudioTrack? = null
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+    }
 
     private val _uiState = MutableStateFlow(
         CompositionPageState(
@@ -85,19 +94,40 @@ class CompositionPageViewModel @Inject constructor(
 
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
                 Log.d("YF", "onMessage (bytes): ${bytes.size} bytes")
-                val byteArray = bytes.toByteArray()
+                val messageText = bytes.utf8()
 
                 // 检查是否是 setupComplete 信号
-                if (byteArray.decodeToString().contains("setupComplete")) {
+                if (messageText.contains("setupComplete")) {
+                    // 设置配置
+                    webSocket.sendConfig(
+                        MusicGenerationConfig(
+                            bpm = 120,
+                            scale = Scale.C_MAJOR_A_MINOR,
+                        )
+                    )
+                    // 重置上下文
+                    webSocket.sendPlayback(PlaybackControl.RESET_CONTEXT)
+
                     isWsReady.value = true
                     return
                 }
 
-                // 处理二进制数据
-                _uiState.value = _uiState.value.copy(
-                    messages = _uiState.value.messages + BinaryResponseMessage(bytes)
-                )
-                audioTrack?.write(byteArray, 0, byteArray.size)
+                try {
+                    val response = json.decodeFromString<LyriaResponse>(messageText)
+                    response.serverContent?.audioChunks?.forEach { chunk ->
+                        Log.d("YF", "LyriaResponse format: ${chunk.mimeType}")
+                        val audioData = Base64.decode(chunk.data, Base64.DEFAULT)
+
+                        // 处理二进制数据（仅用于 UI 显示）
+                        _uiState.value = _uiState.value.copy(
+                            messages = _uiState.value.messages + BinaryResponseMessage(bytes)
+                        )
+
+                        audioTrack?.write(audioData, 0, audioData.size)
+                    }
+                } catch (e: Exception) {
+                    Log.e("YF", "Failed to parse LyriaResponse", e)
+                }
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
@@ -128,24 +158,36 @@ class CompositionPageViewModel @Inject constructor(
 
     fun WebSocket.sendPrompt(prompt: String) {
         send(
-            Json.encodeToString(
+            json.encodeToString(
                 PromptMessage(
                     ClientContent(
                         listOf(WeightedPrompt(prompt, 1.0))
                     )
                 )
-            )
+            ).also {
+                Log.d("YF", "Prompt sent: $it")
+            }
         )
-        Log.d("YF", "Prompt sent: $prompt")
     }
 
     fun WebSocket.sendPlayback(playbackControl: PlaybackControl) {
         send(
-            Json.encodeToString(
+            json.encodeToString(
                 PlaybackMessage(playbackControl)
-            )
+            ).also {
+                Log.d("YF", "Playback sent: $it")
+            }
         )
-        Log.d("YF", "Playback sent: $playbackControl")
+    }
+
+    fun WebSocket.sendConfig(config: MusicGenerationConfig) {
+        send(
+            json.encodeToString(
+                ConfigMessage(config)
+            ).also {
+                Log.d("YF", "Config sent: $it")
+            }
+        )
     }
 
     private fun initAudioTrack() {
@@ -185,10 +227,10 @@ data class CompositionPageState(
 )
 
 private data class AudioTrackConfig(
-    val sampleRate: Int = 44100,
+    val sampleRate: Int = 48000,
     val channelConfig: Int = AudioFormat.CHANNEL_OUT_STEREO,
     val audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT,
-    val bufferSize: Int = AudioTrack.getMinBufferSize(sampleRate, channelConfig, audioFormat)
+    val bufferSize: Int = AudioTrack.getMinBufferSize(sampleRate, channelConfig, audioFormat) * 4
 )
 
 private val keys = listOf(
