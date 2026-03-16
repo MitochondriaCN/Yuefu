@@ -80,4 +80,13 @@
     <string name="cache_size">缓存：</string>
     <string name="survey_submit_failed">问卷提交失败</string>
     <string name="survey_submit_success">问卷提交成功</string>
+    <string name="prompt">提示词</string>
+    <string name="composition_prompt_placeholder">一首欢快的流行音乐……</string>
+    <string name="composition">创作</string>
+    <string name="composition_headline">需要我帮你找点灵感吗？</string>
+    <string name="instrument">乐器</string>
+    <string name="key">调式</string>
+    <string name="connection_lost">连接已丢失，请重试</string>
+    <string name="ai_generating">AI实时生成中</string>
+    <string name="this_may_take_a_while">这可能需要一些时间</string>
 </resources>

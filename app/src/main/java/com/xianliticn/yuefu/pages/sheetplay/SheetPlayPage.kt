@@ -1,4 +1,4 @@
-package com.xianliticn.yuefu.pages
+package com.xianliticn.yuefu.pages.sheetplay
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

@@ -1,4 +1,4 @@
-package com.xianliticn.yuefu.pages
+package com.xianliticn.yuefu.pages.survey
 
 import android.content.Context
 import android.widget.Toast

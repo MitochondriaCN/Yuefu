@@ -1,4 +1,4 @@
-package com.xianliticn.yuefu.pages
+package com.xianliticn.yuefu.pages.scanstudio
 
 import android.graphics.Bitmap
 import android.net.Uri
@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
-import com.xianliticn.yuefu.pages.ScanStudioPageViewModel.ImageParam
 import com.xianliticn.yuefu.ui.theme.Orange800
 import kotlinx.coroutines.delay
 
@@ -103,13 +102,13 @@ fun ScanStudioPage(
 fun ScanStudioContent(
     modifier: Modifier = Modifier,
     imageModel: Any? = null,
-    imageParams: Map<ImageParam, Float> = emptyMap(),
+    imageParams: Map<ScanStudioPageViewModel.ImageParam, Float> = emptyMap(),
     omrRunning: Boolean = false,
-    onImageParamChange: (ImageParam, Float) -> Unit = { _, _ -> },
+    onImageParamChange: (ScanStudioPageViewModel.ImageParam, Float) -> Unit = { _, _ -> },
     onConfirm: (Bitmap) -> Unit = {},
     onCrop: (xOffset: Float, yOffset: Float) -> Unit = { _, _ -> }
 ) {
-    var selectedParam by remember { mutableStateOf<ImageParam?>(null) }
+    var selectedParam by remember { mutableStateOf<ScanStudioPageViewModel.ImageParam?>(null) }
     var tipIndex by remember { mutableIntStateOf(0) }
     val tips = listOf(
         R.string.scanning_tip_1,

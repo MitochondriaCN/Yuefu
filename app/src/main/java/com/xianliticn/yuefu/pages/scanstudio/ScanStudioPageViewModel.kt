@@ -1,4 +1,4 @@
-package com.xianliticn.yuefu.pages
+package com.xianliticn.yuefu.pages.scanstudio
 
 import android.content.Context
 import android.graphics.Bitmap
