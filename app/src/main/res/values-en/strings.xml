@@ -87,4 +87,7 @@
     <string name="composition_headline">Need some inspiration?</string>
     <string name="instrument">Instrument</string>
     <string name="key">Key</string>
+    <string name="connection_lost">Connection has lost, please retry</string>
+    <string name="ai_generating">AI Generating</string>
+    <string name="this_may_take_a_while">This may take a while</string>
 </resources>

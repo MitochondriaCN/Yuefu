@@ -1,12 +1,15 @@
 package com.xianliticn.yuefu.pages.composition
 
+import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Base64
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.webapi.lyria.ClientContent
 import com.xianliticn.yuefu.webapi.lyria.ConfigMessage
 import com.xianliticn.yuefu.webapi.lyria.LyriaResponse
@@ -17,6 +20,7 @@ import com.xianliticn.yuefu.webapi.lyria.PromptMessage
 import com.xianliticn.yuefu.webapi.lyria.Scale
 import com.xianliticn.yuefu.webapi.lyria.WeightedPrompt
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +38,10 @@ import okio.ByteString
 class CompositionPageViewModel @Inject constructor(
     private val client: OkHttpClient
 ) : ViewModel() {
+
+    @Inject
+    @ApplicationContext
+    lateinit var context: Context
 
     private var ws: WebSocket? = null
     private val isWsReady = MutableStateFlow(false)
@@ -58,19 +66,21 @@ class CompositionPageViewModel @Inject constructor(
 
     fun handleSendClick() {
         val prompt = _uiState.value.prompt ?: return
+        _uiState.value = _uiState.value.copy(
+            prompt = null,
+            messages = _uiState.value.messages + PromptMessage(prompt)
+        )
 
         viewModelScope.launch {
             if (ws == null) {
                 connectWebSocket()
             }
 
-            // 非阻塞等待 websocket 准备好 (通过 StateFlow 的挂起函数 first)
+            // 等待 websocket 准备好
             isWsReady.first { it }
 
             ws?.let {
                 it.sendPrompt(prompt)
-                _uiState.value =
-                    _uiState.value.copy(messages = _uiState.value.messages + PromptMessage(prompt))
                 it.sendPlayback(PlaybackControl.PLAY)
             }
         }
@@ -132,6 +142,11 @@ class CompositionPageViewModel @Inject constructor(
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 Log.e("YF", "onFailure: ${t.message}", t)
+                Toast.makeText(
+                    context,
+                    R.string.connection_lost,
+                    Toast.LENGTH_LONG
+                ).show()
                 resetWsState()
             }
 

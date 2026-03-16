@@ -7,25 +7,36 @@ import kotlin.math.pow
 
 interface LyriaMessage {
     fun getMessageString(): String
+    fun getTimestampMillis(): Long
 }
 
 data class PromptMessage(
     val prompt: String,
+    val timestamp: Long = System.currentTimeMillis(),
 ) : LyriaMessage {
 
     override fun getMessageString(): String {
         return prompt
     }
+
+    override fun getTimestampMillis(): Long {
+        return timestamp
+    }
 }
 
 data class BinaryResponseMessage(
     val data: ByteString,
+    val timestamp: Long = System.currentTimeMillis(),
 ) : LyriaMessage {
     /**
      * 数据大小（自动转换为友好单位）
      */
     override fun getMessageString(): String {
         return formatFileSize(data.size.toLong())
+    }
+
+    override fun getTimestampMillis(): Long {
+        return timestamp
     }
 
     private fun formatFileSize(size: Long): String {

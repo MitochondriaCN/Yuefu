@@ -86,4 +86,7 @@
     <string name="composition_headline">需要我帮你找点灵感吗？</string>
     <string name="instrument">乐器</string>
     <string name="key">调式</string>
+    <string name="connection_lost">连接已丢失，请重试</string>
+    <string name="ai_generating">AI实时生成中</string>
+    <string name="this_may_take_a_while">这可能需要一些时间</string>
 </resources>

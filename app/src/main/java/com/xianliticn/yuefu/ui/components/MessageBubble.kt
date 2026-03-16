@@ -1,5 +1,6 @@
 package com.xianliticn.yuefu.ui.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,6 +51,7 @@ fun MessageBubble(
 
         // 气泡主体
         Surface(
+            modifier = Modifier.animateContentSize(),
             color = if (isFromUser) {
                 MaterialTheme.colorScheme.primaryContainer
             } else {

@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -27,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,6 +41,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.ui.components.MessageBubble
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
+import kotlinx.coroutines.delay
 import okio.ByteString
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -79,6 +83,12 @@ fun CompositionPageContent(
 ) {
     var keyExpanded by remember { mutableStateOf(false) }
     var instrumentExpanded by remember { mutableStateOf(false) }
+    val currentTime by produceState(initialValue = System.currentTimeMillis()) {
+        while (true) {
+            delay(1000)
+            value = System.currentTimeMillis()
+        }
+    }
 
     Column(
         modifier = if (messages.isNotEmpty())
@@ -117,7 +127,27 @@ fun CompositionPageContent(
             MessageBubble(
                 label = label,
                 message = messageText,
-                isFromUser = isUserMessage
+                isFromUser = isUserMessage,
+                supportingContent = {
+                    // 如果是当前列表中最后一条消息
+                    // 就转圈
+                    if (messages.last() == message)
+                        Row(
+                            modifier = Modifier.padding(top = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            if (currentTime - message.getTimestampMillis() > 1000 * 10)
+                                Text(
+                                    text = stringResource(R.string.this_may_take_a_while),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                        }
+                }
             )
         }
 
@@ -125,6 +155,7 @@ fun CompositionPageContent(
             Spacer(Modifier.weight(1f))
 
         Spacer(Modifier.height(40.dp))
+
         OutlinedTextField(
             modifier = Modifier
                 .fillMaxWidth()
