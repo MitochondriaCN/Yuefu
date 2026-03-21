@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.modules.NetworkModule
 import com.xianliticn.yuefu.webapi.lyria.ClientContent
 import com.xianliticn.yuefu.webapi.lyria.ConfigMessage
 import com.xianliticn.yuefu.webapi.lyria.LyriaResponse
@@ -34,6 +35,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
 
+//TODO: 增加异常处理防崩溃
 @HiltViewModel
 class CompositionPageViewModel @Inject constructor(
     private val client: OkHttpClient
@@ -88,7 +90,7 @@ class CompositionPageViewModel @Inject constructor(
 
     private fun connectWebSocket() {
         val request = Request.Builder()
-            .url("wss://yf.qingshuige.ink/api/ws/lyria")
+            .url(NetworkModule.WS_URL)
             .build()
 
         isWsReady.value = false
