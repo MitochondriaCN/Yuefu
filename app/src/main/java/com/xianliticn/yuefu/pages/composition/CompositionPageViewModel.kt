@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.modules.NetworkModule
 import com.xianliticn.yuefu.webapi.lyria.ClientContent
 import com.xianliticn.yuefu.webapi.lyria.ConfigMessage
 import com.xianliticn.yuefu.webapi.lyria.LyriaResponse
@@ -34,6 +35,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
 
+//TODO: 增加异常处理防崩溃
 @HiltViewModel
 class CompositionPageViewModel @Inject constructor(
     private val client: OkHttpClient
@@ -88,7 +90,7 @@ class CompositionPageViewModel @Inject constructor(
 
     private fun connectWebSocket() {
         val request = Request.Builder()
-            .url("wss://yf.qingshuige.ink/api/ws/lyria")
+            .url(NetworkModule.WS_URL)
             .build()
 
         isWsReady.value = false
@@ -105,6 +107,19 @@ class CompositionPageViewModel @Inject constructor(
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
                 Log.d("YF", "onMessage (bytes): ${bytes.size} bytes")
                 val messageText = bytes.utf8()
+
+                // 检查风控
+                if (messageText.contains("We couldn't create what you asked for")) {
+                    viewModelScope.launch {
+                        Toast.makeText(
+                            context,
+                            R.string.comp_risk_control,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    handleStopClick()
+                    return
+                }
 
                 // 检查是否是 setupComplete 信号
                 if (messageText.contains("setupComplete")) {
@@ -141,12 +156,14 @@ class CompositionPageViewModel @Inject constructor(
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e("YF", "onFailure: ${t.message}", t)
-                Toast.makeText(
-                    context,
-                    R.string.connection_lost,
-                    Toast.LENGTH_LONG
-                ).show()
+                Log.w("YF", "onFailure: ${t.message}", t)
+                viewModelScope.launch {
+                    Toast.makeText(
+                        context,
+                        R.string.connection_lost,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
                 resetWsState()
             }
 
@@ -229,6 +246,27 @@ class CompositionPageViewModel @Inject constructor(
             .build()
 
         audioTrack?.play()
+    }
+
+    fun handleStopClick() {
+        ws?.sendPlayback(PlaybackControl.STOP)
+
+        ws?.close(1000, "User requested stop")
+        ws = null
+
+        audioTrack?.let {
+            try {
+                if (it.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                    it.stop()
+                }
+                it.release()
+            } catch (e: Exception) {
+                Log.e("YF", "Error releasing AudioTrack", e)
+            }
+        }
+        audioTrack = null
+
+        resetWsState()
     }
 }
 

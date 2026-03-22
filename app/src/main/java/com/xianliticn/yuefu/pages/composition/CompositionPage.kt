@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Square
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +43,7 @@ import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.ui.components.MessageBubble
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import kotlinx.coroutines.delay
+import okio.Buffer
 import okio.ByteString
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -56,13 +58,14 @@ fun CompositionPage(viewModel: CompositionPageViewModel = hiltViewModel()) {
         prompt = uiState.prompt ?: "",
         onPromptChange = { viewModel.handlePromptChange(it) },
         onSendClick = { viewModel.handleSendClick() },
+        onStopClick = { viewModel.handleStopClick() },
         keys = uiState.keys,
         instruments = uiState.instruments,
         selectedKey = uiState.selectedKey ?: stringResource(R.string.unknown),
         onKeyChange = { viewModel.handleKeyChange(it) },
         selectedInstrument = uiState.selectedInstrument ?: stringResource(R.string.unknown),
         onInstrumentChange = { viewModel.handleInstrumentChange(it) },
-        messages = uiState.messages,
+        messages = compactMessages(uiState.messages),
     )
 }
 
@@ -73,6 +76,7 @@ fun CompositionPageContent(
     prompt: String = "",
     onPromptChange: (String) -> Unit = {},
     onSendClick: () -> Unit = {},
+    onStopClick: () -> Unit = {},
     keys: List<String> = emptyList(),
     instruments: List<String> = emptyList(),
     selectedKey: String = "C Major",
@@ -113,7 +117,7 @@ fun CompositionPageContent(
 
         for (message in messages) {
             val label = SimpleDateFormat("HH:mm", Locale.getDefault())
-                .format(Date())
+                .format(Date(message.getTimestampMillis()))
             val messageText = when (message) {
                 is PromptMessage -> message.getMessageString()
                 is BinaryResponseMessage -> message.getMessageString()
@@ -165,11 +169,18 @@ fun CompositionPageContent(
             label = { Text(stringResource(R.string.prompt)) },
             placeholder = { Text(stringResource(R.string.composition_prompt_placeholder)) },
             trailingIcon = {
-                FilledIconButton(
+                Row(
                     modifier = Modifier.padding(horizontal = 4.dp),
-                    onClick = { onSendClick() },
-                    enabled = prompt.isNotBlank(),
-                ) { Icon(Icons.AutoMirrored.Default.Send, null) }
+                ) {
+                    FilledIconButton(
+                        onClick = { onSendClick() },
+                        enabled = prompt.isNotBlank(),
+                    ) { Icon(Icons.AutoMirrored.Default.Send, null) }
+                    if (messages.isNotEmpty())
+                        FilledIconButton(
+                            onClick = { onStopClick() },
+                        ) { Icon(Icons.Default.Square, null) }
+                }
             }
         )
 
@@ -255,6 +266,42 @@ fun CompositionPageContent(
 
         Spacer(Modifier.height(40.dp))
     }
+}
+
+/**
+ * 将连续的BinaryResponseMessage合并为一个
+ */
+private fun compactMessages(messages: List<LyriaMessage>): List<LyriaMessage> {
+    if (messages.isEmpty()) return emptyList()
+
+    val result = mutableListOf<LyriaMessage>()
+    var currentBinary: BinaryResponseMessage? = null
+
+    for (message in messages) {
+        if (message is BinaryResponseMessage) {
+            if (currentBinary == null) {
+                currentBinary = message
+            } else {
+                // 使用 Buffer 来合并 ByteString
+                val combined =
+                    Buffer().write(currentBinary.data).write(message.data).readByteString()
+                currentBinary =
+                    currentBinary.copy(data = combined, timestamp = System.currentTimeMillis())
+            }
+        } else {
+            if (currentBinary != null) {
+                result.add(currentBinary)
+                currentBinary = null
+            }
+            result.add(message)
+        }
+    }
+
+    if (currentBinary != null) {
+        result.add(currentBinary)
+    }
+
+    return result
 }
 
 @Preview(showBackground = true, showSystemUi = true, locale = "en")
