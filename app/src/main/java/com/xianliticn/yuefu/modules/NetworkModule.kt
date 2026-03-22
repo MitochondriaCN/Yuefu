@@ -26,7 +26,7 @@ import javax.net.ssl.X509TrustManager
 object NetworkModule {
 
     const val BASE_URL = "https://8.148.249.149"
-    const val WS_URL = "wss://8.148.249.149:8088/ws/lyria"
+    const val WS_URL = "wss://8.148.249.149/ws/lyria"
 
     @Provides
     @Singleton

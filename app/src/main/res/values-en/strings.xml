@@ -90,4 +90,5 @@
     <string name="connection_lost">Connection has lost, please retry</string>
     <string name="ai_generating">AI Generating</string>
     <string name="this_may_take_a_while">This may take a while</string>
+    <string name="comp_risk_control">The prompt doesn\'t suit the rule, please retry</string>
 </resources>

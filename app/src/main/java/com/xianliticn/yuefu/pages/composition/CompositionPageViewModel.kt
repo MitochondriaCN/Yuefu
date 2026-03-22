@@ -108,6 +108,19 @@ class CompositionPageViewModel @Inject constructor(
                 Log.d("YF", "onMessage (bytes): ${bytes.size} bytes")
                 val messageText = bytes.utf8()
 
+                // 检查风控
+                if (messageText.contains("We couldn't create what you asked for")) {
+                    viewModelScope.launch {
+                        Toast.makeText(
+                            context,
+                            R.string.comp_risk_control,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    handleStopClick()
+                    return
+                }
+
                 // 检查是否是 setupComplete 信号
                 if (messageText.contains("setupComplete")) {
                     // 设置配置
@@ -143,12 +156,14 @@ class CompositionPageViewModel @Inject constructor(
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e("YF", "onFailure: ${t.message}", t)
-                Toast.makeText(
-                    context,
-                    R.string.connection_lost,
-                    Toast.LENGTH_LONG
-                ).show()
+                Log.w("YF", "onFailure: ${t.message}", t)
+                viewModelScope.launch {
+                    Toast.makeText(
+                        context,
+                        R.string.connection_lost,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
                 resetWsState()
             }
 
@@ -231,6 +246,27 @@ class CompositionPageViewModel @Inject constructor(
             .build()
 
         audioTrack?.play()
+    }
+
+    fun handleStopClick() {
+        ws?.sendPlayback(PlaybackControl.STOP)
+
+        ws?.close(1000, "User requested stop")
+        ws = null
+
+        audioTrack?.let {
+            try {
+                if (it.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                    it.stop()
+                }
+                it.release()
+            } catch (e: Exception) {
+                Log.e("YF", "Error releasing AudioTrack", e)
+            }
+        }
+        audioTrack = null
+
+        resetWsState()
     }
 }
 
