@@ -25,7 +25,8 @@
             android:name=".SheetActivity"
             android:exported="false"
             android:label="@string/title_activity_sheet"
-            android:theme="@style/Theme.Yuefu" />
+            android:theme="@style/Theme.Yuefu"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
