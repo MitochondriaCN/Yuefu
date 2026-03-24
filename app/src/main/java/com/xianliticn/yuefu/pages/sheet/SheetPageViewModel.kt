@@ -49,6 +49,15 @@ class SheetPageViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SheetPageState())
     val uiState: StateFlow<SheetPageState> = _uiState
 
+    init {
+        // 定时刷新
+        viewModelScope.launch {
+            while (true) {
+                delay(5000)
+                refresh()
+            }
+        }
+    }
 
     fun refresh() {
         _uiState.update {

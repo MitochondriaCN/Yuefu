@@ -199,7 +199,8 @@ fun ScanStudioContent(
                     )
                 }
                 IconButton(onClick = {
-                    onConfirm(imageModel as Bitmap)
+                    val bitmap = imageModel as? Bitmap ?: return@IconButton
+                    onConfirm(bitmap)
                 }) { Icon(Icons.Default.Check, null) }
             }
             Spacer(Modifier.height(20.dp))

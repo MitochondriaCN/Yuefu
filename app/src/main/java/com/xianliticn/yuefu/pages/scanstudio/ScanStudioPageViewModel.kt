@@ -102,13 +102,21 @@ class ScanStudioPageViewModel @Inject constructor(
 
     fun initialize(imageUri: Uri) {
         viewModelScope.launch {
-            val source = ImageDecoder.createSource(
-                context.contentResolver,
-                imageUri
-            )
-            val bitmap = ImageDecoder.decodeBitmap(source)
-            _originalBitmap = bitmap
-            _imageModel.value = bitmap
+            try {
+                val bitmap = withContext(Dispatchers.IO) {
+                    val source = ImageDecoder.createSource(
+                        context.contentResolver,
+                        imageUri
+                    )
+                    ImageDecoder.decodeBitmap(source)
+                }
+                _originalBitmap = bitmap
+                _imageModel.value = bitmap
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
+                _finished.value = true
+            }
         }
     }
 
@@ -206,9 +214,11 @@ class ScanStudioPageViewModel @Inject constructor(
                     )
                     appDatabase.sheetDao().insert(sheet)
                     Toast.makeText(context, R.string.omr_task_submitted, Toast.LENGTH_LONG).show()
-                    _omrRunning.value = false
                     _finished.value = true
+                    return@launch
                 }
+                Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
+                _omrRunning.value = false
             } catch (e: Exception) {
                 e.printStackTrace()
                 Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
