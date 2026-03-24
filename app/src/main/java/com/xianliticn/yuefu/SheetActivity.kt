@@ -1,5 +1,6 @@
 package com.xianliticn.yuefu
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -63,13 +64,19 @@ class SheetActivity : ComponentActivity() {
         DisposableEffect(isPlayRoute) {
             val insetsController = WindowInsetsControllerCompat(window, window.decorView)
             if (isPlayRoute) {
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
                 insetsController.systemBarsBehavior =
                     WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 insetsController.hide(WindowInsetsCompat.Type.systemBars())
             } else {
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
                 insetsController.show(WindowInsetsCompat.Type.systemBars())
             }
             onDispose {
+                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
                 insetsController.show(WindowInsetsCompat.Type.systemBars())
             }
         }
