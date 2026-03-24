@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -278,27 +280,37 @@ private fun SheetCard(
                 .fillMaxWidth()
                 .basicMarquee()
         )
-        //上次打开日期或识别状态
-        Text(
-            text = if (sheet.first.isDownloaded)
-                Instant.ofEpochMilli(
-                    sheet.first.lastOpenTime
-                        ?: sheet.first.createTime
-                ).toFriendlyString()
-            else when (sheet.second) {
-                TaskStatus.PENDING -> stringResource(R.string.pending_to_scan)
-                TaskStatus.PROCESSING -> stringResource(R.string.scanning_sheet)
-                TaskStatus.COMPLETED -> stringResource(R.string.waiting_to_download)
-                TaskStatus.FAILED -> stringResource(R.string.scanning_failed)
-                else -> stringResource(R.string.unknown_status)
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = Grey800,
-            maxLines = 1,
-            modifier = Modifier
-                .fillMaxWidth()
-                .basicMarquee()
-        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (sheet.second == TaskStatus.PENDING || sheet.second == TaskStatus.PROCESSING)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp
+                )
+            //上次打开日期或识别状态
+            Text(
+                text = if (sheet.first.isDownloaded)
+                    Instant.ofEpochMilli(
+                        sheet.first.lastOpenTime
+                            ?: sheet.first.createTime
+                    ).toFriendlyString()
+                else when (sheet.second) {
+                    TaskStatus.PENDING -> stringResource(R.string.pending_to_scan)
+                    TaskStatus.PROCESSING -> stringResource(R.string.scanning_sheet)
+                    TaskStatus.COMPLETED -> stringResource(R.string.waiting_to_download)
+                    TaskStatus.FAILED -> stringResource(R.string.scanning_failed)
+                    else -> stringResource(R.string.unknown_status)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = Grey800,
+                maxLines = 1,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .basicMarquee()
+            )
+        }
     }
 }
 
