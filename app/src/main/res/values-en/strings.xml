@@ -91,4 +91,5 @@
     <string name="ai_generating">AI Generating</string>
     <string name="this_may_take_a_while">This may take a while</string>
     <string name="comp_risk_control">The prompt doesn\'t suit the rule, please retry</string>
+    <string name="failed_to_fetch_image">Failed to fetch image, please check the permissions</string>
 </resources>

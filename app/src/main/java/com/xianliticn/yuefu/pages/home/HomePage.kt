@@ -1,7 +1,9 @@
 package com.xianliticn.yuefu.pages.home
 
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -37,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +58,11 @@ import com.xianliticn.yuefu.ui.theme.Blue800
 import com.xianliticn.yuefu.ui.theme.Clouds
 import com.xianliticn.yuefu.ui.theme.Grey800
 import com.xianliticn.yuefu.utils.toFriendlyString
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 import java.time.Instant
 
 @Composable
@@ -65,6 +72,7 @@ fun HomePage(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var imageUri by remember { mutableStateOf<Uri?>(null) }
 
     val takePictureLauncher = rememberLauncherForActivityResult(
@@ -78,10 +86,15 @@ fun HomePage(
     }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         uri?.let {
-            onImageSelected(it)
+            scope.launch {
+                val safeUri = withContext(Dispatchers.IO) {
+                    copyToAppCache(context, it) ?: it
+                }
+                onImageSelected(safeUri)
+            }
         }
     }
 
@@ -105,7 +118,11 @@ fun HomePage(
             takePictureLauncher.launch(uri)
         },
         onPickImageClick = {
-            pickImageLauncher.launch("image/*")
+            pickImageLauncher.launch(
+                PickVisualMediaRequest(
+                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                )
+            )
         },
         onRecentSheetClick = {
             viewModel.handleRecentSheetClick(it)
@@ -356,4 +373,28 @@ fun HomePagePreview() {
         loading = true,
         loadingMessage = "AI识别乐谱中\n可能需要约1分钟。"
     )
+}
+
+private fun copyToAppCache(context: android.content.Context, sourceUri: Uri): Uri? {
+    val resolver = context.contentResolver
+    val mimeType = resolver.getType(sourceUri).orEmpty()
+    val extension = MimeTypeMap.getSingleton()
+        .getExtensionFromMimeType(mimeType)
+        ?.takeIf { it.isNotBlank() }
+        ?: "jpg"
+    val targetFile = File(context.cacheDir, "${System.currentTimeMillis()}-picked.$extension")
+
+    return runCatching {
+        resolver.openInputStream(sourceUri)?.use { input ->
+            FileOutputStream(targetFile).use { output ->
+                input.copyTo(output)
+            }
+        } ?: return null
+
+        FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            targetFile
+        )
+    }.getOrNull()
 }
