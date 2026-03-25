@@ -92,4 +92,7 @@
     <string name="this_may_take_a_while">This may take a while</string>
     <string name="comp_risk_control">The prompt doesn\'t suit the rule, please retry</string>
     <string name="failed_to_fetch_image">Failed to fetch image, please check the permissions</string>
+    <string name="created_time">Created Time</string>
+    <string name="unknown_author">Unknown Author</string>
+    <string name="measure_count">Measure Count</string>
 </resources>

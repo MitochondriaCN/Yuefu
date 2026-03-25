@@ -72,3 +72,16 @@ suspend fun Document.getAuthor(): String? =
 
         return@withContext null
     }
+
+suspend fun Document.getTotalMeasureCount(): Int =
+    withContext(Dispatchers.IO) {
+        // 对于 score-partwise，通常取第一个 part 的 measure 数量作为总小节数
+        val partwiseMeasures = this@getTotalMeasureCount.selectNodes("/score-partwise/part[1]/measure")
+        if (partwiseMeasures.isNotEmpty()) {
+            return@withContext partwiseMeasures.size
+        }
+
+        // 对于 score-timewise，小节是直接位于根节点下的
+        val timewiseMeasures = this@getTotalMeasureCount.selectNodes("/score-timewise/measure")
+        return@withContext timewiseMeasures.size
+    }
