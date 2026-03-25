@@ -1,7 +1,5 @@
 package com.xianliticn.yuefu.pages.scanstudio
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
@@ -115,12 +113,8 @@ class ScanStudioPageViewModel @Inject constructor(
                 _originalBitmap = bitmap
                 _imageModel.value = bitmap
             } catch (e: Exception) {
-                val stackTrace = e.stackTraceToString()
-                (context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)?.setPrimaryClip(
-                    ClipData.newPlainText("ScanStudio initialize error", stackTrace)
-                )
-                Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-                Toast.makeText(context, "错误堆栈已复制到剪贴板", Toast.LENGTH_LONG).show()
+                e.printStackTrace()
+                Toast.makeText(context, R.string.failed_to_fetch_image, Toast.LENGTH_LONG).show()
                 _finished.value = true
             }
         }
