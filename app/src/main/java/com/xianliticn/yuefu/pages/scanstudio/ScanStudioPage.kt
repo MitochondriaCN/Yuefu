@@ -13,6 +13,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +27,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -90,8 +93,8 @@ fun ScanStudioPage(
             viewModel.handleImageParamChange(param, value)
         },
         onCrop = { x, y -> viewModel.handleCrop(x, y) },
-        onConfirm = {
-            viewModel.handleConfirm(it)
+        onConfirm = { bitmap, model ->
+            viewModel.handleConfirm(bitmap, model)
         }
     )
 
@@ -105,7 +108,7 @@ fun ScanStudioContent(
     imageParams: Map<ScanStudioPageViewModel.ImageParam, Float> = emptyMap(),
     omrRunning: Boolean = false,
     onImageParamChange: (ScanStudioPageViewModel.ImageParam, Float) -> Unit = { _, _ -> },
-    onConfirm: (Bitmap) -> Unit = {},
+    onConfirm: (Bitmap, OmrModel) -> Unit = { _, _ -> },
     onCrop: (xOffset: Float, yOffset: Float) -> Unit = { _, _ -> }
 ) {
     var selectedParam by remember { mutableStateOf<ScanStudioPageViewModel.ImageParam?>(null) }
@@ -120,6 +123,7 @@ fun ScanStudioContent(
     )
 
     var clippingMode by remember { mutableStateOf(false) }
+    var showModelMenu by remember { mutableStateOf(false) }
     var clipLeftLineX by remember { mutableFloatStateOf(0f) }
     var clipTopLineY by remember { mutableFloatStateOf(0f) }
     // AsyncImage大小
@@ -198,10 +202,43 @@ fun ScanStudioContent(
                         tint = if (clippingMode) MaterialTheme.colorScheme.primary else LocalContentColor.current
                     )
                 }
-                IconButton(onClick = {
-                    val bitmap = imageModel as? Bitmap ?: return@IconButton
-                    onConfirm(bitmap)
-                }) { Icon(Icons.Default.Check, null) }
+                Box {
+                    IconButton(onClick = {
+                        showModelMenu = true
+                    }) { Icon(Icons.Default.Check, null) }
+                    DropdownMenu(
+                        expanded = showModelMenu,
+                        onDismissRequest = { showModelMenu = false }
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            text = stringResource(R.string.choose_model),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        OmrModel.entries.forEach { model ->
+                            DropdownMenuItem(
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                text = {
+                                    Column {
+                                        Text(
+                                            text = model.label,
+                                            style = MaterialTheme.typography.labelLarge
+                                        )
+                                        Text(
+                                            text = model.description,
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    showModelMenu = false
+                                    val bitmap = imageModel as? Bitmap ?: return@DropdownMenuItem
+                                    onConfirm(bitmap, model)
+                                }
+                            )
+                        }
+                    }
+                }
             }
             Spacer(Modifier.height(20.dp))
 
@@ -377,6 +414,6 @@ fun ScanStudioContent(
 @Composable
 fun ScanStudioContentPreview() {
     ScanStudioContent(
-        omrRunning = true
+        omrRunning = false
     )
 }

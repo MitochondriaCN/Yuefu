@@ -196,7 +196,7 @@ class ScanStudioPageViewModel @Inject constructor(
         }
     }
 
-    fun handleConfirm(image: Bitmap) {
+    fun handleConfirm(image: Bitmap, model: OmrModel) {
         _omrRunning.value = true
 
         omrJob?.cancel()
@@ -205,6 +205,7 @@ class ScanStudioPageViewModel @Inject constructor(
             try {
                 val part = image.toMultipartBodyPart()
                 //提交OMR任务
+                // 当前接口尚未接收 model 参数，这里先预留并传递到调用链。
                 omrApi.submitSheetImage(part).data?.let { vo ->
                     //创建乐谱实体
                     val sheet = Sheet(
