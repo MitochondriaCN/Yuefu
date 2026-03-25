@@ -8,7 +8,9 @@ import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
 import com.xianliticn.yuefu.utils.getAuthor
 import com.xianliticn.yuefu.utils.getTitle
+import com.xianliticn.yuefu.utils.getTotalMeasureCount
 import com.xianliticn.yuefu.utils.readXml
+import com.xianliticn.yuefu.utils.toFriendlyString
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
+import java.time.Instant
 
 @HiltViewModel
 class SheetOverviewPageViewModel @Inject constructor(
@@ -54,12 +57,16 @@ class SheetOverviewPageViewModel @Inject constructor(
             //获取各项信息
             val sheetTitle = sheetDoc.getTitle() ?: sheet.sheetName //有标题用标题，没标题用名字
             val sheetAuthor = sheetDoc.getAuthor()
+            val sheetCreatedTime= Instant.ofEpochMilli(sheet.createTime).toFriendlyString()
+            val sheetMeasureCount= sheetDoc.getTotalMeasureCount()
 
             _uiState.update {
                 _uiState.value.copy(
-                    sheetTitle = sheetTitle ?: "",
-                    sheetAuthor = sheetAuthor ?: "",
-                    loading = false
+                    sheetTitle = sheetTitle,
+                    sheetAuthor = sheetAuthor,
+                    loading = false,
+                    sheetCreatedTime = sheetCreatedTime,
+                    sheetMeasureCount = sheetMeasureCount
                 )
             }
         }
@@ -68,7 +75,9 @@ class SheetOverviewPageViewModel @Inject constructor(
     data class UiState(
         val loading: Boolean = false,
         val errorMessage: String? = null,
-        val sheetTitle: String = "",
-        val sheetAuthor: String = ""
+        val sheetTitle: String? = null,
+        val sheetAuthor: String? = null,
+        val sheetCreatedTime: String? = null,
+        val sheetMeasureCount: Int? = null
     )
 }

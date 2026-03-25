@@ -91,4 +91,7 @@
     <string name="this_may_take_a_while">这可能需要一些时间</string>
     <string name="comp_risk_control">提示词不符合要求，请重试</string>
     <string name="failed_to_fetch_image">获取图片失败，请检查权限</string>
+    <string name="created_time">创建时间</string>
+    <string name="unknown_author">未知作者</string>
+    <string name="measure_count">小节数</string>
 </resources>

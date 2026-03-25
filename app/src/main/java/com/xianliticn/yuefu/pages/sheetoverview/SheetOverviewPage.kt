@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.VerticalSplit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,11 +29,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.ui.components.InfoBox
 import com.xianliticn.yuefu.ui.theme.Grey800
 
 @Composable
@@ -54,8 +59,10 @@ fun SheetOverviewPage(
     else
         SheetOverviewPageContent(
             modifier = Modifier.fillMaxSize(),
-            sheetName = uiState.sheetTitle,
-            sheetAuthor = uiState.sheetAuthor
+            sheetName = uiState.sheetTitle ?: stringResource(R.string.unknown_sheet),
+            sheetAuthor = uiState.sheetAuthor ?: stringResource(R.string.unknown_author),
+            sheetCreatedTime = uiState.sheetCreatedTime,
+            sheetMeasureCount = uiState.sheetMeasureCount
         )
 }
 
@@ -63,19 +70,21 @@ fun SheetOverviewPage(
 fun SheetOverviewPageContent(
     modifier: Modifier = Modifier,
     sheetName: String,
-    sheetAuthor: String
+    sheetAuthor: String,
+    sheetCreatedTime: String? = null,
+    sheetMeasureCount: Int? = null
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(32.dp)
     ) {
         Spacer(Modifier.height(40.dp))
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -111,6 +120,19 @@ fun SheetOverviewPageContent(
                 )
             }
         }
+
+        Spacer(Modifier.height(4.dp))
+
+        InfoBox(
+            title = stringResource(R.string.created_time),
+            content = sheetCreatedTime ?: stringResource(R.string.unknown),
+            icon = Icons.Default.DateRange
+        )
+        InfoBox(
+            title = stringResource(R.string.measure_count),
+            content = sheetMeasureCount?.toString() ?: stringResource(R.string.unknown),
+            icon = Icons.Default.VerticalSplit
+        )
     }
 }
 
@@ -119,6 +141,6 @@ fun SheetOverviewPageContent(
 fun SheetOverviewPagePreview() {
     SheetOverviewPageContent(
         sheetName = "Rhapsody in The Blue in B Flat, Op. 21",
-        sheetAuthor = "P. I. Tchaikovsky"
+        sheetAuthor = "P. I. Tchaikovsky",
     )
 }
