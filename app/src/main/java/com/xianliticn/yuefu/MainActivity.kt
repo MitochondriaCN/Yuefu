@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Blender
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -31,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.xianliticn.yuefu.modules.SettingsManager
+import com.xianliticn.yuefu.pages.about.AboutPage
 import com.xianliticn.yuefu.pages.composition.CompositionPage
 import com.xianliticn.yuefu.pages.home.HomePage
 import com.xianliticn.yuefu.pages.scanstudio.ScanStudioPage
@@ -66,7 +67,7 @@ class MainActivity : ComponentActivity() {
             NavItem("home", R.string.home, Icons.Filled.Home),
             NavItem("sheet", R.string.sheet, Icons.Filled.MusicNote),
             NavItem("composition", R.string.composition, Icons.Filled.Blender),
-            NavItem("settings", R.string.about, Icons.Filled.Info)
+            NavItem("settings", R.string.settings, Icons.Filled.Settings)
         )
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -135,7 +136,14 @@ class MainActivity : ComponentActivity() {
 
                 composable("composition") { CompositionPage(hiltViewModel()) }
 
-                composable("settings") { SettingsPage(hiltViewModel()) }
+                composable("about") { AboutPage(hiltViewModel()) }
+
+                composable("settings") {
+                    SettingsPage(
+                        viewModel = hiltViewModel(),
+                        onAboutClick = { navController.navigate("about") },
+                        onSurveyClick = { navController.navigate("survey") })
+                }
 
                 composable("survey") {
                     SurveyPage(

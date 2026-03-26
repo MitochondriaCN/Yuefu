@@ -97,4 +97,9 @@
     <string name="choose_model">选择模型</string>
     <string name="model">模型</string>
     <string name="share">分享</string>
+    <string name="general">通用</string>
+    <string name="survey">调研问卷</string>
+    <string name="help_us_to_survey">帮助我们增强软件体验</string>
+    <string name="auto_show_survey">自动显示调研问卷</string>
+    <string name="auto_show_survey_desc">在导入乐谱后自动显示调研问卷</string>
 </resources>

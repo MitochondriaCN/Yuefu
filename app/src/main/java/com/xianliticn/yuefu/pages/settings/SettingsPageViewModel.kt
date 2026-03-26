@@ -1,46 +1,26 @@
 package com.xianliticn.yuefu.pages.settings
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xianliticn.yuefu.webapi.SystemInfoApi
+import com.xianliticn.yuefu.modules.SettingsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import jakarta.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Locale
+import javax.inject.Inject
 
 @HiltViewModel
 class SettingsPageViewModel @Inject constructor(
-    private val systemInfoApi: SystemInfoApi
+    private val settingsManager: SettingsManager
 ) : ViewModel() {
 
-    @Inject
-    @ApplicationContext
-    lateinit var context: Context
+    val isSurveyShown: StateFlow<Boolean> = settingsManager.isSurveyShown
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    private val _uiState = MutableStateFlow(UiState())
-    val uiState: StateFlow<UiState> = _uiState
-
-    fun refresh() {
+    fun setSurveyShown(shown: Boolean) {
         viewModelScope.launch {
-            val systemInfo = runCatching { systemInfoApi.getSystemInfo().data }.getOrNull()
-            _uiState.value = UiState(
-                backendOnline = systemInfo != null,
-                backendTimestamp = systemInfo?.time?.let {
-                    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(it)
-                },
-                backendTmpSize = "${systemInfo?.tmpSize ?: "-"} B"
-            )
+            settingsManager.setIsSurveyShown(shown)
         }
     }
-
-    data class UiState(
-        val backendOnline: Boolean = false,
-        val backendTimestamp: String? = null,
-        val backendTmpSize: String? = null
-    )
 }

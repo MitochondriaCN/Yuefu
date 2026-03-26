@@ -1,221 +1,209 @@
 package com.xianliticn.yuefu.pages.settings
 
-import android.annotation.SuppressLint
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Summarize
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
-import com.xianliticn.yuefu.modules.NetworkModule
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPage(viewModel: SettingsPageViewModel) {
-    LaunchedEffect(Unit) {
-        viewModel.refresh()
+fun SettingsPage(
+    viewModel: SettingsPageViewModel,
+    onAboutClick: () -> Unit = {},
+    onSurveyClick: () -> Unit = {}
+) {
+    val isSurveyShown by viewModel.isSurveyShown.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.settings)) }
+            )
+        }
+    ) { paddingValues ->
+        SettingsPageContent(
+            isSurveyShown = isSurveyShown,
+            onSurveyShownChange = viewModel::setSurveyShown,
+            onAboutClick = onAboutClick,
+            onSurveyClick = onSurveyClick,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        )
     }
-
-    val uiState = viewModel.uiState.collectAsState()
-
-    SettingsPageContent(
-        backendOnline = uiState.value.backendOnline,
-        backendTimestamp = uiState.value.backendTimestamp,
-        backendTmpSize = uiState.value.backendTmpSize
-    )
 }
 
-@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun SettingsPageContent(
-    modifier: Modifier = Modifier,
-    backendOnline: Boolean,
-    backendTimestamp: String? = null,
-    backendTmpSize: String? = null
+    isSurveyShown: Boolean,
+    onSurveyShownChange: (Boolean) -> Unit,
+    onAboutClick: () -> Unit,
+    onSurveyClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val versionName = remember {
-        try {
-            val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            packageInfo.versionName
-        } catch (_: Exception) {
-            context.getString(R.string.unknown)
-        }
-    }
-
     Column(
         modifier = modifier
-            .fillMaxWidth()
             .verticalScroll(rememberScrollState())
     ) {
-        Image(
-            modifier = Modifier.fillMaxWidth(),
-            painter = painterResource(R.mipmap.ic_launcher_foreground),
-            contentDescription = null
-        )
-        Text(
-            text = stringResource(R.string.app_name),
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = versionName.toString(),
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
-        Spacer(Modifier.height(32.dp))
-        Text(
-            text = stringResource(R.string.developers),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = "线粒体",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            supportingContent = { Text("程序") },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(48.dp)
-                )
-            }
-        )
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = "发发",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            supportingContent = { Text("策划") },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(48.dp)
-                )
-            }
-        )
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = "冰寻卿",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            supportingContent = { Text("策划") },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(48.dp)
-                )
-            }
-        )
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = "柒晨",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            supportingContent = { Text("程序") },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(48.dp)
-                )
-            }
-        )
-        Spacer(Modifier.height(32.dp))
-        Text(
-            text = stringResource(R.string.backend_status),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(
-                        color = if (backendOnline) Color.Green else Color.Red,
-                        shape = CircleShape
-                    )
-            )
-            Text(
-                text = NetworkModule.BASE_URL,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
-        Text(
-            text = "${stringResource(R.string.timestamp)}${backendTimestamp ?: "-"}",
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Text(
-            text = "${stringResource(R.string.cache_size)}${backendTmpSize ?: "-"}",
-            modifier = Modifier.padding(horizontal = 16.dp)
+        SettingsCategory(title = stringResource(R.string.general))
+
+        SettingsClickItem(
+            title = stringResource(R.string.survey),
+            description = stringResource(R.string.help_us_to_survey),
+            icon = Icons.Default.Summarize,
+            onClick = onSurveyClick
         )
 
-        Spacer(Modifier.height(32.dp))
+        SettingsSwitchItem(
+            title = stringResource(R.string.auto_show_survey),
+            description = stringResource(R.string.auto_show_survey_desc),
+            checked = isSurveyShown,
+            onCheckedChange = onSurveyShownChange
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        SettingsCategory(title = stringResource(R.string.about))
+
+        SettingsClickItem(
+            title = stringResource(R.string.about),
+            icon = Icons.Default.Info,
+            onClick = onAboutClick
+        )
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-fun SettingsPagePreview() {
-    SettingsPageContent(
-        modifier = Modifier.fillMaxSize(),
-        backendOnline = true,
-        backendTimestamp = "2023-05-05 12:00:00",
-        backendTmpSize = "28 MB",
+fun SettingsCategory(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
+}
+
+@Composable
+fun SettingsSwitchItem(
+    title: String,
+    description: String? = null,
+    icon: ImageVector? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
+            if (description != null) {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
+    }
+}
+
+@Composable
+fun SettingsClickItem(
+    title: String,
+    description: String? = null,
+    icon: ImageVector? = null,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
+            if (description != null) {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+@Preview(showBackground = true)
+fun SettingsPagePreview() {
+    MaterialTheme {
+        SettingsPageContent(
+            isSurveyShown = true,
+            onSurveyShownChange = {},
+            onAboutClick = {},
+            modifier = Modifier.fillMaxSize(),
+            onSurveyClick = {}
+        )
+    }
 }
