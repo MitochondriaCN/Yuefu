@@ -107,6 +107,7 @@ fun HomePage(
         loading = uiState.loading,
         loadingMessage = uiState.loadingMessage,
         recent4 = uiState.recent4,
+        onTutorialShown = viewModel::handleTutorialShown,
         onTakePhotoClick = {
             val file = File(context.cacheDir, "${System.currentTimeMillis()}-img")
             val uri = FileProvider.getUriForFile(
@@ -126,7 +127,8 @@ fun HomePage(
         },
         onRecentSheetClick = {
             viewModel.handleRecentSheetClick(it)
-        }
+        },
+        showTutorial = uiState.showTutorial
     )
 }
 
@@ -137,6 +139,8 @@ fun HomePageContent(
     loading: Boolean = false,
     loadingMessage: String? = null,
     recent4: List<Sheet> = emptyList(),
+    showTutorial: Boolean = true,
+    onTutorialShown: () -> Unit = {},
     onTakePhotoClick: () -> Unit = {},
     onPickImageClick: () -> Unit = {},
     onRecentSheetClick: (Sheet) -> Unit = {}
@@ -221,7 +225,13 @@ fun HomePageContent(
                     modifier = Modifier.weight(1f),
                     label = stringResource(R.string.shot_sheet),
                     bgColor = Blue800
-                ) { showingTutorial = true }
+                ) {
+                    if (showTutorial) {
+                        showingTutorial = true
+                        onTutorialShown()
+                    } else
+                        gettingImage = true
+                }
             }
             Spacer(Modifier.height(20.dp))
             RecentlyUsedFile(

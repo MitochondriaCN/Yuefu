@@ -103,4 +103,6 @@
     <string name="auto_show_survey">自动显示调研问卷</string>
     <string name="auto_show_survey_desc">在导入乐谱后自动显示调研问卷</string>
     <string name="please_choose">请选择选项</string>
+    <string name="auto_show_tutorial">自动显示扫描指引</string>
+    <string name="auto_show_tutorial_desc">在点击扫描乐谱后显示扫描指引</string>
 </resources>

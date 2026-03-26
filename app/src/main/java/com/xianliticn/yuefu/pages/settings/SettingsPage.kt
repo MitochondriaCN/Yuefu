@@ -42,6 +42,7 @@ fun SettingsPage(
     onSurveyClick: () -> Unit = {}
 ) {
     val isSurveyShown by viewModel.isSurveyShown.collectAsState()
+    val isTutorialShown by viewModel.isTutorialShown.collectAsState()
 
     Scaffold(
         topBar = {
@@ -53,6 +54,8 @@ fun SettingsPage(
         SettingsPageContent(
             isSurveyShown = isSurveyShown,
             onSurveyShownChange = viewModel::setSurveyShown,
+            isTutorialShown = isTutorialShown,
+            onTutorialShownChange = viewModel::setTutorialShown,
             onAboutClick = onAboutClick,
             onSurveyClick = onSurveyClick,
             modifier = Modifier
@@ -66,6 +69,8 @@ fun SettingsPage(
 fun SettingsPageContent(
     isSurveyShown: Boolean,
     onSurveyShownChange: (Boolean) -> Unit,
+    isTutorialShown: Boolean,
+    onTutorialShownChange: (Boolean) -> Unit,
     onAboutClick: () -> Unit,
     onSurveyClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -88,6 +93,13 @@ fun SettingsPageContent(
             description = stringResource(R.string.auto_show_survey_desc),
             checked = isSurveyShown,
             onCheckedChange = onSurveyShownChange
+        )
+
+        SettingsSwitchItem(
+            title = stringResource(R.string.auto_show_tutorial),
+            description = stringResource(R.string.auto_show_tutorial_desc),
+            checked = isTutorialShown,
+            onCheckedChange = onTutorialShownChange
         )
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -203,7 +215,9 @@ fun SettingsPagePreview() {
             onSurveyShownChange = {},
             onAboutClick = {},
             modifier = Modifier.fillMaxSize(),
-            onSurveyClick = {}
+            onSurveyClick = {},
+            isTutorialShown = true,
+            onTutorialShownChange = {}
         )
     }
 }

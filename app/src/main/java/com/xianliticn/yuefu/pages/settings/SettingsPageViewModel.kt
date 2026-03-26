@@ -18,9 +18,18 @@ class SettingsPageViewModel @Inject constructor(
     val isSurveyShown: StateFlow<Boolean> = settingsManager.isSurveyShown
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val isTutorialShown: StateFlow<Boolean> = settingsManager.isShowingTutorial
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun setSurveyShown(shown: Boolean) {
         viewModelScope.launch {
             settingsManager.setIsSurveyShown(shown)
+        }
+    }
+
+    fun setTutorialShown(shown: Boolean) {
+        viewModelScope.launch {
+            settingsManager.setIsShowingTutorial(shown)
         }
     }
 }
