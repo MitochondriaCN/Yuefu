@@ -102,4 +102,5 @@
     <string name="help_us_to_survey">帮助我们增强软件体验</string>
     <string name="auto_show_survey">自动显示调研问卷</string>
     <string name="auto_show_survey_desc">在导入乐谱后自动显示调研问卷</string>
+    <string name="please_choose">请选择选项</string>
 </resources>

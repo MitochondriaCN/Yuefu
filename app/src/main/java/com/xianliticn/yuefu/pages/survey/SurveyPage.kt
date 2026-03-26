@@ -1,5 +1,6 @@
 package com.xianliticn.yuefu.pages.survey
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.slideInHorizontally
@@ -27,10 +28,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.ui.components.ChoiceGroup
 
 @Composable
@@ -69,6 +72,8 @@ fun SurveyPageContent(
     modifier: Modifier = Modifier,
     onFinished: (Map<String, List<String>>) -> Unit = {}
 ) {
+    val context = LocalContext.current
+
     var currentIndex by remember { mutableStateOf(-1) }
 
     val steps = getSurveySteps()
@@ -155,8 +160,14 @@ fun SurveyPageContent(
                         } else {
                             if (currentIndex != -1
                                 && stepStatusMap[steps[index]]?.isEmpty() == true
-                            ) // 未选择任何选项
+                            ) { // 未选择任何选项
+                                Toast.makeText(
+                                    context,
+                                    R.string.please_choose,
+                                    Toast.LENGTH_SHORT
+                                ).show()
                                 return@Button
+                            }
                             currentIndex = index + 1
                         }
                     }) {

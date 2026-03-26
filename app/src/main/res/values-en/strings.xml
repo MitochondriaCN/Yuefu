@@ -98,9 +98,10 @@
     <string name="choose_model">Choose Model</string>
     <string name="model">Model</string>
     <string name="share">Share</string>
-    <string name="general">通用</string>
-    <string name="survey">调研问卷</string>
-    <string name="help_us_to_survey">帮助我们增强软件体验</string>
-    <string name="auto_show_survey">自动显示调研问卷</string>
-    <string name="auto_show_survey_desc">在导入乐谱后自动显示调研问卷</string>
+    <string name="general">General</string>
+    <string name="survey">Survey</string>
+    <string name="help_us_to_survey">Help us to improve the experience</string>
+    <string name="auto_show_survey">Auto Showing Survey</string>
+    <string name="auto_show_survey_desc">Auto show survey after importing a sheet</string>
+    <string name="please_choose">Please choose a selection</string>
 </resources>
