@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.AppDatabase
@@ -286,6 +287,27 @@ class SheetPageViewModel @Inject constructor(
             }
         } else {
             throw Exception("下载乐谱失败")
+        }
+    }
+
+    fun handleShareSheet(sheet: Sheet) {
+        sheet.fileName?.let {
+            val file = File(context.getAbsoluteImportFilePath(it))
+            if (file.exists()) {
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "application/xml"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, sheet.sheetName)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                val chooser = Intent.createChooser(shareIntent, context.getString(R.string.share)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(chooser)
+            } else {
+                Toast.makeText(context, R.string.sheet_not_found, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

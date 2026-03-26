@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
@@ -85,7 +86,8 @@ fun SheetPage(viewModel: SheetPageViewModel) {
         onDeleteSheet = { viewModel.handleDeleteSheet(it) },
         onRenameSheet = { sheet, newName ->
             viewModel.handleRenameSheet(sheet, newName)
-        }
+        },
+        onShareSheet = { viewModel.handleShareSheet(it) }
     )
 }
 
@@ -102,7 +104,8 @@ fun SheetPageContent(
     onSearchQueryChanged: (String) -> Unit = {},
     onSearch: (String) -> Unit = {},
     onDeleteSheet: (Sheet) -> Unit = {},
-    onRenameSheet: (Sheet, String) -> Unit = { _, _ -> }
+    onRenameSheet: (Sheet, String) -> Unit = { _, _ -> },
+    onShareSheet: (Sheet) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var optionSheet by remember { mutableStateOf<Sheet?>(null) }
@@ -149,6 +152,16 @@ fun SheetPageContent(
                             optionSheet = null
                         }
                     )
+                    if (it.isDownloaded)
+                        ListItem(
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                            headlineContent = { Text(stringResource(R.string.share)) },
+                            leadingContent = { Icon(Icons.Default.Share, null) },
+                            modifier = Modifier.clickable {
+                                onShareSheet(it)
+                                optionSheet = null
+                            }
+                        )
                 }
             }
         )
