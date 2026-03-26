@@ -1,4 +1,4 @@
-package com.xianliticn.yuefu.webapi
+package com.xianliticn.yuefu.webapi.omr
 
 import com.xianliticn.yuefu.vo.ApiResponse
 import com.xianliticn.yuefu.vo.SubmitTaskVo
@@ -19,12 +19,12 @@ interface OmrApi {
     @Deprecated("Use submitSheetImage() instead")
     suspend fun getMusicXml(@Part image: MultipartBody.Part): Response<ResponseBody>
 
-    @POST("omr/submit")
+    @POST("omr/submit/{engine}")
     @Multipart
     /**
      * 提交乐谱图片创建OMR任务
      */
-    suspend fun submitSheetImage(@Part image: MultipartBody.Part): ApiResponse<SubmitTaskVo>
+    suspend fun submitSheetImage(@Path("engine") engine: OmrEngine, @Part image: MultipartBody.Part): ApiResponse<SubmitTaskVo>
 
     /**
      * 获取OMR任务状态

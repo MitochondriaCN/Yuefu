@@ -6,4 +6,5 @@ plugins {
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.ksp) apply false
     kotlin("plugin.serialization") version "2.3.0" apply false
+    id("androidx.room") version "2.8.4" apply false
 }

@@ -1,8 +1,8 @@
 package com.xianliticn.yuefu.modules
 
-import com.xianliticn.yuefu.webapi.OmrApi
 import com.xianliticn.yuefu.webapi.SurveyApi
 import com.xianliticn.yuefu.webapi.SystemInfoApi
+import com.xianliticn.yuefu.webapi.omr.OmrApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.VerticalSplit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -62,7 +63,8 @@ fun SheetOverviewPage(
             sheetName = uiState.sheetTitle ?: stringResource(R.string.unknown_sheet),
             sheetAuthor = uiState.sheetAuthor ?: stringResource(R.string.unknown_author),
             sheetCreatedTime = uiState.sheetCreatedTime,
-            sheetMeasureCount = uiState.sheetMeasureCount
+            sheetMeasureCount = uiState.sheetMeasureCount,
+            sheetModel = uiState.sheetModel
         )
 }
 
@@ -72,7 +74,8 @@ fun SheetOverviewPageContent(
     sheetName: String,
     sheetAuthor: String,
     sheetCreatedTime: String? = null,
-    sheetMeasureCount: Int? = null
+    sheetMeasureCount: Int? = null,
+    sheetModel: String? = null
 ) {
     Column(
         modifier = modifier
@@ -132,6 +135,11 @@ fun SheetOverviewPageContent(
             title = stringResource(R.string.measure_count),
             content = sheetMeasureCount?.toString() ?: stringResource(R.string.unknown),
             icon = Icons.Default.VerticalSplit
+        )
+        InfoBox(
+                title = stringResource(R.string.model),
+        content = sheetModel ?: stringResource(R.string.unknown),
+        icon = Icons.Default.Psychology
         )
     }
 }

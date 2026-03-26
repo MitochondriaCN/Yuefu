@@ -20,7 +20,8 @@ import com.xianliticn.yuefu.AppDatabase
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.utils.ColorFilterTransformation
-import com.xianliticn.yuefu.webapi.OmrApi
+import com.xianliticn.yuefu.webapi.omr.OmrApi
+import com.xianliticn.yuefu.webapi.omr.OmrEngine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -204,14 +205,20 @@ class ScanStudioPageViewModel @Inject constructor(
             delay(1000)
             try {
                 val part = image.toMultipartBodyPart()
-                //提交OMR任务
-                // 当前接口尚未接收 model 参数，这里先预留并传递到调用链。
-                omrApi.submitSheetImage(part).data?.let { vo ->
+                // 提交OMR任务
+                omrApi.submitSheetImage(
+                    engine = when (model) {
+                        OmrModel.QINGSHANG -> OmrEngine.LEGATO_FP16
+                        OmrModel.ZHENGSHENG -> OmrEngine.LEGATO_FP32
+                    },
+                    image = part
+                ).data?.let { vo ->
                     //创建乐谱实体
                     val sheet = Sheet(
                         taskId = vo.taskId,
                         isDownloaded = false,
                         createTime = System.currentTimeMillis(),
+                        model = model.label
                     )
                     appDatabase.sheetDao().insert(sheet)
                     Toast.makeText(context, R.string.omr_task_submitted, Toast.LENGTH_LONG).show()

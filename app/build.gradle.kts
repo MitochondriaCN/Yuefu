@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     kotlin("plugin.serialization") version "2.3.0"
+    id("androidx.room")
 }
 
 android {
@@ -18,7 +19,7 @@ android {
         minSdk = 28
         targetSdk = 36
         versionCode = 3
-        versionName = "v0.2.8-beta"
+        versionName = "v0.2.9-beta"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -44,6 +45,10 @@ android {
             excludes.add("**/dump_syms/**")
         }
     }
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 kotlin {

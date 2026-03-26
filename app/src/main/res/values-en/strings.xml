@@ -96,4 +96,5 @@
     <string name="unknown_author">Unknown Author</string>
     <string name="measure_count">Measure Count</string>
     <string name="choose_model">Choose Model</string>
+    <string name="model">模型</string>
 </resources>
