@@ -17,7 +17,7 @@ import com.xianliticn.yuefu.utils.getTitle
 import com.xianliticn.yuefu.utils.isValidMusicXml
 import com.xianliticn.yuefu.utils.readXml
 import com.xianliticn.yuefu.vo.TaskStatus
-import com.xianliticn.yuefu.webapi.OmrApi
+import com.xianliticn.yuefu.webapi.omr.OmrApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject

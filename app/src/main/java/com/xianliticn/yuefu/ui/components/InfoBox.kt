@@ -35,7 +35,7 @@ fun InfoBox(
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // 为图标添加主题色，并调整为更适合元数据展示的大小
             Icon(

@@ -34,5 +34,9 @@ data class Sheet(
     /**
      * 文件哈希，SHA-256算法
      */
-    @ColumnInfo(name = "hash") val hash: String? = null
+    @ColumnInfo(name = "hash") val hash: String? = null,
+    /**
+     * 所用AI模型
+     */
+    @ColumnInfo(name = "model") val model: String? = null
 )

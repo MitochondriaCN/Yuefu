@@ -94,4 +94,6 @@
     <string name="created_time">创建时间</string>
     <string name="unknown_author">未知作者</string>
     <string name="measure_count">小节数</string>
+    <string name="choose_model">选择模型</string>
+    <string name="model">模型</string>
 </resources>

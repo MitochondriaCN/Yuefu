@@ -57,8 +57,10 @@ class SheetOverviewPageViewModel @Inject constructor(
             //获取各项信息
             val sheetTitle = sheetDoc.getTitle() ?: sheet.sheetName //有标题用标题，没标题用名字
             val sheetAuthor = sheetDoc.getAuthor()
-            val sheetCreatedTime= Instant.ofEpochMilli(sheet.createTime).toFriendlyString()
-            val sheetMeasureCount= sheetDoc.getTotalMeasureCount()
+            val sheetCreatedTime = Instant.ofEpochMilli(sheet.createTime).toFriendlyString()
+            val sheetMeasureCount = sheetDoc.getTotalMeasureCount()
+            val sheetModel = sheet.model
+
 
             _uiState.update {
                 _uiState.value.copy(
@@ -66,7 +68,8 @@ class SheetOverviewPageViewModel @Inject constructor(
                     sheetAuthor = sheetAuthor,
                     loading = false,
                     sheetCreatedTime = sheetCreatedTime,
-                    sheetMeasureCount = sheetMeasureCount
+                    sheetMeasureCount = sheetMeasureCount,
+                    sheetModel = sheetModel
                 )
             }
         }
@@ -78,6 +81,7 @@ class SheetOverviewPageViewModel @Inject constructor(
         val sheetTitle: String? = null,
         val sheetAuthor: String? = null,
         val sheetCreatedTime: String? = null,
-        val sheetMeasureCount: Int? = null
+        val sheetMeasureCount: Int? = null,
+        val sheetModel: String? = null
     )
 }
