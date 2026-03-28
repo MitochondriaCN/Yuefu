@@ -107,4 +107,6 @@
     <string name="auto_show_tutorial">Auto Showing Scanning Tutorial</string>
     <string name="auto_show_tutorial_desc">Auto show survey after importing a sheet</string>
     <string name="failed_to_download">Failed to download</string>
+    <string name="no_recently_used_sheets">No recently used sheets. Please scan the sheet.</string>
+    <string name="no_sheets">无乐谱，请前往主页扫描乐谱</string>
 </resources>

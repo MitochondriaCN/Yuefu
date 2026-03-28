@@ -231,6 +231,15 @@ fun SheetPageContent(
                     )
                 }
             }
+
+            if (sheets.isEmpty())
+                Text(
+                    text = stringResource(R.string.no_sheets),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Center)
+                )
         }
 
         downloadingSheet?.let {

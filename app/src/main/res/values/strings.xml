@@ -106,4 +106,6 @@
     <string name="auto_show_tutorial">自动显示扫描指引</string>
     <string name="auto_show_tutorial_desc">在点击扫描乐谱后显示扫描指引</string>
     <string name="failed_to_download">下载失败</string>
+    <string name="no_recently_used_sheets">无最近使用的乐谱，请扫描乐谱</string>
+    <string name="no_sheets">无乐谱，请前往主页扫描乐谱</string>
 </resources>

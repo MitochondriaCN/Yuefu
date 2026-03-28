@@ -288,6 +288,16 @@ fun RecentlyUsedFile(
                     )
                 }
         }
+
+        if (recent4.isEmpty())
+            Text(
+                text = stringResource(R.string.no_recently_used_sheets),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+
     }
 }
 
@@ -376,11 +386,11 @@ enum class FileCardType {
     Midi
 }
 
-@Preview(showBackground = true, locale = "en")
+@Preview(showBackground = true, locale = "en", showSystemUi = true)
 @Composable
 fun HomePagePreview() {
     HomePageContent(
-        loading = true,
+        loading = false,
         loadingMessage = "AI识别乐谱中\n可能需要约1分钟。"
     )
 }
