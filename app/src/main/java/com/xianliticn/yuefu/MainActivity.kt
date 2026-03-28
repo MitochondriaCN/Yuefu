@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Blender
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -31,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.xianliticn.yuefu.modules.SettingsManager
+import com.xianliticn.yuefu.pages.about.AboutPage
 import com.xianliticn.yuefu.pages.composition.CompositionPage
 import com.xianliticn.yuefu.pages.home.HomePage
 import com.xianliticn.yuefu.pages.scanstudio.ScanStudioPage
@@ -66,10 +67,20 @@ class MainActivity : ComponentActivity() {
             NavItem("home", R.string.home, Icons.Filled.Home),
             NavItem("sheet", R.string.sheet, Icons.Filled.MusicNote),
             NavItem("composition", R.string.composition, Icons.Filled.Blender),
-            NavItem("settings", R.string.about, Icons.Filled.Info)
+            NavItem("settings", R.string.settings, Icons.Filled.Settings)
         )
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
+
+        fun bottomBarNavigate(targetRoute: String) {
+            navController.navigate(targetRoute) {
+                popUpTo(navController.graph.startDestinationId) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
 
         Scaffold(
             modifier = modifier.fillMaxSize(),
@@ -78,15 +89,7 @@ class MainActivity : ComponentActivity() {
                     navItems.forEach { item ->
                         NavigationBarItem(
                             selected = navBackStackEntry?.destination?.route == item.route,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
+                            onClick = { bottomBarNavigate(item.route) },
                             icon = { Icon(item.icon, null) },
                             label = { Text(stringResource(item.labelStringRes)) }
                         )
@@ -125,17 +128,23 @@ class MainActivity : ComponentActivity() {
                         viewModel = hiltViewModel(),
                         imageUri = imageUri,
                         onFinished = {
-                            navController.popBackStack()
-                            if (!isSurveyShown.value) { // 如果没有展示过调研，就展示调研
-                                navController.navigate("survey")
-                            }
+                            navController.popBackStack() // 移除 studio 页面
+                            val targetRoute = if (!isSurveyShown.value) "survey" else "sheet"
+                            bottomBarNavigate(targetRoute)
                         }
                     )
                 }
 
                 composable("composition") { CompositionPage(hiltViewModel()) }
 
-                composable("settings") { SettingsPage(hiltViewModel()) }
+                composable("about") { AboutPage(hiltViewModel()) }
+
+                composable("settings") {
+                    SettingsPage(
+                        viewModel = hiltViewModel(),
+                        onAboutClick = { navController.navigate("about") },
+                        onSurveyClick = { navController.navigate("survey") })
+                }
 
                 composable("survey") {
                     SurveyPage(

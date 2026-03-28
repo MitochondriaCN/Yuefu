@@ -24,7 +24,10 @@ interface OmrApi {
     /**
      * 提交乐谱图片创建OMR任务
      */
-    suspend fun submitSheetImage(@Path("engine") engine: OmrEngine, @Part image: MultipartBody.Part): ApiResponse<SubmitTaskVo>
+    suspend fun submitSheetImage(
+        @Path("engine") engine: OmrEngine,
+        @Part image: MultipartBody.Part
+    ): ApiResponse<SubmitTaskVo>
 
     /**
      * 获取OMR任务状态
@@ -41,4 +44,7 @@ interface OmrApi {
      */
     @GET("omr/download/{taskId}")
     suspend fun downloadSheet(@Path("taskId") taskId: String): Response<ResponseBody>
+
+    @GET("omr/download/pic/{taskId}")
+    suspend fun downloadPicture(@Path("taskId") taskId: String): ApiResponse<String>
 }

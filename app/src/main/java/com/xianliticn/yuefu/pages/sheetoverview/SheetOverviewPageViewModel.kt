@@ -1,6 +1,7 @@
 package com.xianliticn.yuefu.pages.sheetoverview
 
 import android.content.Context
+import android.util.Base64
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xianliticn.yuefu.AppDatabase
@@ -11,6 +12,7 @@ import com.xianliticn.yuefu.utils.getTitle
 import com.xianliticn.yuefu.utils.getTotalMeasureCount
 import com.xianliticn.yuefu.utils.readXml
 import com.xianliticn.yuefu.utils.toFriendlyString
+import com.xianliticn.yuefu.webapi.omr.OmrApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
@@ -23,7 +25,8 @@ import java.time.Instant
 
 @HiltViewModel
 class SheetOverviewPageViewModel @Inject constructor(
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val omrApi: OmrApi
 ) : ViewModel() {
 
     @Inject
@@ -32,6 +35,9 @@ class SheetOverviewPageViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState
+
+    private val _sheetPicture = MutableStateFlow<ByteArray?>(null)
+    val sheetPicture: StateFlow<ByteArray?> = _sheetPicture
 
     fun refresh(sheetId: Int) {
         _uiState.update {
@@ -55,12 +61,12 @@ class SheetOverviewPageViewModel @Inject constructor(
                 readXml(File(context.getAbsoluteImportFilePath(sheet.fileName)))
 
             //获取各项信息
-            val sheetTitle = sheetDoc.getTitle() ?: sheet.sheetName //有标题用标题，没标题用名字
+            val sheetTitle = sheetDoc.getTitle()?.takeUnless { it == "<|text|>" }
+                ?: sheet.sheetName // 有标题用标题，没标题用名字
             val sheetAuthor = sheetDoc.getAuthor()
             val sheetCreatedTime = Instant.ofEpochMilli(sheet.createTime).toFriendlyString()
             val sheetMeasureCount = sheetDoc.getTotalMeasureCount()
             val sheetModel = sheet.model
-
 
             _uiState.update {
                 _uiState.value.copy(
@@ -72,7 +78,18 @@ class SheetOverviewPageViewModel @Inject constructor(
                     sheetModel = sheetModel
                 )
             }
+
+            // 更新预览图
+            refreshPicture(sheet.taskId)
         }
+    }
+
+    suspend fun refreshPicture(taskId: String) {
+        runCatching { omrApi.downloadPicture(taskId) }
+            .onSuccess { resp ->
+                val imageModel = Base64.decode(resp.data, Base64.DEFAULT)
+                _sheetPicture.value = imageModel
+            }
     }
 
     data class UiState(

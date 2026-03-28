@@ -54,6 +54,9 @@ class CompositionPageViewModel @Inject constructor(
         ignoreUnknownKeys = true
     }
 
+    private var currentWeight = 1.0
+    private var isPlaying = false
+
     private val _uiState = MutableStateFlow(
         CompositionPageState(
             instruments = instruments,
@@ -82,8 +85,12 @@ class CompositionPageViewModel @Inject constructor(
             isWsReady.first { it }
 
             ws?.let {
-                it.sendPrompt(prompt)
-                it.sendPlayback(PlaybackControl.PLAY)
+                it.sendPrompt(prompt, currentWeight)
+                currentWeight /= 2
+                if (!isPlaying) {
+                    it.sendPlayback(PlaybackControl.PLAY)
+                    isPlaying = true
+                }
             }
         }
     }
@@ -177,6 +184,8 @@ class CompositionPageViewModel @Inject constructor(
     private fun resetWsState() {
         ws = null
         isWsReady.value = false
+        isPlaying = false
+        currentWeight = 1.0
         _uiState.value = _uiState.value.copy(messages = emptyList())
     }
 
@@ -188,12 +197,12 @@ class CompositionPageViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedInstrument = instrument)
     }
 
-    fun WebSocket.sendPrompt(prompt: String) {
+    fun WebSocket.sendPrompt(prompt: String, weight: Double = 1.0) {
         send(
             json.encodeToString(
                 PromptMessage(
                     ClientContent(
-                        listOf(WeightedPrompt(prompt, 1.0))
+                        listOf(WeightedPrompt(prompt, weight))
                     )
                 )
             ).also {

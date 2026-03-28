@@ -96,5 +96,17 @@
     <string name="unknown_author">Unknown Author</string>
     <string name="measure_count">Measure Count</string>
     <string name="choose_model">Choose Model</string>
-    <string name="model">模型</string>
+    <string name="model">Model</string>
+    <string name="share">Share</string>
+    <string name="general">General</string>
+    <string name="survey">Survey</string>
+    <string name="help_us_to_survey">Help us to improve the experience</string>
+    <string name="auto_show_survey">Auto Showing Survey</string>
+    <string name="auto_show_survey_desc">Auto show survey after importing a sheet</string>
+    <string name="please_choose">Please choose a selection</string>
+    <string name="auto_show_tutorial">Auto Showing Scanning Tutorial</string>
+    <string name="auto_show_tutorial_desc">Auto show survey after importing a sheet</string>
+    <string name="failed_to_download">Failed to download</string>
+    <string name="no_recently_used_sheets">No recently used sheets. Please scan the sheet.</string>
+    <string name="no_sheets">无乐谱，请前往主页扫描乐谱</string>
 </resources>
