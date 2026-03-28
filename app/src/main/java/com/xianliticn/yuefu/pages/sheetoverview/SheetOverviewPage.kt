@@ -45,6 +45,7 @@ fun SheetOverviewPage(
     sheetId: Int
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val imageModel by viewModel.sheetPicture.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.refresh(sheetId)
@@ -64,7 +65,8 @@ fun SheetOverviewPage(
             sheetAuthor = uiState.sheetAuthor ?: stringResource(R.string.unknown_author),
             sheetCreatedTime = uiState.sheetCreatedTime,
             sheetMeasureCount = uiState.sheetMeasureCount,
-            sheetModel = uiState.sheetModel
+            sheetModel = uiState.sheetModel,
+            sheetPicture = imageModel
         )
 }
 
@@ -75,7 +77,8 @@ fun SheetOverviewPageContent(
     sheetAuthor: String,
     sheetCreatedTime: String? = null,
     sheetMeasureCount: Int? = null,
-    sheetModel: String? = null
+    sheetModel: String? = null,
+    sheetPicture: Any? = null
 ) {
     Column(
         modifier = modifier
@@ -137,9 +140,16 @@ fun SheetOverviewPageContent(
             icon = Icons.Default.VerticalSplit
         )
         InfoBox(
-                title = stringResource(R.string.model),
-        content = sheetModel ?: stringResource(R.string.unknown),
-        icon = Icons.Default.Psychology
+            title = stringResource(R.string.model),
+            content = sheetModel ?: stringResource(R.string.unknown),
+            icon = Icons.Default.Psychology
+        )
+
+        AsyncImage(
+            model = sheetPicture,
+            contentDescription = null,
+            modifier = Modifier.fillMaxWidth(),
+            contentScale = ContentScale.Fit
         )
     }
 }
