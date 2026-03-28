@@ -51,10 +51,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.InputDialog
@@ -77,6 +79,7 @@ fun SheetPage(viewModel: SheetPageViewModel) {
     SheetPageContent(
         modifier = Modifier.padding(horizontal = 20.dp),
         sheets = uiState.sheets,
+        sheetCovers = uiState.sheetCoverMap,
         downloadingSheet = uiState.downloadingSheet,
         onRefresh = { viewModel.refresh() },
         loading = uiState.loading,
@@ -97,6 +100,7 @@ fun SheetPage(viewModel: SheetPageViewModel) {
 fun SheetPageContent(
     modifier: Modifier = Modifier,
     sheets: List<Pair<Sheet, TaskStatus?>> = emptyList(),
+    sheetCovers: Map<Sheet, Any?> = emptyMap(),
     downloadingSheet: Sheet? = null,
     loading: Boolean = false,
     onRefresh: () -> Unit = {},
@@ -222,7 +226,9 @@ fun SheetPageContent(
                     SheetCard(
                         sheet = sheets[index],
                         onItemClick = onItemClick,
-                        onItemHold = { optionSheet = it.first })
+                        onItemHold = { optionSheet = it.first },
+                        cover = sheetCovers[sheets[index].first]
+                    )
                 }
             }
         }
@@ -256,6 +262,7 @@ fun SheetPageContent(
 @Composable
 private fun SheetCard(
     sheet: Pair<Sheet, TaskStatus?>,
+    cover: Any? = null,
     onItemClick: (Pair<Sheet, TaskStatus?>) -> Unit,
     onItemHold: (Pair<Sheet, TaskStatus?>) -> Unit
 ) {
@@ -273,14 +280,22 @@ private fun SheetCard(
                 .fillMaxWidth()
                 .aspectRatio(1f)
         ) {
-            Icon(
-                imageVector = Icons.Default.LibraryMusic,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(52.dp),
-                tint = Color(getRandomPrettyColor())
-            )
+            if (cover == null)
+                Icon(
+                    imageVector = Icons.Default.LibraryMusic,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(52.dp),
+                    tint = Color(getRandomPrettyColor())
+                )
+            else
+                AsyncImage(
+                    model = cover,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
         }
         Spacer(modifier = Modifier.height(8.dp))
         // 标题

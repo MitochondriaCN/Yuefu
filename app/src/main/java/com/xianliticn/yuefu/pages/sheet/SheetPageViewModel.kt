@@ -2,6 +2,7 @@ package com.xianliticn.yuefu.pages.sheet
 
 import android.content.Context
 import android.content.Intent
+import android.util.Base64
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
@@ -94,6 +95,9 @@ class SheetPageViewModel @Inject constructor(
                 )
             }
         }
+
+        // 刷新封面
+        refreshSheetCover()
     }
 
     fun handleItemClick(sheet: Pair<Sheet, TaskStatus?>) {
@@ -294,16 +298,18 @@ class SheetPageViewModel @Inject constructor(
         sheet.fileName?.let {
             val file = File(context.getAbsoluteImportFilePath(it))
             if (file.exists()) {
-                val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+                val uri =
+                    FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "application/xml"
                     putExtra(Intent.EXTRA_STREAM, uri)
                     putExtra(Intent.EXTRA_SUBJECT, sheet.sheetName)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-                val chooser = Intent.createChooser(shareIntent, context.getString(R.string.share)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
+                val chooser =
+                    Intent.createChooser(shareIntent, context.getString(R.string.share)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
                 context.startActivity(chooser)
             } else {
                 Toast.makeText(context, R.string.sheet_not_found, Toast.LENGTH_SHORT).show()
@@ -311,9 +317,29 @@ class SheetPageViewModel @Inject constructor(
         }
     }
 
+    fun refreshSheetCover() {
+        val currentSheets = _uiState.value.sheets.map { it.first }
+        currentSheets.forEach { sheet ->
+            if (_uiState.value.sheetCoverMap.containsKey(sheet)) return@forEach
+
+            viewModelScope.launch {
+                runCatching { omrApi.downloadPicture(sheet.taskId) }
+                    .onSuccess { resp ->
+                        val base64Pic = Base64.decode(resp.data, Base64.DEFAULT)
+                        _uiState.update { currentState ->
+                            currentState.copy(
+                                sheetCoverMap = currentState.sheetCoverMap + (sheet to base64Pic)
+                            )
+                        }
+                    }
+            }
+        }
+    }
+
     data class SheetPageState(
         val loading: Boolean = false,
         val downloadingSheet: Sheet? = null,
-        val sheets: List<Pair<Sheet, TaskStatus?>> = emptyList()
+        val sheets: List<Pair<Sheet, TaskStatus?>> = emptyList(),
+        val sheetCoverMap: Map<Sheet, ByteArray?> = emptyMap()
     )
 }
