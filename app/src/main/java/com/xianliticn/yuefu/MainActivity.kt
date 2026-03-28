@@ -72,6 +72,16 @@ class MainActivity : ComponentActivity() {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
 
+        fun bottomBarNavigate(targetRoute: String) {
+            navController.navigate(targetRoute) {
+                popUpTo(navController.graph.startDestinationId) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+
         Scaffold(
             modifier = modifier.fillMaxSize(),
             bottomBar = {
@@ -79,15 +89,7 @@ class MainActivity : ComponentActivity() {
                     navItems.forEach { item ->
                         NavigationBarItem(
                             selected = navBackStackEntry?.destination?.route == item.route,
-                            onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
+                            onClick = { bottomBarNavigate(item.route) },
                             icon = { Icon(item.icon, null) },
                             label = { Text(stringResource(item.labelStringRes)) }
                         )
@@ -126,10 +128,9 @@ class MainActivity : ComponentActivity() {
                         viewModel = hiltViewModel(),
                         imageUri = imageUri,
                         onFinished = {
-                            navController.popBackStack()
-                            if (!isSurveyShown.value) { // 如果没有展示过调研，就展示调研
-                                navController.navigate("survey")
-                            }
+                            navController.popBackStack() // 移除 studio 页面
+                            val targetRoute = if (!isSurveyShown.value) "survey" else "sheet"
+                            bottomBarNavigate(targetRoute)
                         }
                     )
                 }

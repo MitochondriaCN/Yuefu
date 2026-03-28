@@ -122,23 +122,33 @@ class SheetPageViewModel @Inject constructor(
 
             //开始下载并导入
             downloadJob = viewModelScope.launch {
-                downloadSheetAndImport(sheet.first)
-                refresh()
-                //完成下载
+                runCatching { downloadSheetAndImport(sheet.first) }
+                    .onSuccess {
+                        // 提示用户下载完成
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.download_complete) +
+                                    (appDatabase.sheetDao().getById(sheet.first.id)?.sheetName
+                                        ?: "Unknown"),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    .onFailure {
+                        Toast.makeText(
+                            context,
+                            "${context.getString(R.string.failed_to_download)}: ${it.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                // 完成下载
                 _uiState.update {
                     _uiState.value.copy(
                         downloadingSheet = null
                     )
                 }
-                //提示用户下载完成
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.download_complete) +
-                            (appDatabase.sheetDao().getById(sheet.first.id)?.sheetName
-                                ?: "Unknown"),
-                    Toast.LENGTH_SHORT
-                ).show()
                 downloadJob = null
+                refresh()
             }
         }
     }
@@ -283,7 +293,8 @@ class SheetPageViewModel @Inject constructor(
                     sheet.copy(
                         isDownloaded = true,
                         fileName = inFile.name,
-                        sheetName = readXml(inFile).getTitle() ?: "Unknown",
+                        sheetName = (readXml(inFile).getTitle())?.takeUnless { it == "<|text|>" }
+                            ?: context.getString(R.string.unknown_sheet),
                         lastOpenTime = System.currentTimeMillis(),
                         hash = inFile.getHash(),
                     )
@@ -320,6 +331,7 @@ class SheetPageViewModel @Inject constructor(
     fun refreshSheetCover() {
         val currentSheets = _uiState.value.sheets.map { it.first }
         currentSheets.forEach { sheet ->
+            if (!sheet.isDownloaded) return@forEach
             if (_uiState.value.sheetCoverMap.containsKey(sheet)) return@forEach
 
             viewModelScope.launch {

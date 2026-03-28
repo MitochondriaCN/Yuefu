@@ -61,7 +61,8 @@ class SheetOverviewPageViewModel @Inject constructor(
                 readXml(File(context.getAbsoluteImportFilePath(sheet.fileName)))
 
             //获取各项信息
-            val sheetTitle = sheetDoc.getTitle() ?: sheet.sheetName //有标题用标题，没标题用名字
+            val sheetTitle = sheetDoc.getTitle()?.takeUnless { it == "<|text|>" }
+                ?: sheet.sheetName // 有标题用标题，没标题用名字
             val sheetAuthor = sheetDoc.getAuthor()
             val sheetCreatedTime = Instant.ofEpochMilli(sheet.createTime).toFriendlyString()
             val sheetMeasureCount = sheetDoc.getTotalMeasureCount()

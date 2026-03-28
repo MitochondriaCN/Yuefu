@@ -106,4 +106,5 @@
     <string name="please_choose">Please choose a selection</string>
     <string name="auto_show_tutorial">Auto Showing Scanning Tutorial</string>
     <string name="auto_show_tutorial_desc">Auto show survey after importing a sheet</string>
+    <string name="failed_to_download">Failed to download</string>
 </resources>

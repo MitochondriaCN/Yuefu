@@ -105,4 +105,5 @@
     <string name="please_choose">请选择选项</string>
     <string name="auto_show_tutorial">自动显示扫描指引</string>
     <string name="auto_show_tutorial_desc">在点击扫描乐谱后显示扫描指引</string>
+    <string name="failed_to_download">下载失败</string>
 </resources>
