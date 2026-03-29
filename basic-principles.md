@@ -2,7 +2,10 @@
 
 ## 产品名
 
-乐府（Yuefu）
+乐府：基于AI五线谱识别的乐谱即时预览与理解系统  
+Yuefu: An AI-Based System for Instant Preview and Understanding of
+Musical Scores via Staff Notation Recognition
+
 
 ## 定位
 
