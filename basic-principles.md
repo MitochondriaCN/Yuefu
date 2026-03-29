@@ -17,9 +17,10 @@ Musical Scores via Staff Notation Recognition
 **核心能力**：基于AI五线谱识别（OMR）的乐谱即时预览与理解系统
 
 **技术架构**：
-- CS架构（前后端分离）
-- 前端：Android + Jetpack Compose
-- 后端：Spring Boot + Legato OMR服务
+- C/S架构（前后端分离）
+- 前端1：Android + Jetpack Compose
+- 前端2：Vue.js
+- 后端：Spring Boot + Legato OMR服务 + 其余开源库
 
 **应用场景**：用户在获取乐谱后，需要立即试听音乐的大致轮廓效果（"听其大略"场景）
 
@@ -46,7 +47,7 @@ Musical Scores via Staff Notation Recognition
 |---------|---------|
 | 乐谱识别类产品 | 不仅能识别，还能即时试听和可视化预览 |
 | 可视化教学软件 | 支持任意乐谱输入，不依赖固定曲库 |
-| 游戏化学习平台 | 打通"识别—理解—预览—导出"完整闭环 |
+| 游戏化学习平台 | 更加专业，适合实际音乐学习场景 |
 
 乐府的核心竞争优势在于：**打通从乐谱识别到音乐理解、从预览到导出的完整闭环，使"乐谱本身"直接转化为可执行的学习课程。**
 
@@ -75,7 +76,10 @@ Musical Scores via Staff Notation Recognition
 
 ### 处理流程
 
-乐谱识别 → ABC中间表示 → MusicXML转换 → 音频合成 → 输出
+$$
+\underbrace{\text{乐谱识别} \to \text{ABC中间表示} \to \text{MusicXML转换}}_{后端 + 云函数} \to 
+\underbrace{\text{音频合成} \to 输出}_{\text{前端}}
+$$
 
 ### Legato OMR模型
 
