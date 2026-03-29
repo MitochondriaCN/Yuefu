@@ -6,6 +6,10 @@
 Yuefu: An AI-Based System for Instant Preview and Understanding of
 Musical Scores via Staff Notation Recognition
 
+## 定位
+
+乐府（Yuefu）是一款以五线谱图片识别（OMR）为核心，帮助音乐学习者快速“听懂乐谱”的智能工具。
+
 ## 项目介绍
 
 乐府（Yuefu）是第十九届全国大学生软件创新大赛参赛项目，由希望之峰小队开发。
@@ -46,9 +50,6 @@ Musical Scores via Staff Notation Recognition
 
 乐府的核心竞争优势在于：**打通从乐谱识别到音乐理解、从预览到导出的完整闭环，使"乐谱本身"直接转化为可执行的学习课程。**
 
-## 定位
-
-乐府（Yuefu）是一款以五线谱图片识别（OMR）为核心，帮助音乐学习者快速“听懂乐谱”的智能工具。
 
 ## 文档基本原则
 
