@@ -38,6 +38,7 @@ Musical Scores via Staff Notation Recognition
 - 钢琴瀑布流试听
 - OMR导出（MusicXML）
 - 基于提示词的AI乐曲编配
+- 基于识别结果的更进一步AI编配（尚未实现，很难实现，但不是不能实现，锦上添花的功能，写文档或许可以提一提）
 
 ## 目标用户（解决的痛点）
 
