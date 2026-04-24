@@ -18,7 +18,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -37,11 +36,9 @@ import com.xianliticn.yuefu.pages.home.HomePage
 import com.xianliticn.yuefu.pages.scanstudio.ScanStudioPage
 import com.xianliticn.yuefu.pages.settings.SettingsPage
 import com.xianliticn.yuefu.pages.sheet.SheetPage
-import com.xianliticn.yuefu.pages.survey.SurveyPage
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
-import kotlinx.coroutines.runBlocking
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -61,8 +58,6 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun MainActivityFramework(modifier: Modifier = Modifier) {
-        val isSurveyShown = settingsManager.isSurveyShown.collectAsState(initial = false)
-
         val navItems = listOf(
             NavItem("home", R.string.home, Icons.Filled.Home),
             NavItem("sheet", R.string.sheet, Icons.Filled.MusicNote),
@@ -129,8 +124,7 @@ class MainActivity : ComponentActivity() {
                         imageUri = imageUri,
                         onFinished = {
                             navController.popBackStack() // 移除 studio 页面
-                            val targetRoute = if (!isSurveyShown.value) "survey" else "sheet"
-                            bottomBarNavigate(targetRoute)
+                            bottomBarNavigate("sheet")
                         }
                     )
                 }
@@ -142,19 +136,7 @@ class MainActivity : ComponentActivity() {
                 composable("settings") {
                     SettingsPage(
                         viewModel = hiltViewModel(),
-                        onAboutClick = { navController.navigate("about") },
-                        onSurveyClick = { navController.navigate("survey") })
-                }
-
-                composable("survey") {
-                    SurveyPage(
-                        viewModel = hiltViewModel(),
-                        onFinished = { isSubmitted ->
-                            if (isSubmitted) {
-                                runBlocking { settingsManager.setIsSurveyShown(true) }
-                            }
-                            navController.popBackStack()
-                        }
+                        onAboutClick = { navController.navigate("about") }
                     )
                 }
             }

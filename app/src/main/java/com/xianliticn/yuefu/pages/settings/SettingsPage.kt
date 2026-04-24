@@ -14,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Summarize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,10 +37,8 @@ import com.xianliticn.yuefu.R
 @Composable
 fun SettingsPage(
     viewModel: SettingsPageViewModel,
-    onAboutClick: () -> Unit = {},
-    onSurveyClick: () -> Unit = {}
+    onAboutClick: () -> Unit = {}
 ) {
-    val isSurveyShown by viewModel.isSurveyShown.collectAsState()
     val isTutorialShown by viewModel.isTutorialShown.collectAsState()
 
     Scaffold(
@@ -52,12 +49,9 @@ fun SettingsPage(
         }
     ) { paddingValues ->
         SettingsPageContent(
-            isSurveyShown = isSurveyShown,
-            onSurveyShownChange = viewModel::setSurveyShown,
             isTutorialShown = isTutorialShown,
             onTutorialShownChange = viewModel::setTutorialShown,
             onAboutClick = onAboutClick,
-            onSurveyClick = onSurveyClick,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -67,12 +61,9 @@ fun SettingsPage(
 
 @Composable
 fun SettingsPageContent(
-    isSurveyShown: Boolean,
-    onSurveyShownChange: (Boolean) -> Unit,
     isTutorialShown: Boolean,
     onTutorialShownChange: (Boolean) -> Unit,
     onAboutClick: () -> Unit,
-    onSurveyClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -80,20 +71,6 @@ fun SettingsPageContent(
             .verticalScroll(rememberScrollState())
     ) {
         SettingsCategory(title = stringResource(R.string.general))
-
-        SettingsClickItem(
-            title = stringResource(R.string.survey),
-            description = stringResource(R.string.help_us_to_survey),
-            icon = Icons.Default.Summarize,
-            onClick = onSurveyClick
-        )
-
-        SettingsSwitchItem(
-            title = stringResource(R.string.auto_show_survey),
-            description = stringResource(R.string.auto_show_survey_desc),
-            checked = isSurveyShown,
-            onCheckedChange = onSurveyShownChange
-        )
 
         SettingsSwitchItem(
             title = stringResource(R.string.auto_show_tutorial),
@@ -211,11 +188,8 @@ fun SettingsClickItem(
 fun SettingsPagePreview() {
     MaterialTheme {
         SettingsPageContent(
-            isSurveyShown = true,
-            onSurveyShownChange = {},
             onAboutClick = {},
             modifier = Modifier.fillMaxSize(),
-            onSurveyClick = {},
             isTutorialShown = true,
             onTutorialShownChange = {}
         )
