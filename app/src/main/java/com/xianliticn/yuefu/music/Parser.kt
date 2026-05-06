@@ -1,19 +1,11 @@
 package com.xianliticn.yuefu.music
 
 import androidx.compose.ui.graphics.Color
-import com.xianliticn.yuefu.ui.theme.Green800
-import com.xianliticn.yuefu.ui.theme.Grey800
-import com.xianliticn.yuefu.ui.theme.Orange800
 import org.dom4j.Document
 import org.dom4j.Element
 
 class Parser(
-    private val partsColor: Map<Int, Color> = mapOf(
-        0 to Green800,
-        1 to Orange800,
-        2 to Color.Blue,
-        3 to Color.Red
-    )
+    private val partsColor: Map<Int, Color>
 ) {
     fun generateMidiEvents(
         musicXmlDoc: Document,
@@ -171,10 +163,9 @@ class Parser(
                     visualNotes.add(
                         VisualNoteEvent(
                             startTimeMillis = startEvent.timeNano / 1_000_000,
-                            endTimeMillis = event.timeNano / 1_000_000,
+                            endTimeMillis = event.timeNano / 1_000_000, // 直接使用当前 Release 的时间
                             keyIndex = currentOctaveStart + offset,
-                            color = partsColor[startEvent.part] ?: Grey800,
-                            partId = startEvent.part
+                            color = partsColor[startEvent.part] ?: Color.Gray
                         )
                     )
                 }
@@ -184,17 +175,25 @@ class Parser(
         return visualNotes
     }
 
-    /**
-     * 辅助函数：将 MusicXML 的 Step/Octave/Alter 转换为 MIDI Note Number (0-127)
-     * 例如: C4 -> 60
-     */
     private fun calculateMidiPitch(step: String, octave: Int, alter: Int): Int {
-        val baseValues = mapOf(
+        // C4 = 60 in MIDI
+        val stepValues = mapOf(
             "C" to 0, "D" to 2, "E" to 4, "F" to 5, "G" to 7, "A" to 9, "B" to 11
         )
-
-        val base = baseValues[step] ?: 0
-        // MIDI note calculation: (Octave + 1) * 12 + Base + Alter
-        return (octave + 1) * 12 + base + alter
+        val stepValue = stepValues[step] ?: 0
+        return (octave + 1) * 12 + stepValue + alter
     }
 }
+
+enum class Note {
+    PRESS, RELEASE
+}
+
+data class MidiEvent(
+    val pitch: Int,
+    val timeNano: Long,
+    val note: Note,
+    val isChord: Boolean,
+    val part: Int,
+    val measure: Int? = null
+)

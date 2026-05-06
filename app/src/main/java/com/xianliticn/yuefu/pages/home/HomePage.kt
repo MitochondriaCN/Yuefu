@@ -54,9 +54,7 @@ import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
-import com.xianliticn.yuefu.ui.theme.Blue800
-import com.xianliticn.yuefu.ui.theme.Clouds
-import com.xianliticn.yuefu.ui.theme.Grey800
+import com.xianliticn.yuefu.ui.theme.yuefuExtendedColors
 import com.xianliticn.yuefu.utils.toFriendlyString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -224,7 +222,7 @@ fun HomePageContent(
                     icon = Icons.Default.Camera,
                     modifier = Modifier.weight(1f),
                     label = stringResource(R.string.shot_sheet),
-                    bgColor = Blue800
+                    bgColor = MaterialTheme.yuefuExtendedColors.primaryAction
                 ) {
                     if (showTutorial) {
                         showingTutorial = true
@@ -314,7 +312,7 @@ private fun ButtonCard(
         onClick = { onClick() },
         colors = CardDefaults.elevatedCardColors(
             containerColor = bgColor,
-            contentColor = Clouds
+            contentColor = MaterialTheme.yuefuExtendedColors.onPrimaryAction
         )
     ) {
         Column(
@@ -360,7 +358,7 @@ fun FileCard(
                     FileCardType.MusicXml -> Icons.Default.LibraryMusic
                     FileCardType.Midi -> Icons.Default.Piano
                 },
-                tint = Grey800,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 contentDescription = null
             )
             Column(modifier = Modifier.weight(1f)) {

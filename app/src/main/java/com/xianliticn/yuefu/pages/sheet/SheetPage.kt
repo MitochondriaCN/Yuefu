@@ -60,7 +60,6 @@ import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.InputDialog
-import com.xianliticn.yuefu.ui.theme.Grey800
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import com.xianliticn.yuefu.utils.getRandomPrettyColor
 import com.xianliticn.yuefu.utils.toFriendlyString
@@ -341,7 +340,7 @@ private fun SheetCard(
                     else -> stringResource(R.string.unknown_status)
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = Grey800,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 modifier = Modifier
                     .fillMaxWidth()

@@ -61,7 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
-import com.xianliticn.yuefu.ui.theme.Orange800
+import com.xianliticn.yuefu.ui.theme.yuefuExtendedColors
 import kotlinx.coroutines.delay
 
 @Composable
@@ -269,14 +269,15 @@ fun ScanStudioContent(
                             .fillMaxSize()
                     ) {
                         translate(left = imageOffsetX, top = imageOffsetY) {
+                            val extendedColors = MaterialTheme.yuefuExtendedColors
                             drawLine(
-                                color = Orange800,
+                                color = extendedColors.scanCropLine,
                                 start = Offset(x = clipLeftLineX, y = 0f),
                                 end = Offset(x = clipLeftLineX, y = scaledImageHeight),
                                 strokeWidth = 10f
                             )
                             drawRect(
-                                color = Color.Gray.copy(alpha = 0.7f),
+                                color = extendedColors.scanOverlay,
                                 topLeft = if (clipLeftLineX < scaledImageWidth / 2) Offset.Zero else
                                     Offset(clipLeftLineX, 0f),
                                 size = Size(
@@ -287,13 +288,13 @@ fun ScanStudioContent(
                             )
 
                             drawLine(
-                                color = Orange800,
+                                color = extendedColors.scanCropLine,
                                 start = Offset(x = 0f, y = clipTopLineY),
                                 end = Offset(x = scaledImageWidth, y = clipTopLineY),
                                 strokeWidth = 10f
                             )
                             drawRect(
-                                color = Color.Gray.copy(alpha = 0.7f),
+                                color = extendedColors.scanOverlay,
                                 topLeft = if (clipTopLineY < scaledImageHeight / 2) Offset.Zero else
                                     Offset(0f, clipTopLineY),
                                 size = Size(
