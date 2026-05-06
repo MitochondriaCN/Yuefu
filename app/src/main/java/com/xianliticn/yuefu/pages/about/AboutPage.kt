@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -84,17 +85,21 @@ fun AboutPageContent(
         }
     }
 
-    // Staggered animation states
-    var headerVisible by remember { mutableStateOf(false) }
-    var devVisible by remember { mutableStateOf(false) }
-    var statusVisible by remember { mutableStateOf(false) }
+    // One-shot staggered animation
+    var animationPlayed by rememberSaveable { mutableStateOf(false) }
+    var headerVisible by remember { mutableStateOf(animationPlayed) }
+    var devVisible by remember { mutableStateOf(animationPlayed) }
+    var statusVisible by remember { mutableStateOf(animationPlayed) }
 
     LaunchedEffect(Unit) {
-        headerVisible = true
-        kotlinx.coroutines.delay(100)
-        devVisible = true
-        kotlinx.coroutines.delay(150)
-        statusVisible = true
+        if (!animationPlayed) {
+            headerVisible = true
+            kotlinx.coroutines.delay(100)
+            devVisible = true
+            kotlinx.coroutines.delay(150)
+            statusVisible = true
+            animationPlayed = true
+        }
     }
 
     val developers = listOf("线粒体", "发发", "冰寻卿", "柒晨")

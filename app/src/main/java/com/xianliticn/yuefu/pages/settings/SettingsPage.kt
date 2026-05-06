@@ -1,5 +1,9 @@
 package com.xianliticn.yuefu.pages.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,8 +32,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -68,43 +77,88 @@ fun SettingsPageContent(
         context.packageManager.getPackageInfo(context.packageName, 0).versionName
     } catch (_: Exception) { null }
 
+    // One-shot staggered animation
+    var animationPlayed by rememberSaveable { mutableStateOf(false) }
+    var titleVisible by remember { mutableStateOf(animationPlayed) }
+    var generalVisible by remember { mutableStateOf(animationPlayed) }
+    var aboutVisible by remember { mutableStateOf(animationPlayed) }
+
+    LaunchedEffect(Unit) {
+        if (!animationPlayed) {
+            titleVisible = true
+            kotlinx.coroutines.delay(100)
+            generalVisible = true
+            kotlinx.coroutines.delay(150)
+            aboutVisible = true
+            animationPlayed = true
+        }
+    }
+
     Column(
         modifier = modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
     ) {
-        Spacer(Modifier.height(32.dp))
-        Text(
-            text = stringResource(R.string.settings),
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(Modifier.height(24.dp))
-
-        // General Section
-        SettingsSection(title = stringResource(R.string.general)) {
-            SettingsSwitchItem(
-                title = stringResource(R.string.auto_show_tutorial),
-                description = stringResource(R.string.auto_show_tutorial_desc),
-                icon = Icons.Default.Tune,
-                checked = isTutorialShown,
-                onCheckedChange = onTutorialShownChange
+        AnimatedVisibility(
+            visible = titleVisible,
+            enter = fadeIn(tween(500)) + slideInVertically(
+                animationSpec = tween(500),
+                initialOffsetY = { it / 4 }
             )
+        ) {
+            Column {
+                Spacer(Modifier.height(32.dp))
+                Text(
+                    text = stringResource(R.string.settings),
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(24.dp))
+            }
         }
 
-        Spacer(Modifier.height(16.dp))
-
-        // About Section
-        SettingsSection(title = stringResource(R.string.about)) {
-            SettingsClickItem(
-                title = stringResource(R.string.about),
-                description = "${stringResource(R.string.app_name)} ${versionName ?: ""}",
-                icon = Icons.Default.Info,
-                onClick = onAboutClick
+        AnimatedVisibility(
+            visible = generalVisible,
+            enter = fadeIn(tween(500)) + slideInVertically(
+                animationSpec = tween(500),
+                initialOffsetY = { it / 4 }
             )
+        ) {
+            Column {
+                // General Section
+                SettingsSection(title = stringResource(R.string.general)) {
+                    SettingsSwitchItem(
+                        title = stringResource(R.string.auto_show_tutorial),
+                        description = stringResource(R.string.auto_show_tutorial_desc),
+                        icon = Icons.Default.Tune,
+                        checked = isTutorialShown,
+                        onCheckedChange = onTutorialShownChange
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+            }
         }
 
-        Spacer(Modifier.height(32.dp))
+        AnimatedVisibility(
+            visible = aboutVisible,
+            enter = fadeIn(tween(500)) + slideInVertically(
+                animationSpec = tween(500),
+                initialOffsetY = { it / 4 }
+            )
+        ) {
+            Column {
+                // About Section
+                SettingsSection(title = stringResource(R.string.about)) {
+                    SettingsClickItem(
+                        title = stringResource(R.string.about),
+                        description = "${stringResource(R.string.app_name)} ${versionName ?: ""}",
+                        icon = Icons.Default.Info,
+                        onClick = onAboutClick
+                    )
+                }
+                Spacer(Modifier.height(32.dp))
+            }
+        }
     }
 }
 

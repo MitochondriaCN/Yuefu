@@ -1,11 +1,8 @@
 package com.xianliticn.yuefu.pages.sheet
 
 import android.annotation.SuppressLint
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -125,13 +122,7 @@ fun SheetPageContent(
     var searchQuery by remember { mutableStateOf("") }
     var optionSheet by remember { mutableStateOf<Sheet?>(null) }
     var renamingSheet by remember { mutableStateOf<Sheet?>(null) }
-    var gridVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(sheets) {
-        gridVisible = false
-        kotlinx.coroutines.delay(50)
-        gridVisible = true
-    }
+    var deletingSheet by remember { mutableStateOf<Sheet?>(null) }
 
     // Bottom Sheet: 操作菜单
     optionSheet?.let {
@@ -183,7 +174,7 @@ fun SheetPageContent(
                     tint = ErrorRed,
                     isDestructive = true,
                     onClick = {
-                        onDeleteSheet(it)
+                        deletingSheet = it
                         optionSheet = null
                     }
                 )
@@ -202,6 +193,37 @@ fun SheetPageContent(
         }
     )
 
+    // Delete confirmation dialog
+    deletingSheet?.let { sheet ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { deletingSheet = null },
+            title = { Text(stringResource(R.string.delete)) },
+            text = {
+                Text(
+                    stringResource(R.string.delete_confirm_message, sheet.sheetName ?: stringResource(R.string.unknown_sheet))
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        onDeleteSheet(sheet)
+                        deletingSheet = null
+                    }
+                ) {
+                    Text(
+                        stringResource(R.string.delete),
+                        color = ErrorRed
+                    )
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { deletingSheet = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         PullToRefreshBox(
             modifier = modifier.fillMaxSize(),
@@ -215,12 +237,23 @@ fun SheetPageContent(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 contentPadding = PaddingValues(bottom = 20.dp)
             ) {
-                // 大标题
+                // 大标题 — with bottom scrim so content scrolling underneath is dimmed
                 stickyHeader {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp, bottom = 4.dp)
+                            .background(
+                                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.surface,
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0f)
+                                    ),
+                                    startY = 0f,
+                                    endY = 200f
+                                )
+                            )
+                            .padding(top = 12.dp, bottom = 12.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -291,21 +324,12 @@ fun SheetPageContent(
 
                 // 网格卡片
                 items(sheets.size, key = { sheets[it].first.id }) { index ->
-                    AnimatedVisibility(
-                        visible = gridVisible,
-                        enter = fadeIn(tween(350, delayMillis = index * 60)) +
-                                scaleIn(
-                                    animationSpec = tween(350, delayMillis = index * 60),
-                                    initialScale = 0.92f
-                                )
-                    ) {
-                        SheetCard(
-                            sheet = sheets[index],
-                            onItemClick = onItemClick,
-                            onItemHold = { optionSheet = it.first },
-                            cover = sheetCovers[sheets[index].first]
-                        )
-                    }
+                    SheetCard(
+                        sheet = sheets[index],
+                        onItemClick = onItemClick,
+                        onItemHold = { optionSheet = it.first },
+                        cover = sheetCovers[sheets[index].first]
+                    )
                 }
             }
 

@@ -48,6 +48,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -157,17 +158,21 @@ fun HomePageContent(
     var showingTutorial by remember { mutableStateOf(false) }
     var gettingImage by remember { mutableStateOf(false) }
 
-    // Staggered animation states
-    var headerVisible by remember { mutableStateOf(false) }
-    var actionsVisible by remember { mutableStateOf(false) }
-    var recentVisible by remember { mutableStateOf(false) }
+    // One-shot staggered animation — only plays once per session, not on every navigation
+    var animationPlayed by rememberSaveable { mutableStateOf(false) }
+    var headerVisible by remember { mutableStateOf(animationPlayed) }
+    var actionsVisible by remember { mutableStateOf(animationPlayed) }
+    var recentVisible by remember { mutableStateOf(animationPlayed) }
 
     LaunchedEffect(Unit) {
-        headerVisible = true
-        kotlinx.coroutines.delay(100)
-        actionsVisible = true
-        kotlinx.coroutines.delay(150)
-        recentVisible = true
+        if (!animationPlayed) {
+            headerVisible = true
+            kotlinx.coroutines.delay(100)
+            actionsVisible = true
+            kotlinx.coroutines.delay(150)
+            recentVisible = true
+            animationPlayed = true
+        }
     }
 
     if (loading) {
@@ -184,7 +189,7 @@ fun HomePageContent(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = loadingMessage.toString(),
+                    text = loadingMessage.orEmpty(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -353,31 +358,17 @@ fun HomePageContent(
             // Recent Items
             if (recent4.isEmpty()) {
                 item {
-                    AnimatedVisibility(
-                        visible = recentVisible,
-                        enter = fadeIn(tween(600))
-                    ) {
-                        EmptyRecentState()
-                    }
+                    EmptyRecentState()
                 }
             } else {
                 itemsIndexed(recent4, key = { _, sheet -> sheet.id }) { index, sheet ->
-                    AnimatedVisibility(
-                        visible = recentVisible,
-                        enter = fadeIn(tween(400, delayMillis = index * 80)) +
-                                slideInVertically(
-                                    animationSpec = tween(400, delayMillis = index * 80),
-                                    initialOffsetY = { it / 4 }
-                                )
-                    ) {
-                        FileCard(
-                            label = sheet.sheetName ?: stringResource(R.string.unknown_sheet),
-                            lastOpenTime = Instant.ofEpochMilli(
-                                sheet.lastOpenTime ?: sheet.createTime
-                            ).toFriendlyString(),
-                            onClick = { onRecentSheetClick(sheet) }
-                        )
-                    }
+                    FileCard(
+                        label = sheet.sheetName ?: stringResource(R.string.unknown_sheet),
+                        lastOpenTime = Instant.ofEpochMilli(
+                            sheet.lastOpenTime ?: sheet.createTime
+                        ).toFriendlyString(),
+                        onClick = { onRecentSheetClick(sheet) }
+                    )
                     if (index < recent4.lastIndex) {
                         Spacer(Modifier.height(8.dp))
                     }

@@ -91,10 +91,14 @@ fun CompositionPageContent(
 ) {
     var keyExpanded by remember { mutableStateOf(false) }
     var instrumentExpanded by remember { mutableStateOf(false) }
-    val currentTime by produceState(initialValue = System.currentTimeMillis()) {
-        while (true) {
-            delay(1000)
-            value = System.currentTimeMillis()
+    // Only tick when there's an active generation (last message is a response)
+    val isGenerating = messages.isNotEmpty() && messages.last() !is PromptMessage
+    val currentTime by produceState(initialValue = System.currentTimeMillis(), isGenerating) {
+        if (isGenerating) {
+            while (true) {
+                delay(1000)
+                value = System.currentTimeMillis()
+            }
         }
     }
 
