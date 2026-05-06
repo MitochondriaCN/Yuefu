@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -67,6 +68,7 @@ fun PianoRollNoteFlow(
     scrollState: ScrollState = rememberScrollState(),
     notes: List<VisualNoteEvent> = emptyList(),
     currentProgressMillis: Long = 0L,
+    effectLevel: EffectLevel = EffectLevel.HIGH,
     onKeyPressed: (PianoKeyData) -> Unit = {},
     onKeyReleased: (PianoKeyData) -> Unit = {}
 ) {
@@ -105,6 +107,7 @@ fun PianoRollNoteFlow(
             keyCount = whiteKeys.size,
             notes = notes,
             currentProgressMillis = currentProgressMillis,
+            effectLevel = effectLevel,
             //同步滚动
             visibleRange = NoteFlowVisibleRange(
                 startPx = scrollState.value.toFloat(),

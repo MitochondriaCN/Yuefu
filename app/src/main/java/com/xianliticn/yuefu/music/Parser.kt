@@ -185,17 +185,12 @@ class Parser(
         return visualNotes
     }
 
-    /**
-     * 辅助函数：将 MusicXML 的 Step/Octave/Alter 转换为 MIDI Note Number (0-127)
-     * 例如: C4 -> 60
-     */
     private fun calculateMidiPitch(step: String, octave: Int, alter: Int): Int {
-        val baseValues = mapOf(
+        // C4 = 60 in MIDI
+        val stepValues = mapOf(
             "C" to 0, "D" to 2, "E" to 4, "F" to 5, "G" to 7, "A" to 9, "B" to 11
         )
-
-        val base = baseValues[step] ?: 0
-        // MIDI note calculation: (Octave + 1) * 12 + Base + Alter
-        return (octave + 1) * 12 + base + alter
+        val stepValue = stepValues[step] ?: 0
+        return (octave + 1) * 12 + stepValue + alter
     }
 }
