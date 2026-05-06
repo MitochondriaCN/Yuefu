@@ -57,6 +57,24 @@ class SequenceEngine {
         sequence = midiEvents.sortedBy { it.timeNano }
     }
 
+    private fun sendMidiInit() {
+        // GM System On - 重置合成器到 General MIDI 标准状态
+        midiDriver.queueEvent(
+            byteArrayOf(
+                0xF0.toByte(), 0x7E.toByte(), 0x7F.toByte(),
+                0x09.toByte(), 0x01.toByte(), 0xF7.toByte()
+            )
+        )
+        // Program Change: 钢琴 (program 0) 在通道 0
+        midiDriver.queueEvent(byteArrayOf(0xC0.toByte(), 0x00.toByte()))
+        // Control Change 7 (通道音量) = 127
+        midiDriver.queueEvent(byteArrayOf(0xB0.toByte(), 0x07.toByte(), 0x7F.toByte()))
+        // Control Change 11 (表情) = 127
+        midiDriver.queueEvent(byteArrayOf(0xB0.toByte(), 0x0B.toByte(), 0x7F.toByte()))
+        // 设置主音量
+        midiDriver.setVolume(100)
+    }
+
     fun play() {
         if (sequence == null)
             throw Exception("尚未加载音频序列")
@@ -64,8 +82,16 @@ class SequenceEngine {
         if (isPlaying)
             return
 
+        // 如果已经播完，重置到开头以便重新播放
+        val allSent = sequence?.all { it.isSent } == true
+        if (allSent) {
+            pausedProgressNano = 0L
+        }
+
         isPlaying = true
         changeProgress(pausedProgressNano / 1_000_000)
+
+        sendMidiInit()
 
         playJob = scope.launch {
             eventIndex = 0
