@@ -148,6 +148,11 @@ class SequenceEngine {
 
     fun pause() {
         playJob?.cancel()
+
+        // 立即停止所有正在播放的音符，避免暂停后仍有残留声音
+        midiDriver.queueEvent(byteArrayOf(0xB0.toByte(), 0x78.toByte(), 0x00.toByte())) // All Sound Off
+        midiDriver.queueEvent(byteArrayOf(0xB0.toByte(), 0x7B.toByte(), 0x00.toByte())) // All Notes Off
+
         isPlaying = false
         pausedProgressNano = System.nanoTime() - startTimeNano
     }
