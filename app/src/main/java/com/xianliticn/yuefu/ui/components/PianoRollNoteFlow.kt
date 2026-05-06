@@ -30,6 +30,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -75,15 +76,46 @@ object EffectConfig {
             EffectLevel.HIGH -> 16f
         }
 
-    val particlesPerNote: Int
-        get() = when (level) {
-            EffectLevel.LOW -> 4
-            EffectLevel.MEDIUM -> 10
-            EffectLevel.HIGH -> 18
-        }
-
     val glowBandEnabled: Boolean
         get() = level != EffectLevel.LOW
+
+    // ========== 粒子效果等级配置 ==========
+
+    val trailEnabled: Boolean get() = true
+    val burstEnabled: Boolean get() = level != EffectLevel.LOW
+    val sustainEnabled: Boolean get() = level == EffectLevel.HIGH
+
+    /** 拖尾粒子产生间隔（帧数，约16ms/帧） */
+    val trailEmitInterval: Int
+        get() = when (level) {
+            EffectLevel.LOW -> 6
+            EffectLevel.MEDIUM -> 4
+            EffectLevel.HIGH -> 3
+        }
+
+    /** 爆发阶段3扇形喷射粒子数 */
+    val burstSparkCount: Int
+        get() = when (level) {
+            EffectLevel.LOW -> 0
+            EffectLevel.MEDIUM -> 12
+            EffectLevel.HIGH -> 25
+        }
+
+    /** 长音符持续流脉冲间隔（毫秒） */
+    val sustainPulseIntervalMs: Long
+        get() = when (level) {
+            EffectLevel.LOW -> 0L
+            EffectLevel.MEDIUM -> 0L
+            EffectLevel.HIGH -> 180L
+        }
+
+    /** 长音符持续流每次脉冲粒子数 */
+    val sustainParticlesPerPulse: Int
+        get() = when (level) {
+            EffectLevel.LOW -> 0
+            EffectLevel.MEDIUM -> 0
+            EffectLevel.HIGH -> 4
+        }
 }
 
 // ==================== 背景色 ====================
@@ -93,6 +125,14 @@ val GlowBandColor = Color(0xFFFFF8F0)
 
 // ==================== 粒子系统 ====================
 
+enum class ParticleType {
+    Trail,      // 拖尾粒子：小圆点，随机飘散
+    BurstRay,   // 爆发星芒：光线
+    BurstRing,  // 爆发环形：扩散圆环
+    BurstSpark, // 爆发扇形喷射：小粒子
+    Sustain     // 长音符持续流：向上飘散
+}
+
 data class Particle(
     var x: Float,
     var y: Float,
@@ -101,20 +141,174 @@ data class Particle(
     var life: Float,
     val maxLife: Float,
     val color: Color,
-    val baseSize: Float
+    val baseSize: Float,
+    val type: ParticleType = ParticleType.Trail,
+    var rotation: Float = 0f,
+    var rotationSpeed: Float = 0f,
+    var scale: Float = 1f,
+    var extraData: Float = 0f  // 用于 BurstRing 记录最大半径等
 ) {
     fun update(deltaMs: Float) {
         x += vx * deltaMs
         y += vy * deltaMs
-        vy += 0.0003f * deltaMs
+        rotation += rotationSpeed * deltaMs
+
+        when (type) {
+            ParticleType.Trail -> {
+                vy += 0.0002f * deltaMs  // 轻微重力
+                vx *= (1f - 0.001f * deltaMs)  // 轻微阻尼
+            }
+            ParticleType.BurstSpark -> {
+                vy += 0.0004f * deltaMs  // 较强重力
+                vx *= (1f - 0.002f * deltaMs)
+            }
+            ParticleType.Sustain -> {
+                vy += 0.00015f * deltaMs  // 很弱的重力
+                vx *= (1f - 0.0005f * deltaMs)
+            }
+            ParticleType.BurstRay -> {
+                // 光线：匀速直线，快速淡出
+            }
+            ParticleType.BurstRing -> {
+                // 圆环：匀速扩散
+            }
+        }
+
         life -= deltaMs / maxLife
     }
 
-    val alpha: Float get() = (life * 1.5f).coerceIn(0f, 1f)
-    val currentSize: Float get() = baseSize * (0.6f + life * 0.4f)
+    val alpha: Float get() = when (type) {
+        ParticleType.BurstRay -> (life * 2f).coerceIn(0f, 1f)  // 光线快速淡出
+        ParticleType.BurstRing -> (life * 1.2f).coerceIn(0f, 0.7f)
+        else -> (life * 1.5f).coerceIn(0f, 1f)
+    }
+    val currentSize: Float get() = baseSize * scale * when (type) {
+        ParticleType.BurstRing -> (0.2f + life * 0.8f)  // 圆环随时间变小（线变细）
+        else -> (0.5f + life * 0.5f)
+    }
 }
 
-fun emitParticles(
+data class BurstState(
+    val startTime: Long,
+    var stage1Emitted: Boolean = false,
+    var stage2Emitted: Boolean = false,
+    var stage3Emitted: Boolean = false
+)
+
+// ==================== 粒子发射函数 ====================
+
+/** 从音符后缘发射拖尾粒子 */
+fun emitTrailParticles(
+    particles: MutableList<Particle>,
+    noteLeft: Float,
+    noteRight: Float,
+    noteTopY: Float,
+    noteColor: Color,
+    count: Int
+) {
+    repeat(count) {
+        val x = Random.nextFloat() * (noteRight - noteLeft) + noteLeft
+        val angle = Random.nextFloat() * kotlin.math.PI * 2
+        val speed = Random.nextFloat() * 0.1f + 0.03f
+        particles.add(
+            Particle(
+                x = x,
+                y = noteTopY,
+                vx = cos(angle).toFloat() * speed,
+                vy = sin(angle).toFloat() * speed - 0.05f,
+                life = 1f,
+                maxLife = Random.nextFloat() * 150f + 200f,
+                color = noteColor.copy(alpha = 0.7f),
+                baseSize = Random.nextFloat() * 1.5f + 0.8f,
+                type = ParticleType.Trail
+            )
+        )
+    }
+}
+
+/** 爆发阶段1：星芒放射 */
+fun emitBurstRays(
+    particles: MutableList<Particle>,
+    centerX: Float,
+    centerY: Float,
+    color: Color,
+    rayCount: Int = 10
+) {
+    repeat(rayCount) { i ->
+        val angle = (i / rayCount.toFloat()) * kotlin.math.PI * 2 + Random.nextFloat() * 0.2f
+        val speed = Random.nextFloat() * 0.3f + 0.4f
+        val length = Random.nextFloat() * 20f + 20f
+        particles.add(
+            Particle(
+                x = centerX,
+                y = centerY,
+                vx = cos(angle).toFloat() * speed,
+                vy = sin(angle).toFloat() * speed,
+                life = 1f,
+                maxLife = 120f,
+                color = color.copy(alpha = 0.9f),
+                baseSize = length,
+                type = ParticleType.BurstRay,
+                rotation = angle.toFloat(),
+                scale = 1f,
+                extraData = length
+            )
+        )
+    }
+}
+
+/** 爆发阶段2：环形扩散 */
+fun emitBurstRing(
+    particles: MutableList<Particle>,
+    centerX: Float,
+    centerY: Float,
+    color: Color
+) {
+    particles.add(
+        Particle(
+            x = centerX,
+            y = centerY,
+            vx = 0.2f,  // 扩散速度
+            vy = 0f,
+            life = 1f,
+            maxLife = 180f,
+            color = color.copy(alpha = 0.6f),
+            baseSize = 3f,  // 线宽
+            type = ParticleType.BurstRing,
+            extraData = 60f  // 最大半径
+        )
+    )
+}
+
+/** 爆发阶段3：扇形喷射 */
+fun emitBurstSparks(
+    particles: MutableList<Particle>,
+    centerX: Float,
+    centerY: Float,
+    color: Color,
+    count: Int
+) {
+    repeat(count) {
+        val angle = Random.nextFloat() * kotlin.math.PI * 0.8f + kotlin.math.PI * 0.6f  // 斜上方扇形
+        val speed = Random.nextFloat() * 0.35f + 0.2f
+        particles.add(
+            Particle(
+                x = centerX + Random.nextFloat() * 6f - 3f,
+                y = centerY + Random.nextFloat() * 4f - 2f,
+                vx = cos(angle).toFloat() * speed,
+                vy = sin(angle).toFloat() * speed,
+                life = 1f,
+                maxLife = Random.nextFloat() * 150f + 300f,
+                color = color.copy(alpha = 0.85f),
+                baseSize = Random.nextFloat() * 2f + 1f,
+                type = ParticleType.BurstSpark
+            )
+        )
+    }
+}
+
+/** 长音符持续流：向上飘散粒子 */
+fun emitSustainParticles(
     particles: MutableList<Particle>,
     keyX: Float,
     hitLineY: Float,
@@ -122,18 +316,19 @@ fun emitParticles(
     count: Int
 ) {
     repeat(count) {
-        val angle = Random.nextFloat() * kotlin.math.PI * 2
-        val speed = Random.nextFloat() * 0.25f + 0.08f
+        val angle = Random.nextFloat() * kotlin.math.PI * 0.5f + kotlin.math.PI * 0.25f  // 向上扇形
+        val speed = Random.nextFloat() * 0.15f + 0.08f
         particles.add(
             Particle(
-                x = keyX,
-                y = hitLineY,
-                vx = cos(angle).toFloat() * speed,
-                vy = -abs(sin(angle).toFloat() * speed) - 0.15f,
+                x = keyX + Random.nextFloat() * 8f - 4f,
+                y = hitLineY + Random.nextFloat() * 4f,
+                vx = cos(angle).toFloat() * speed + Random.nextFloat() * 0.04f - 0.02f,
+                vy = -sin(angle).toFloat() * speed - 0.1f,
                 life = 1f,
-                maxLife = Random.nextFloat() * 200f + 250f,
-                color = noteColor,
-                baseSize = Random.nextFloat() * 2.5f + 1.5f
+                maxLife = Random.nextFloat() * 200f + 400f,
+                color = noteColor.copy(alpha = 0.6f),
+                baseSize = Random.nextFloat() * 2f + 1f,
+                type = ParticleType.Sustain
             )
         )
     }
@@ -583,7 +778,12 @@ fun NoteFlowWithParticles(
 ) {
     val particles = remember { mutableStateListOf<Particle>() }
     val triggeredNotes = remember { mutableSetOf<Long>() }
+    val burstStates = remember { mutableMapOf<Long, BurstState>() }
     var lastProgress by remember { mutableLongStateOf(-1L) }
+    var trailFrameCounter by remember { mutableIntStateOf(0) }
+
+    // 长音符脉冲计时：keyIndex -> 上次脉冲时间
+    val sustainPulseTimers = remember { mutableMapOf<Float, Long>() }
 
     // 粒子更新驱动
     var frameTick by remember { mutableLongStateOf(0L) }
@@ -591,10 +791,15 @@ fun NoteFlowWithParticles(
         while (true) {
             delay(16)
             frameTick++
+            trailFrameCounter++
             // 清理死亡粒子
             particles.removeAll { it.life <= 0 }
             // 更新存活粒子
             particles.forEach { it.update(16f) }
+            // 清理过期 burst state
+            burstStates.entries.removeAll { (_, state) ->
+                currentProgressMillis - state.startTime > 1000
+            }
         }
     }
 
@@ -618,22 +823,17 @@ fun NoteFlowWithParticles(
         val bufferTime = 500L
         val offsetX = -visibleRange.startPx
 
-        // 检测新触发音符并发射粒子
+        // 检测新触发音符并启动爆发状态机
         if (lastProgress != currentProgressMillis && lastProgress >= 0) {
             notes.forEach { note ->
                 val triggerId = note.startTimeMillis * 1000L + (note.keyIndex * 100).toLong()
                 if (note.startTimeMillis in lastProgress..currentProgressMillis) {
                     if (!triggeredNotes.contains(triggerId)) {
                         triggeredNotes.add(triggerId)
-                        // 直接发射粒子
-                        val keyX = (note.keyIndex + 0.5f) * whiteKeyWidth
-                        emitParticles(
-                            particles,
-                            keyX,
-                            hitLineY,
-                            note.color,
-                            EffectConfig.particlesPerNote
-                        )
+                        // 启动爆发状态机
+                        if (EffectConfig.burstEnabled) {
+                            burstStates[triggerId] = BurstState(startTime = currentProgressMillis)
+                        }
                     }
                 }
             }
@@ -642,9 +842,43 @@ fun NoteFlowWithParticles(
                 val noteTime = id / 1000L
                 noteTime < currentProgressMillis - 10000
             }
+            burstStates.entries.removeAll { (id, state) ->
+                currentProgressMillis - state.startTime > 800
+            }
         }
         if (lastProgress != currentProgressMillis) {
             lastProgress = currentProgressMillis
+        }
+
+        // 处理爆发状态机（分阶段发射）
+        if (EffectConfig.burstEnabled) {
+            burstStates.forEach { (triggerId, state) ->
+                val keyIndex = ((triggerId % 1000L) / 100).toFloat()
+                val keyX = (keyIndex + 0.5f) * whiteKeyWidth + offsetX
+                val elapsed = currentProgressMillis - state.startTime
+
+                // 阶段1：星芒放射（0ms）
+                if (!state.stage1Emitted && elapsed >= 0) {
+                    state.stage1Emitted = true
+                    val rayCount = if (EffectConfig.level == EffectLevel.HIGH) 12 else 8
+                    emitBurstRays(particles, keyX, hitLineY, Color.White.copy(alpha = 0.9f), rayCount)
+                }
+
+                // 阶段2：环形扩散（50ms）
+                if (!state.stage2Emitted && elapsed >= 50) {
+                    state.stage2Emitted = true
+                    emitBurstRing(particles, keyX, hitLineY, Color(0xFFFFF0C0).copy(alpha = 0.7f))
+                }
+
+                // 阶段3：扇形喷射（100ms）
+                if (!state.stage3Emitted && elapsed >= 100) {
+                    state.stage3Emitted = true
+                    val count = EffectConfig.burstSparkCount
+                    if (count > 0) {
+                        emitBurstSparks(particles, keyX, hitLineY, Color(0xFFFFF8E0), count)
+                    }
+                }
+            }
         }
 
         // 绘制音符辉光层
@@ -713,6 +947,11 @@ fun NoteFlowWithParticles(
 
             val left = mid - noteWidth / 2f
             val right = mid + noteWidth / 2f
+
+            // 拖尾粒子发射（从音符后缘）
+            if (EffectConfig.trailEnabled && trailFrameCounter % EffectConfig.trailEmitInterval == 0) {
+                emitTrailParticles(particles, left, right, noteTopY, note.color, 1)
+            }
 
             // 主体
             drawRoundRect(
@@ -815,14 +1054,63 @@ fun NoteFlowWithParticles(
             )
         }
 
-        // 绘制粒子
+        // 长音符持续流脉冲发射
+        if (EffectConfig.sustainEnabled) {
+            notes.forEach { note ->
+                if (note.isLongNote && currentProgressMillis in note.startTimeMillis..note.endTimeMillis) {
+                    val keyX = (note.keyIndex + 0.5f) * whiteKeyWidth + offsetX
+                    val lastPulse = sustainPulseTimers[note.keyIndex] ?: 0L
+                    if (currentProgressMillis - lastPulse >= EffectConfig.sustainPulseIntervalMs) {
+                        sustainPulseTimers[note.keyIndex] = currentProgressMillis
+                        emitSustainParticles(
+                            particles,
+                            keyX,
+                            hitLineY,
+                            note.color,
+                            EffectConfig.sustainParticlesPerPulse
+                        )
+                    }
+                }
+            }
+        }
+
+        // 绘制粒子（根据类型绘制不同形态）
         particles.forEach { p ->
-            if (p.life > 0 && p.x in -20f..canvasWidth + 20f && p.y in -20f..canvasHeight + 20f) {
-                drawCircle(
-                    color = p.color.copy(alpha = p.alpha * 0.8f),
-                    radius = p.currentSize,
-                    center = Offset(p.x + offsetX, p.y)
-                )
+            if (p.life <= 0) return@forEach
+
+            val px = p.x + offsetX
+            if (px < -50f || px > canvasWidth + 50f || p.y < -50f || p.y > canvasHeight + 50f) return@forEach
+
+            when (p.type) {
+                ParticleType.Trail, ParticleType.BurstSpark, ParticleType.Sustain -> {
+                    drawCircle(
+                        color = p.color.copy(alpha = p.alpha * 0.8f),
+                        radius = p.currentSize,
+                        center = Offset(px, p.y)
+                    )
+                }
+                ParticleType.BurstRay -> {
+                    val cos = kotlin.math.cos(p.rotation)
+                    val sin = kotlin.math.sin(p.rotation)
+                    val halfLen = p.currentSize * 0.5f
+                    drawLine(
+                        color = p.color.copy(alpha = p.alpha),
+                        start = Offset(px - cos * halfLen * 0.2f, p.y - sin * halfLen * 0.2f),
+                        end = Offset(px + cos * halfLen, p.y + sin * halfLen),
+                        strokeWidth = 2.5f
+                    )
+                }
+                ParticleType.BurstRing -> {
+                    val radius = p.extraData * (1f - p.life * 0.5f)
+                    if (radius > 0) {
+                        drawCircle(
+                            color = p.color.copy(alpha = p.alpha),
+                            radius = radius,
+                            center = Offset(px, p.y),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = p.currentSize.coerceAtLeast(0.5f))
+                        )
+                    }
+                }
             }
         }
     }
