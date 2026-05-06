@@ -36,10 +36,10 @@ val ErrorRed = Color(0xFFBA1A1A)
 val ErrorRedDark = Color(0xFFFFB4AB)
 
 // ── 乐谱声部配色（用于 PianoRoll 音符流） ────────────────
-val PartColor0 = Color(0xFF5266E8)         // 主旋律：蓝紫
-val PartColor1 = Color(0xFFDDD575)         // 第二声部：暖黄
-val PartColor2 = Color(0xFF8B9A6B)         // 第三声部：橄榄绿
-val PartColor3 = Color(0xFFD4A05A)         // 第四声部：蜜橙
+val PartColor0 = Color(0xFF4F5BFF)         // 主旋律：更饱和的蓝紫
+val PartColor1 = Color(0xFFF0E060)         // 第二声部：更鲜明的暖黄
+val PartColor2 = Color(0xFF8FB84A)         // 第三声部：更鲜亮的橄榄绿
+val PartColor3 = Color(0xFFE8983A)         // 第四声部：更浓郁的蜜橙
 
 // ── 钢琴键暖色调 ────────────────────────────────────────
 val PianoWhiteDefault = Color(0xFFFCFBFA)  // 暖米白，与页面背景同色系

@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
@@ -190,6 +191,8 @@ fun NoteFlow(
         val offsetX = -visibleRange.startPx
 
         // 绘制音符
+        val cornerRadiusPx = 6.dp.toPx()
+        val minNoteHeightPx = 4.dp.toPx()
         notes.forEach { note ->
             if (note.endTimeMillis < minTime - bufferTime || note.startTimeMillis > maxTime + bufferTime) {
                 return@forEach
@@ -197,9 +200,9 @@ fun NoteFlow(
 
             val rawMid = (note.keyIndex + 0.5f) * whiteKeyWidth
             val mid = rawMid + offsetX
-            val width = whiteKeyWidth * 0.4f
+            val width = whiteKeyWidth * 0.44f
 
-            if (mid + width < 0 || mid > canvasWidth) {
+            if (mid + width / 2f < 0 || mid - width / 2f > canvasWidth) {
                 return@forEach
             }
 
@@ -208,14 +211,52 @@ fun NoteFlow(
 
             val noteBottomY = hitLineY - noteStartDistance
             val noteTopY = hitLineY - noteEndDistance
-            val height = noteBottomY - noteTopY
+            val rawHeight = noteBottomY - noteTopY
+            val height = rawHeight.coerceAtLeast(minNoteHeightPx)
+            val drawTopY = noteBottomY - height
+
+            val noteLeft = mid - width / 2f
+            val noteRight = mid + width / 2f
+
+            // 伪外发光（仅 HIGH）
+            if (effectLevel == EffectLevel.HIGH) {
+                val glowPad = 3.dp.toPx()
+                drawRoundRect(
+                    color = note.color.copy(alpha = 0.12f),
+                    topLeft = Offset(x = noteLeft - glowPad, y = drawTopY - glowPad),
+                    size = Size(width = width + glowPad * 2, height = height + glowPad * 2),
+                    cornerRadius = CornerRadius(cornerRadiusPx + glowPad)
+                )
+            }
+
+            // 渐变填充：尾部淡、头部实
+            val gradientBrush = Brush.verticalGradient(
+                colors = listOf(
+                    note.color.copy(alpha = 0.50f),
+                    note.color.copy(alpha = 0.85f),
+                    note.color
+                ),
+                startY = drawTopY,
+                endY = noteBottomY
+            )
 
             drawRoundRect(
-                color = note.color,
-                topLeft = Offset(x = mid - width / 2f, y = noteTopY),
+                brush = gradientBrush,
+                topLeft = Offset(x = noteLeft, y = drawTopY),
                 size = Size(width = width, height = height),
-                cornerRadius = CornerRadius(4.dp.toPx())
+                cornerRadius = CornerRadius(cornerRadiusPx)
             )
+
+            // 顶部高光线
+            val highlightY = drawTopY + 1.5.dp.toPx()
+            if (highlightY < noteBottomY - cornerRadiusPx && height > cornerRadiusPx * 2) {
+                drawLine(
+                    color = Color.White.copy(alpha = 0.30f),
+                    start = Offset(x = noteLeft + cornerRadiusPx * 0.3f, y = highlightY),
+                    end = Offset(x = noteRight - cornerRadiusPx * 0.3f, y = highlightY),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
         }
 
         // 绘制粒子
