@@ -171,9 +171,10 @@ class Parser(
                     visualNotes.add(
                         VisualNoteEvent(
                             startTimeMillis = startEvent.timeNano / 1_000_000,
-                            endTimeMillis = event.timeNano / 1_000_000, // 直接使用当前 Release 的时间
+                            endTimeMillis = event.timeNano / 1_000_000,
                             keyIndex = currentOctaveStart + offset,
-                            color = partsColor[startEvent.part] ?: Grey800
+                            color = partsColor[startEvent.part] ?: Grey800,
+                            partId = startEvent.part
                         )
                     )
                 }

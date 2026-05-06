@@ -663,6 +663,9 @@ fun NoteFlowWithParticles(
             val noteTopY = hitLineY - noteEndDistance
             val noteHeight = noteBottomY - noteTopY
 
+            val glowRadiusOuter = if (note.isLongNote) 24f else 16f
+            val glowRadiusInner = if (note.isLongNote) 16f else 10f
+
             // 辉光层1：最外层柔光
             drawRoundRect(
                 color = note.color.copy(alpha = 0.12f),
@@ -671,7 +674,7 @@ fun NoteFlowWithParticles(
                     width = noteWidth * 2.4f,
                     height = noteHeight + 12f
                 ),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(16f)
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(glowRadiusOuter)
             )
 
             // 辉光层2：中层
@@ -682,7 +685,7 @@ fun NoteFlowWithParticles(
                     width = noteWidth * 1.6f,
                     height = noteHeight + 6f
                 ),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f)
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(glowRadiusInner)
             )
         }
 
@@ -704,14 +707,101 @@ fun NoteFlowWithParticles(
 
             val isBlackKey = (note.keyIndex % 1f) != 0f
             val noteAlpha = if (isBlackKey) 0.85f else 0.75f
+            val cornerRadius = androidx.compose.ui.geometry.CornerRadius(
+                if (note.isLongNote) 12f else 4f
+            )
+
+            val left = mid - noteWidth / 2f
+            val right = mid + noteWidth / 2f
 
             // 主体
             drawRoundRect(
                 color = note.color.copy(alpha = noteAlpha),
-                topLeft = Offset(x = mid - noteWidth / 2f, y = noteTopY),
+                topLeft = Offset(x = left, y = noteTopY),
                 size = androidx.compose.ui.geometry.Size(width = noteWidth, height = noteHeight),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f)
+                cornerRadius = cornerRadius
             )
+
+            // 长音符进度填充（Deemo 风格：底部发光条逐渐上升）
+            if (note.isLongNote) {
+                val progress = when {
+                    currentProgressMillis <= note.startTimeMillis -> 0f
+                    currentProgressMillis >= note.endTimeMillis -> 1f
+                    else -> (currentProgressMillis - note.startTimeMillis).toFloat() / note.durationMillis
+                }
+                if (progress > 0f) {
+                    val fillHeight = noteHeight * progress
+                    val fillTop = noteBottomY - fillHeight
+                    drawRoundRect(
+                        color = note.color.copy(alpha = 0.45f),
+                        topLeft = Offset(x = left, y = fillTop),
+                        size = androidx.compose.ui.geometry.Size(width = noteWidth, height = fillHeight),
+                        cornerRadius = cornerRadius
+                    )
+                    // 填充顶部高光边
+                    if (fillHeight > 3f) {
+                        drawLine(
+                            color = Color.White.copy(alpha = 0.35f),
+                            start = Offset(x = left + 2f, y = fillTop),
+                            end = Offset(x = right - 2f, y = fillTop),
+                            strokeWidth = 1.5f
+                        )
+                    }
+                }
+            }
+
+            // 声部纹理
+            when (note.partId) {
+                1 -> { // 横向细条纹
+                    val stripeCount = (noteHeight / 12f).toInt().coerceIn(2, 5)
+                    val stripeSpacing = noteHeight / (stripeCount + 1)
+                    for (i in 1..stripeCount) {
+                        val y = noteTopY + stripeSpacing * i
+                        drawLine(
+                            color = Color.White.copy(alpha = 0.18f),
+                            start = Offset(left + 3f, y),
+                            end = Offset(right - 3f, y),
+                            strokeWidth = 1f
+                        )
+                    }
+                }
+                2 -> { // 斜向条纹
+                    drawContext.canvas.save()
+                    drawContext.canvas.clipRect(left, noteTopY, right, noteBottomY)
+                    val stripeSpacing = 10f
+                    val diagonalOffset = noteHeight * 0.4f
+                    for (i in -3..8) {
+                        val x = left + i * stripeSpacing
+                        drawLine(
+                            color = Color.White.copy(alpha = 0.12f),
+                            start = Offset(x, noteBottomY),
+                            end = Offset(x + diagonalOffset, noteTopY),
+                            strokeWidth = 1.5f
+                        )
+                    }
+                    drawContext.canvas.restore()
+                }
+                3 -> { // 点阵
+                    drawContext.canvas.save()
+                    drawContext.canvas.clipRect(left, noteTopY, right, noteBottomY)
+                    val dotSpacingY = 10f
+                    val dotSpacingX = noteWidth / 3f
+                    val rows = (noteHeight / dotSpacingY).toInt().coerceAtLeast(1)
+                    for (row in 0 until rows) {
+                        for (col in 0..1) {
+                            val offsetX = if (row % 2 == 0) 0f else dotSpacingX / 2f
+                            val cx = left + dotSpacingX * (col + 0.8f) + offsetX
+                            val cy = noteTopY + dotSpacingY * (row + 0.5f)
+                            drawCircle(
+                                color = Color.White.copy(alpha = 0.2f),
+                                radius = 1.2f,
+                                center = Offset(cx, cy)
+                            )
+                        }
+                    }
+                    drawContext.canvas.restore()
+                }
+            }
 
             // 内部高光条（增加通透感）
             drawRoundRect(
