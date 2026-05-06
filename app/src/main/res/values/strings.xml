@@ -116,4 +116,5 @@
     <string name="no_recently_used_sheets">无最近使用的乐谱，请扫描乐谱</string>
     <string name="no_sheets">无乐谱，请前往主页扫描乐谱</string>
     <string name="delete_confirm_message">确定要删除「%s」吗？此操作无法撤销。</string>
+    <string name="more_options">更多选项</string>
 </resources>
