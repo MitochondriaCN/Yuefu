@@ -21,7 +21,7 @@ data class VisualNoteEvent(
     val durationMillis: Long get() = endTimeMillis - startTimeMillis
 
     /**
-     * 是否为长音符（≥ 300ms）
+     * 是否为长音符（≥ 200ms）
      */
-    val isLongNote: Boolean get() = durationMillis >= 300
+    val isLongNote: Boolean get() = durationMillis >= 200
 }
