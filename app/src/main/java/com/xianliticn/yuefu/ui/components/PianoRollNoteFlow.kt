@@ -68,6 +68,7 @@ fun PianoRollNoteFlow(
     scrollState: ScrollState = rememberScrollState(),
     notes: List<VisualNoteEvent> = emptyList(),
     currentProgressMillis: Long = 0L,
+    effectLevel: EffectLevel = EffectLevel.HIGH,
     onKeyPressed: (PianoKeyData) -> Unit = {},
     onKeyReleased: (PianoKeyData) -> Unit = {}
 ) {
@@ -106,6 +107,7 @@ fun PianoRollNoteFlow(
             keyCount = whiteKeys.size,
             notes = notes,
             currentProgressMillis = currentProgressMillis,
+            effectLevel = effectLevel,
             //同步滚动
             visibleRange = NoteFlowVisibleRange(
                 startPx = scrollState.value.toFloat(),
