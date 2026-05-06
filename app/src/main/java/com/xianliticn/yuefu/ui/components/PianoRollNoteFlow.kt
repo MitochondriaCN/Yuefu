@@ -290,7 +290,6 @@ fun PianoKey(
     onReleased: () -> Unit
 ) {
     // 动态计算颜色
-    val extendedColors = MaterialTheme.yuefuExtendedColors
     val backgroundColor = when (keyType) {
         PianoKeyType.White ->
             if (isPressed) PianoWhitePressed else PianoWhiteDefault
@@ -346,7 +345,7 @@ fun PianoKey(
                     .align(Alignment.BottomCenter)
                     .background(
                         brush = Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, extendedColors.pianoShadow)
+                            colors = listOf(Color.Transparent, Color(0x33000000))
                         )
                     )
             )

@@ -269,7 +269,6 @@ fun ScanStudioContent(
                             .fillMaxSize()
                     ) {
                         translate(left = imageOffsetX, top = imageOffsetY) {
-                            val extendedColors = MaterialTheme.yuefuExtendedColors
                             drawLine(
                                 color = BlueAccent,
                                 start = Offset(x = clipLeftLineX, y = 0f),
