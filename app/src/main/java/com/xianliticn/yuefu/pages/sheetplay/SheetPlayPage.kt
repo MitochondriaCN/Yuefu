@@ -1,5 +1,6 @@
 package com.xianliticn.yuefu.pages.sheetplay
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,8 +35,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.music.VisualNoteEvent
+import com.xianliticn.yuefu.ui.components.BackgroundWarm
 import com.xianliticn.yuefu.ui.components.PianoRollNoteFlow
-import com.xianliticn.yuefu.ui.theme.Clouds
 
 @Composable
 fun SheetPlayPage(
@@ -76,11 +77,11 @@ fun SheetPlayPageContent(
     var isScrollMode by remember { mutableStateOf(false) }
     val keyboardHeight = LocalConfiguration.current.screenHeightDp.dp * 0.2f
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().background(BackgroundWarm)) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = Color.Black,
-            contentColor = Clouds,
+            color = Color(0xFF2A2420),
+            contentColor = Color(0xFFFFF8F0),
         ) {
             Row(
                 modifier = Modifier
