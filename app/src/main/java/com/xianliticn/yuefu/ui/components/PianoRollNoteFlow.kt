@@ -355,7 +355,10 @@ fun PianoRollNoteFlow(
         allKeys.associateBy { it.keyIndex }
     }
 
-    // 2. 计算当前按下的琴键及颜色
+    // 2. 键盘滚动状态（需在 NoteFlowWithParticles 之前声明）
+    val scrollState = rememberScrollState()
+
+    // 3. 计算当前按下的琴键及颜色
     val pressedKeyColors = remember(notes, currentProgressMillis) {
         val map = mutableMapOf<Float, Color>()
         notes.forEach { note ->
@@ -404,8 +407,8 @@ fun PianoRollNoteFlow(
             notes = notes,
             currentProgressMillis = currentProgressMillis,
             visibleRange = NoteFlowVisibleRange(
-                startPx = 0f,
-                endPx = viewportWidthPx
+                startPx = scrollState.value.toFloat(),
+                endPx = scrollState.value.toFloat() + viewportWidthPx
             )
         )
 
@@ -439,8 +442,6 @@ fun PianoRollNoteFlow(
                 .align(Alignment.BottomCenter)
         ) {
             CompositionLocalProvider(LocalOverscrollFactory provides null) {
-                val scrollState = rememberScrollState()
-
                 Row(
                     modifier = Modifier
                         .fillMaxHeight()
