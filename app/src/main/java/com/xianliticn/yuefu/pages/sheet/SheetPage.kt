@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +33,7 @@ import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.FolderOff
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -438,127 +438,114 @@ private fun SheetCard(
     onItemClick: (Pair<Sheet, TaskStatus?>) -> Unit,
     onItemHold: (Pair<Sheet, TaskStatus?>) -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .combinedClickable(
-                onClick = { onItemClick(sheet) },
-                onLongClick = { onItemHold(sheet) }
-            )
+    ElevatedCard(
+        onClick = { onItemClick(sheet) },
+        modifier = Modifier.fillMaxWidth()
     ) {
-        // 封面卡片
-        Surface(
+        // 封面
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1f),
-            shape = RoundedCornerShape(18.dp),
-            shadowElevation = if (cover != null) 4.dp else 2.dp,
-            color = MaterialTheme.colorScheme.surfaceContainer
+                .aspectRatio(1f)
         ) {
-            Box {
-                if (cover == null)
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
+            if (cover == null)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        modifier = Modifier.size(56.dp)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                            modifier = Modifier.size(56.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.LibraryMusic,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(28.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.LibraryMusic,
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
-                else
-                    AsyncImage(
-                        model = cover,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(18.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-
-                // 状态徽章
-                val statusBadge = when (sheet.second) {
-                    TaskStatus.PROCESSING -> StatusBadge(
-                        color = MaterialTheme.colorScheme.primary,
-                        label = stringResource(R.string.scanning_sheet_short)
-                    )
-                    TaskStatus.FAILED -> StatusBadge(
-                        color = ErrorRed,
-                        label = stringResource(R.string.scanning_failed_short)
-                    )
-                    TaskStatus.COMPLETED -> StatusBadge(
-                        color = SuccessGreen,
-                        label = stringResource(R.string.waiting_to_download_short)
-                    )
-                    else -> null
                 }
-                statusBadge?.let { badge ->
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = badge.color.copy(alpha = 0.9f),
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            text = badge.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
+            else
+                AsyncImage(
+                    model = cover,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
 
-                // 三点菜单
+            // 状态徽章
+            val statusBadge = when (sheet.second) {
+                TaskStatus.PROCESSING -> StatusBadge(
+                    color = MaterialTheme.colorScheme.primary,
+                    label = stringResource(R.string.scanning_sheet_short)
+                )
+                TaskStatus.FAILED -> StatusBadge(
+                    color = ErrorRed,
+                    label = stringResource(R.string.scanning_failed_short)
+                )
+                TaskStatus.COMPLETED -> StatusBadge(
+                    color = SuccessGreen,
+                    label = stringResource(R.string.waiting_to_download_short)
+                )
+                else -> null
+            }
+            statusBadge?.let { badge ->
                 Surface(
-                    shape = CircleShape,
-                    color = Color.Black.copy(alpha = 0.35f),
+                    shape = RoundedCornerShape(8.dp),
+                    color = badge.color.copy(alpha = 0.9f),
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(6.dp)
-                        .size(30.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
                 ) {
-                    IconButton(
-                        onClick = { onItemHold(sheet) },
-                        modifier = Modifier.size(30.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = stringResource(R.string.more_options),
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Text(
+                        text = badge.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // 标题
-        Text(
-            text = sheet.first.sheetName ?: stringResource(R.string.unknown_sheet),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
+        // 标题 + 三点按钮
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .basicMarquee()
-        )
-        Spacer(modifier = Modifier.height(2.dp))
+                .padding(start = 12.dp, end = 4.dp, top = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = sheet.first.sheetName ?: stringResource(R.string.unknown_sheet),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                modifier = Modifier
+                    .weight(1f)
+                    .basicMarquee()
+            )
+            IconButton(
+                onClick = { onItemHold(sheet) },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = stringResource(R.string.more_options),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
         // 副标题
         Row(
+            modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
