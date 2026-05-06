@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.music.VisualNoteEvent
 import com.xianliticn.yuefu.ui.components.PianoRollNoteFlow
-import com.xianliticn.yuefu.ui.theme.Clouds
+import com.xianliticn.yuefu.ui.theme.ControlBarDark
 
 @Composable
 fun SheetPlayPage(
@@ -79,8 +79,8 @@ fun SheetPlayPageContent(
     Column(modifier = modifier.fillMaxSize()) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            color = Color.Black,
-            contentColor = Clouds,
+            color = ControlBarDark,
+            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
         ) {
             Row(
                 modifier = Modifier

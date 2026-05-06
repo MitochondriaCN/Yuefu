@@ -44,7 +44,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.xianliticn.yuefu.music.VisualNoteEvent
-import com.xianliticn.yuefu.ui.theme.Orange800
+import com.xianliticn.yuefu.ui.theme.PianoBlackDefault
+import com.xianliticn.yuefu.ui.theme.PianoBlackGradientBottom
+import com.xianliticn.yuefu.ui.theme.PianoBlackGradientTop
+import com.xianliticn.yuefu.ui.theme.PianoBlackPressed
+import com.xianliticn.yuefu.ui.theme.PianoBorder
+import com.xianliticn.yuefu.ui.theme.PianoWhiteDefault
+import com.xianliticn.yuefu.ui.theme.PianoWhiteGradientBottom
+import com.xianliticn.yuefu.ui.theme.PianoWhiteGradientTop
+import com.xianliticn.yuefu.ui.theme.PianoWhitePressed
+import com.xianliticn.yuefu.ui.theme.PartColor0
+import com.xianliticn.yuefu.ui.theme.PartColor1
 
 @OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("FrequentlyChangingValue")
@@ -281,10 +291,10 @@ fun PianoKey(
     // 动态计算颜色
     val backgroundColor = when (keyType) {
         PianoKeyType.White ->
-            if (isPressed) Color(0xFFDDDDDD) else Color(0xFFFFFFF0)
+            if (isPressed) PianoWhitePressed else PianoWhiteDefault
 
         PianoKeyType.Black ->
-            if (isPressed) Color(0xFFBBBBBB) else Color(0xFF000000)
+            if (isPressed) PianoBlackPressed else PianoBlackDefault
     }
     val shadowElevation = if (isPressed) 2.dp else 4.dp
 
@@ -303,7 +313,7 @@ fun PianoKey(
             .fillMaxHeight(),
         shape = RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp), // 底部圆角
         color = backgroundColor,
-        border = BorderStroke(1.dp, Color(0xFFCCCCCC)), // 细微的边框
+        border = BorderStroke(1.dp, PianoBorder), // 细微的边框
         shadowElevation = shadowElevation
     ) {
         // 在按键内部增加渐变，模拟光照，使其看起来不是平面的
@@ -314,14 +324,14 @@ fun PianoKey(
                     brush = Brush.verticalGradient(
                         colors = if (isPressed) {
                             if (keyType == PianoKeyType.Black)
-                                listOf(Color(0xFF444444), Color(0xFF222222))
+                                listOf(PianoBlackPressed, PianoBlackDefault)
                             else
-                                listOf(Color(0xFFBBBBBB), Color(0xFFDDDDDD))
+                                listOf(PianoWhitePressed, PianoWhiteDefault)
                         } else {
                             if (keyType == PianoKeyType.Black)
-                                listOf(Color(0xFF333333), Color(0xFF000000))
+                                listOf(PianoBlackGradientTop, PianoBlackGradientBottom)
                             else
-                                listOf(Color.White, Color(0xFFF2F2F2))
+                                listOf(PianoWhiteGradientTop, PianoWhiteGradientBottom)
                         }
                     )
                 )
@@ -421,10 +431,10 @@ fun PianoRollPreview() {
         modifier = Modifier.fillMaxWidth(),
         notes = listOf(
             VisualNoteEvent(
-                0, 1000, 3f, Orange800
+                0, 1000, 3f, PartColor0
             ),
             VisualNoteEvent(
-                300, 1000, 4f, Orange800
+                300, 1000, 4f, PartColor1
             )
         ),
         currentProgressMillis = 200
