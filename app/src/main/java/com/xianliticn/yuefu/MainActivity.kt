@@ -5,13 +5,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -117,27 +119,37 @@ class MainActivity : ComponentActivity() {
                 navController = navController,
                 startDestination = "home",
                 enterTransition = {
-                    fadeIn(animationSpec = tween(300)) + slideInHorizontally(
-                        initialOffsetX = { fullWidth -> fullWidth / 4 },
-                        animationSpec = tween(300)
+                    fadeIn(
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                    ) + slideInHorizontally(
+                        initialOffsetX = { it / 4 },
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
                     )
                 },
                 exitTransition = {
-                    fadeOut(animationSpec = tween(200)) + slideOutHorizontally(
-                        targetOffsetX = { fullWidth -> -fullWidth / 6 },
-                        animationSpec = tween(200)
+                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + slideOutHorizontally(
+                        targetOffsetX = { -it / 6 },
+                        animationSpec = spring(stiffness = Spring.StiffnessMedium)
                     )
                 },
                 popEnterTransition = {
-                    fadeIn(animationSpec = tween(300)) + slideInHorizontally(
-                        initialOffsetX = { fullWidth -> -fullWidth / 4 },
-                        animationSpec = tween(300)
+                    fadeIn(
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                    ) + slideInHorizontally(
+                        initialOffsetX = { -it / 4 },
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
                     )
                 },
                 popExitTransition = {
-                    fadeOut(animationSpec = tween(200)) + slideOutHorizontally(
-                        targetOffsetX = { fullWidth -> fullWidth / 6 },
-                        animationSpec = tween(200)
+                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + slideOutHorizontally(
+                        targetOffsetX = { it / 6 },
+                        animationSpec = spring(stiffness = Spring.StiffnessMedium)
                     )
                 }
             ) {

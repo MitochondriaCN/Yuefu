@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
 import com.xianliticn.yuefu.ui.theme.BlueAccent
 import kotlinx.coroutines.delay
 
@@ -160,13 +161,9 @@ fun ScanStudioContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CircularProgressIndicator()
-                Text(
-                    text = stringResource(R.string.updating_sheet),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.headlineSmall
+                LottieLoadingView(
+                    message = stringResource(R.string.updating_sheet)
                 )
-                Spacer(Modifier.height(20.dp))
                 AnimatedContent(
                     targetState = tipIndex,
                     transitionSpec = {

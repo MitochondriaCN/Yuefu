@@ -95,6 +95,8 @@ dependencies {
 
     implementation(libs.coil.compose)
 
+    implementation(libs.lottie.compose)
+
     implementation(libs.dom4j)
     implementation(libs.jaxen)
 

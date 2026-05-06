@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.CloudDownload
-import androidx.compose.material.icons.outlined.FolderOff
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
@@ -68,6 +67,9 @@ import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.InputDialog
+import com.xianliticn.yuefu.ui.components.animation.LottieEmptyState
+import com.xianliticn.yuefu.ui.components.animation.SheetGridSkeleton
+import com.xianliticn.yuefu.ui.components.animation.pressScaleEffect
 import com.xianliticn.yuefu.ui.theme.ErrorRed
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
 import com.xianliticn.yuefu.ui.theme.SuccessGreen
@@ -227,6 +229,13 @@ fun SheetPageContent(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // 骨架屏：首次加载且无数据时显示
+        if (loading && sheets.isEmpty()) {
+            SheetGridSkeleton(
+                modifier = modifier,
+                count = 6
+            )
+        } else {
         PullToRefreshBox(
             modifier = modifier.fillMaxSize(),
             isRefreshing = loading,
@@ -337,11 +346,14 @@ fun SheetPageContent(
 
             // 空状态
             if (sheets.isEmpty() && !loading) {
-                EmptySheetState(
-                    modifier = Modifier.align(Alignment.Center)
+                LottieEmptyState(
+                    modifier = Modifier.align(Alignment.Center),
+                    title = stringResource(R.string.no_sheets),
+                    rawRes = R.raw.empty_sheets
                 )
             }
         }
+        } // end else (not skeleton)
 
         // 下载指示器
         downloadingSheet?.let {
@@ -440,7 +452,9 @@ private fun SheetCard(
 ) {
     ElevatedCard(
         onClick = { onItemClick(sheet) },
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .pressScaleEffect()
     ) {
         // 封面
         Box(
@@ -574,36 +588,6 @@ private fun SheetCard(
                 modifier = Modifier.basicMarquee()
             )
         }
-    }
-}
-
-@Composable
-private fun EmptySheetState(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.size(88.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Outlined.FolderOff,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-        }
-        Text(
-            text = stringResource(R.string.no_sheets),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
     }
 }
 

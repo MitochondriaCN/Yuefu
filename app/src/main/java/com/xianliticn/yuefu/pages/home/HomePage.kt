@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Piano
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -66,6 +65,9 @@ import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
+import com.xianliticn.yuefu.ui.components.animation.LottieEmptyState
+import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
+import com.xianliticn.yuefu.ui.components.animation.pressScaleEffect
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
 import com.xianliticn.yuefu.utils.toFriendlyString
 import kotlinx.coroutines.Dispatchers
@@ -176,26 +178,10 @@ fun HomePageContent(
     }
 
     if (loading) {
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = loadingMessage.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
+        LottieLoadingView(
+            modifier = modifier,
+            message = loadingMessage.orEmpty()
+        )
     } else {
         if (gettingImage)
             ModalBottomSheet(
@@ -389,7 +375,7 @@ private fun ActionCard(
     onClick: () -> Unit
 ) {
     ElevatedCard(
-        modifier = modifier,
+        modifier = modifier.pressScaleEffect(),
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.elevatedCardColors(
@@ -433,7 +419,9 @@ fun FileCard(
     onClick: () -> Unit = {}
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .pressScaleEffect(),
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -485,34 +473,11 @@ fun FileCard(
 
 @Composable
 private fun EmptyRecentState() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.size(72.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Outlined.FolderOpen,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-        }
-        Text(
-            text = stringResource(R.string.no_recently_used_sheets),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-    }
+    LottieEmptyState(
+        modifier = Modifier.padding(vertical = 32.dp),
+        title = stringResource(R.string.no_recently_used_sheets),
+        rawRes = R.raw.empty_recent
+    )
 }
 
 enum class FileCardType {
