@@ -194,16 +194,3 @@ class Parser(
         return (octave + 1) * 12 + stepValue + alter
     }
 }
-
-enum class Note {
-    PRESS, RELEASE
-}
-
-data class MidiEvent(
-    val pitch: Int,
-    val timeNano: Long,
-    val note: Note,
-    val isChord: Boolean,
-    val part: Int,
-    val measure: Int? = null
-)

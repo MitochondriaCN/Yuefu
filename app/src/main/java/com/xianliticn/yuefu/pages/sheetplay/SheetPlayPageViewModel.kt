@@ -8,7 +8,6 @@ import com.xianliticn.yuefu.music.MidiEvent
 import com.xianliticn.yuefu.music.Parser
 import com.xianliticn.yuefu.music.SequenceEngine
 import com.xianliticn.yuefu.music.VisualNoteEvent
-import com.xianliticn.yuefu.ui.theme.DefaultPartColorMap
 import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
 import com.xianliticn.yuefu.utils.readXml
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,7 +45,7 @@ class SheetPlayPageViewModel @Inject constructor(
             val sheet = appDatabase.sheetDao().getById(sheetId)
             val sheetDoc =
                 readXml(File(context.getAbsoluteImportFilePath(sheet!!.fileName!!)))
-            val parser = Parser(DefaultPartColorMap)
+            val parser = Parser()
             events = parser.generateMidiEvents(sheetDoc)
             se.load(events)
             measureTimeline = buildMeasureTimeline(events)
