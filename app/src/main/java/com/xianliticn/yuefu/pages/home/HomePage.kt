@@ -5,11 +5,16 @@ import android.webkit.MimeTypeMap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,12 +22,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.Photo
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Piano
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Piano
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
@@ -32,6 +41,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,7 +65,7 @@ import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
-import com.xianliticn.yuefu.ui.theme.yuefuExtendedColors
+import com.xianliticn.yuefu.ui.theme.NotoSerifSc
 import com.xianliticn.yuefu.utils.toFriendlyString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -101,7 +112,7 @@ fun HomePage(
     }
 
     HomePageContent(
-        modifier = Modifier.padding(horizontal = 16.dp),
+        modifier = Modifier.padding(horizontal = 20.dp),
         loading = uiState.loading,
         loadingMessage = uiState.loadingMessage,
         recent4 = uiState.recent4,
@@ -146,6 +157,19 @@ fun HomePageContent(
     var showingTutorial by remember { mutableStateOf(false) }
     var gettingImage by remember { mutableStateOf(false) }
 
+    // Staggered animation states
+    var headerVisible by remember { mutableStateOf(false) }
+    var actionsVisible by remember { mutableStateOf(false) }
+    var recentVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        headerVisible = true
+        kotlinx.coroutines.delay(100)
+        actionsVisible = true
+        kotlinx.coroutines.delay(150)
+        recentVisible = true
+    }
+
     if (loading) {
         Box(
             modifier = modifier.fillMaxSize(),
@@ -153,13 +177,16 @@ fun HomePageContent(
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Text(
                     text = loadingMessage.toString(),
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
             }
@@ -167,9 +194,7 @@ fun HomePageContent(
     } else {
         if (gettingImage)
             ModalBottomSheet(
-                onDismissRequest = {
-                    gettingImage = false
-                }
+                onDismissRequest = { gettingImage = false }
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -186,7 +211,7 @@ fun HomePageContent(
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = { Text(stringResource(R.string.take_photo)) },
-                        leadingContent = { Icon(Icons.Default.PhotoCamera, null) },
+                        leadingContent = { Icon(Icons.Default.CameraAlt, null) },
                         modifier = Modifier.clickable {
                             gettingImage = false
                             onTakePhotoClick()
@@ -195,7 +220,7 @@ fun HomePageContent(
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = { Text(stringResource(R.string.pick_image)) },
-                        leadingContent = { Icon(Icons.Default.Photo, null) },
+                        leadingContent = { Icon(Icons.Default.Image, null) },
                         modifier = Modifier.clickable {
                             gettingImage = false
                             onPickImageClick()
@@ -210,125 +235,199 @@ fun HomePageContent(
                     gettingImage = true
                 }
             )
-        Column(
-            modifier = modifier.fillMaxWidth(),
+
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            Spacer(Modifier.height(20.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ButtonCard(
-                    icon = Icons.Default.Camera,
-                    modifier = Modifier.weight(1f),
-                    label = stringResource(R.string.shot_sheet),
-                    bgColor = MaterialTheme.yuefuExtendedColors.primaryAction
+            // Hero Header
+            item {
+                AnimatedVisibility(
+                    visible = headerVisible,
+                    enter = fadeIn(tween(500)) + slideInVertically(
+                        animationSpec = tween(500),
+                        initialOffsetY = { it / 3 }
+                    )
                 ) {
-                    if (showTutorial) {
-                        showingTutorial = true
-                        onTutorialShown()
-                    } else
-                        gettingImage = true
+                    Column {
+                        Spacer(Modifier.height(32.dp))
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = NotoSerifSc
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.home_subtitle),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
                 }
             }
-            Spacer(Modifier.height(20.dp))
-            RecentlyUsedFile(
-                modifier = Modifier.fillMaxWidth(),
-                recent4 = recent4,
-                onItemClick = { onRecentSheetClick(it) }
-            )
+
+            // Action Cards
+            item {
+                AnimatedVisibility(
+                    visible = actionsVisible,
+                    enter = fadeIn(tween(500)) + slideInVertically(
+                        animationSpec = tween(500),
+                        initialOffsetY = { it / 3 }
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ActionCard(
+                            modifier = Modifier.weight(1f),
+                            icon = Icons.Default.CameraAlt,
+                            title = stringResource(R.string.shot_sheet),
+                            subtitle = stringResource(R.string.shot_sheet_desc),
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            onClick = {
+                                if (showTutorial) {
+                                    showingTutorial = true
+                                    onTutorialShown()
+                                } else
+                                    gettingImage = true
+                            }
+                        )
+                        ActionCard(
+                            modifier = Modifier.weight(1f),
+                            icon = Icons.Default.Image,
+                            title = stringResource(R.string.pick_image),
+                            subtitle = stringResource(R.string.pick_image_desc),
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                            onClick = {
+                                if (showTutorial) {
+                                    showingTutorial = true
+                                    onTutorialShown()
+                                } else
+                                    gettingImage = true
+                            }
+                        )
+                    }
+                }
+            }
+
+            // Recent Section Header
+            item {
+                AnimatedVisibility(
+                    visible = recentVisible,
+                    enter = fadeIn(tween(500)) + slideInVertically(
+                        animationSpec = tween(500),
+                        initialOffsetY = { it / 4 }
+                    )
+                ) {
+                    Column {
+                        Spacer(Modifier.height(32.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.recently_used),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (recent4.isNotEmpty()) {
+                                Icon(
+                                    imageVector = Icons.Outlined.FolderOpen,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
+            }
+
+            // Recent Items
+            if (recent4.isEmpty()) {
+                item {
+                    AnimatedVisibility(
+                        visible = recentVisible,
+                        enter = fadeIn(tween(600))
+                    ) {
+                        EmptyRecentState()
+                    }
+                }
+            } else {
+                itemsIndexed(recent4, key = { _, sheet -> sheet.id }) { index, sheet ->
+                    AnimatedVisibility(
+                        visible = recentVisible,
+                        enter = fadeIn(tween(400, delayMillis = index * 80)) +
+                                slideInVertically(
+                                    animationSpec = tween(400, delayMillis = index * 80),
+                                    initialOffsetY = { it / 4 }
+                                )
+                    ) {
+                        FileCard(
+                            label = sheet.sheetName ?: stringResource(R.string.unknown_sheet),
+                            lastOpenTime = Instant.ofEpochMilli(
+                                sheet.lastOpenTime ?: sheet.createTime
+                            ).toFriendlyString(),
+                            onClick = { onRecentSheetClick(sheet) }
+                        )
+                    }
+                    if (index < recent4.lastIndex) {
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun RecentlyUsedFile(
+private fun ActionCard(
     modifier: Modifier = Modifier,
-    recent4: List<Sheet> = emptyList(),
-    onItemClick: (Sheet) -> Unit = {}
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.recently_used),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            for (i in 0..1)
-                recent4.getOrNull(i)?.let {
-                    FileCard(
-                        modifier = Modifier.weight(1f),
-                        label = it.sheetName ?: stringResource(R.string.unknown_sheet),
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime ?: it.createTime)
-                            .toFriendlyString(),
-                        onClick = { onItemClick(it) }
-                    )
-                }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            for (i in 2..3)
-                recent4.getOrNull(i)?.let {
-                    FileCard(
-                        modifier = Modifier.weight(1f),
-                        label = it.sheetName ?: stringResource(R.string.unknown_sheet),
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime ?: it.createTime)
-                            .toFriendlyString(),
-                        onClick = { onItemClick(it) }
-                    )
-                }
-        }
-
-        if (recent4.isEmpty())
-            Text(
-                text = stringResource(R.string.no_recently_used_sheets),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-
-    }
-}
-
-@Composable
-private fun ButtonCard(
-    modifier: Modifier,
     icon: ImageVector,
-    label: String,
-    bgColor: Color,
-    onClick: () -> Unit = {}
+    title: String,
+    subtitle: String,
+    containerColor: Color,
+    contentColor: Color,
+    onClick: () -> Unit
 ) {
     ElevatedCard(
         modifier = modifier,
-        onClick = { onClick() },
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = bgColor,
-            contentColor = MaterialTheme.yuefuExtendedColors.onPrimaryAction
-        )
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(20.dp)
                 .fillMaxWidth()
         ) {
             Icon(
                 imageVector = icon,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(32.dp),
                 contentDescription = null
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                label,
-                style = MaterialTheme.typography.headlineSmall
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor.copy(alpha = 0.7f)
             )
         }
     }
@@ -342,40 +441,86 @@ fun FileCard(
     lastOpenTime: String,
     onClick: () -> Unit = {}
 ) {
-    ElevatedCard(
-        modifier = modifier,
-        onClick = { onClick() }
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Icon(
-                imageVector = when (type) {
-                    FileCardType.MusicXml -> Icons.Default.LibraryMusic
-                    FileCardType.Midi -> Icons.Default.Piano
-                },
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                contentDescription = null
-            )
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = when (type) {
+                            FileCardType.MusicXml -> Icons.Default.LibraryMusic
+                            FileCardType.Midi -> Icons.Outlined.Piano
+                        },
+                        tint = MaterialTheme.colorScheme.primary,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
                 Text(
                     text = lastOpenTime,
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyRecentState() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.size(72.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Outlined.FolderOpen,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+        Text(
+            text = stringResource(R.string.no_recently_used_sheets),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
     }
 }
 

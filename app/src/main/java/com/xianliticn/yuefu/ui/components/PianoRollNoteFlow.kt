@@ -45,8 +45,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.xianliticn.yuefu.music.VisualNoteEvent
-import com.xianliticn.yuefu.ui.theme.YuefuTheme
-import com.xianliticn.yuefu.ui.theme.yuefuExtendedColors
+import com.xianliticn.yuefu.ui.theme.PianoBlackDefault
+import com.xianliticn.yuefu.ui.theme.PianoBlackGradientBottom
+import com.xianliticn.yuefu.ui.theme.PianoBlackGradientTop
+import com.xianliticn.yuefu.ui.theme.PianoBlackPressed
+import com.xianliticn.yuefu.ui.theme.PianoBorder
+import com.xianliticn.yuefu.ui.theme.PianoWhiteDefault
+import com.xianliticn.yuefu.ui.theme.PianoWhiteGradientBottom
+import com.xianliticn.yuefu.ui.theme.PianoWhiteGradientTop
+import com.xianliticn.yuefu.ui.theme.PianoWhitePressed
+import com.xianliticn.yuefu.ui.theme.PartColor0
+import com.xianliticn.yuefu.ui.theme.PartColor1
 
 @OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("FrequentlyChangingValue")
@@ -284,10 +293,10 @@ fun PianoKey(
     val extendedColors = MaterialTheme.yuefuExtendedColors
     val backgroundColor = when (keyType) {
         PianoKeyType.White ->
-            if (isPressed) extendedColors.pianoWhiteKeyPressed else extendedColors.pianoWhiteKey
+            if (isPressed) PianoWhitePressed else PianoWhiteDefault
 
         PianoKeyType.Black ->
-            if (isPressed) extendedColors.pianoBlackKeyPressed else extendedColors.pianoBlackKey
+            if (isPressed) PianoBlackPressed else PianoBlackDefault
     }
     val shadowElevation = if (isPressed) 2.dp else 4.dp
 
@@ -306,7 +315,7 @@ fun PianoKey(
             .fillMaxHeight(),
         shape = RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp), // 底部圆角
         color = backgroundColor,
-        border = BorderStroke(1.dp, extendedColors.pianoKeyBorder),
+        border = BorderStroke(1.dp, PianoBorder), // 细微的边框
         shadowElevation = shadowElevation
     ) {
         // 在按键内部增加渐变，模拟光照，使其看起来不是平面的
@@ -317,26 +326,14 @@ fun PianoKey(
                     brush = Brush.verticalGradient(
                         colors = if (isPressed) {
                             if (keyType == PianoKeyType.Black)
-                                listOf(
-                                    extendedColors.pianoBlackKeyPressedGradientStart,
-                                    extendedColors.pianoBlackKeyPressedGradientEnd
-                                )
+                                listOf(PianoBlackPressed, PianoBlackDefault)
                             else
-                                listOf(
-                                    extendedColors.pianoWhiteKeyPressedGradientStart,
-                                    extendedColors.pianoWhiteKeyPressedGradientEnd
-                                )
+                                listOf(PianoWhitePressed, PianoWhiteDefault)
                         } else {
                             if (keyType == PianoKeyType.Black)
-                                listOf(
-                                    extendedColors.pianoBlackKeyGradientStart,
-                                    extendedColors.pianoBlackKeyGradientEnd
-                                )
+                                listOf(PianoBlackGradientTop, PianoBlackGradientBottom)
                             else
-                                listOf(
-                                    extendedColors.pianoWhiteKeyGradientStart,
-                                    extendedColors.pianoWhiteKeyGradientEnd
-                                )
+                                listOf(PianoWhiteGradientTop, PianoWhiteGradientBottom)
                         }
                     )
                 )
@@ -432,19 +429,16 @@ enum class PianoKey(val isBlack: Boolean) {
 @Preview(showBackground = true)
 @Composable
 fun PianoRollPreview() {
-    YuefuTheme {
-        val partColors = MaterialTheme.yuefuExtendedColors.partColors
-        PianoRollNoteFlow(
-            modifier = Modifier.fillMaxWidth(),
-            notes = listOf(
-                VisualNoteEvent(
-                    0, 1000, 3f, partColors[1]
-                ),
-                VisualNoteEvent(
-                    300, 1000, 4f, partColors[1]
-                )
+    PianoRollNoteFlow(
+        modifier = Modifier.fillMaxWidth(),
+        notes = listOf(
+            VisualNoteEvent(
+                0, 1000, 3f, PartColor0
             ),
-            currentProgressMillis = 200
-        )
-    }
+            VisualNoteEvent(
+                300, 1000, 4f, PartColor1
+            )
+        ),
+        currentProgressMillis = 200
+    )
 }

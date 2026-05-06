@@ -1,11 +1,21 @@
 package com.xianliticn.yuefu.music
 
 import androidx.compose.ui.graphics.Color
+import com.xianliticn.yuefu.ui.theme.PartColor0
+import com.xianliticn.yuefu.ui.theme.PartColor1
+import com.xianliticn.yuefu.ui.theme.PartColor2
+import com.xianliticn.yuefu.ui.theme.PartColor3
+import com.xianliticn.yuefu.ui.theme.TextMuted
 import org.dom4j.Document
 import org.dom4j.Element
 
 class Parser(
-    private val partsColor: Map<Int, Color>
+    private val partsColor: Map<Int, Color> = mapOf(
+        0 to PartColor0,
+        1 to PartColor1,
+        2 to PartColor2,
+        3 to PartColor3
+    )
 ) {
     fun generateMidiEvents(
         musicXmlDoc: Document,
@@ -165,7 +175,7 @@ class Parser(
                             startTimeMillis = startEvent.timeNano / 1_000_000,
                             endTimeMillis = event.timeNano / 1_000_000, // 直接使用当前 Release 的时间
                             keyIndex = currentOctaveStart + offset,
-                            color = partsColor[startEvent.part] ?: Color.Gray
+                            color = partsColor[startEvent.part] ?: TextMuted
                         )
                     )
                 }

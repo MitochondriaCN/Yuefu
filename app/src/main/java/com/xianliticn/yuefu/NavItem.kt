@@ -5,5 +5,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 data class NavItem(
     val route: String,
     val labelStringRes: Int,
-    val icon: ImageVector
+    val icon: ImageVector,
+    val selectedIcon: ImageVector = icon
 )

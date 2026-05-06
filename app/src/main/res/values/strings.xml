@@ -2,6 +2,9 @@
     <string name="app_name">乐府</string>
     <string name="home">主页</string>
     <string name="shot_sheet">扫描乐谱</string>
+    <string name="home_subtitle">即拍即听，让乐谱跃然指间</string>
+    <string name="shot_sheet_desc">拍照识别乐谱</string>
+    <string name="pick_image_desc">从相册导入图片</string>
     <string name="import_file">导入乐谱</string>
     <string name="invalid_sheet">不是有效的乐谱文件。</string>
     <string name="import_success">导入成功！</string>
@@ -70,6 +73,9 @@
     <string name="scanned_successfully">等待下载</string>
     <string name="waiting_to_download">等待下载</string>
     <string name="scanning_failed">识别失败</string>
+    <string name="scanning_sheet_short">扫描中</string>
+    <string name="scanning_failed_short">失败</string>
+    <string name="waiting_to_download_short">待下载</string>
     <string name="unknown_status">未知状态</string>
     <string name="already_downloading">已有任务正在下载</string>
     <string name="downloading">下载中：</string>
@@ -84,6 +90,7 @@
     <string name="composition_prompt_placeholder">一首欢快的流行音乐……</string>
     <string name="composition">创作</string>
     <string name="composition_headline">需要我帮你找点灵感吗？</string>
+    <string name="composition_desc">描述你想要的音乐风格，AI 为你实时创作</string>
     <string name="instrument">乐器</string>
     <string name="key">调式</string>
     <string name="connection_lost">连接已丢失，请重试</string>
