@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.ui.components.InfoBox
-import com.xianliticn.yuefu.ui.theme.Grey800
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
 
 @Composable
@@ -98,7 +97,7 @@ fun SheetOverviewPageContent(
             Text(
                 text = sheetAuthor,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Grey800,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

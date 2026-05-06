@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.modules.NetworkModule
+import com.xianliticn.yuefu.ui.theme.yuefuExtendedColors
 
 @Composable
 fun AboutPage(viewModel: AboutPageViewModel) {
@@ -182,7 +183,7 @@ fun AboutPageContent(
                 modifier = Modifier
                     .size(8.dp)
                     .background(
-                        color = if (backendOnline) Color.Green else Color.Red,
+                        color = if (backendOnline) MaterialTheme.yuefuExtendedColors.statusOnline else MaterialTheme.yuefuExtendedColors.statusOffline,
                         shape = CircleShape
                     )
             )
