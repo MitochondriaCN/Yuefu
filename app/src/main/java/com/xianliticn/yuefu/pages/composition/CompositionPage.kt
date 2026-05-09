@@ -4,6 +4,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -81,6 +82,7 @@ fun CompositionPage(viewModel: CompositionPageViewModel = hiltViewModel()) {
         selectedInstrument = uiState.selectedInstrument ?: stringResource(R.string.unknown),
         onInstrumentChange = { viewModel.handleInstrumentChange(it) },
         messages = compactMessages(uiState.messages),
+        audioLevel = uiState.audioLevel
     )
 }
 
@@ -98,7 +100,8 @@ fun CompositionPageContent(
     onKeyChange: (String) -> Unit = {},
     selectedInstrument: String = "钢琴",
     onInstrumentChange: (String) -> Unit = {},
-    messages: List<LyriaMessage> = emptyList()
+    messages: List<LyriaMessage> = emptyList(),
+    audioLevel: Float = 0f
 ) {
     var keyExpanded by remember { mutableStateOf(false) }
     var instrumentExpanded by remember { mutableStateOf(false) }
@@ -106,7 +109,8 @@ fun CompositionPageContent(
     if (messages.isNotEmpty()) {
         PlayingNowScreen(
             modifier = modifier.fillMaxSize(),
-            onStopClick = onStopClick
+            onStopClick = onStopClick,
+            audioLevel = audioLevel
         )
         return
     }
@@ -231,62 +235,79 @@ fun CompositionPageContent(
 @Composable
 private fun PlayingNowScreen(
     modifier: Modifier = Modifier,
-    onStopClick: () -> Unit = {}
+    onStopClick: () -> Unit = {},
+    audioLevel: Float = 0f
 ) {
+    val level by animateFloatAsState(
+        targetValue = audioLevel,
+        animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing),
+        label = "audioLevel"
+    )
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF07090D))
             .drawBehind {
-                val mainRadius = size.minDimension * 0.9f
+                val mainRadius = size.minDimension * 0.95f
+                val glowAlpha = 0.28f + level * 0.4f
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF1E2633).copy(alpha = 0.6f),
+                            Color(0xFF1A2230).copy(alpha = glowAlpha),
                             Color.Transparent
                         ),
-                        center = androidx.compose.ui.geometry.Offset(size.width * 0.22f, size.height * 0.2f),
+                        center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.22f),
                         radius = mainRadius
                     )
                 )
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF0E141D).copy(alpha = 0.9f),
+                            Color(0xFF101722).copy(alpha = 0.55f + level * 0.25f),
                             Color.Transparent
                         ),
-                        center = androidx.compose.ui.geometry.Offset(size.width * 0.8f, size.height * 0.72f),
-                        radius = size.minDimension * 0.75f
+                        center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.86f),
+                        radius = size.minDimension * 0.9f
+                    )
+                )
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color(0xFF05070B).copy(alpha = 0.85f)
+                        )
                     )
                 )
             }
     ) {
-        FlowingRibbons(modifier = Modifier.matchParentSize())
+        NoiseVeil(modifier = Modifier.matchParentSize(), intensity = 0.08f)
+        FlowingRibbons(modifier = Modifier.matchParentSize(), audioLevel = level)
 
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(horizontal = 28.dp)
+                .padding(horizontal = 22.dp)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
+                .height(360.dp)
+                .clip(RoundedCornerShape(32.dp))
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.16f),
-                            Color.White.copy(alpha = 0.06f)
+                            Color.White.copy(alpha = 0.2f),
+                            Color.White.copy(alpha = 0.08f)
                         )
                     )
                 )
                 .border(
                     width = 1.dp,
-                    color = Color.White.copy(alpha = 0.25f),
-                    shape = RoundedCornerShape(28.dp)
+                    color = Color.White.copy(alpha = 0.28f),
+                    shape = RoundedCornerShape(32.dp)
                 )
-                .padding(vertical = 28.dp, horizontal = 24.dp)
+                .padding(vertical = 26.dp, horizontal = 26.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(18.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
                     text = stringResource(R.string.now_playing),
@@ -302,7 +323,8 @@ private fun PlayingNowScreen(
                     color = Color.White.copy(alpha = 0.7f),
                     textAlign = TextAlign.Center
                 )
-                SpectrumBars()
+                Spacer(Modifier.weight(1f))
+                SpectrumBars(audioLevel = level)
             }
         }
 
@@ -319,7 +341,8 @@ private fun PlayingNowScreen(
 private fun SpectrumBars(
     modifier: Modifier = Modifier,
     barWidth: Dp = 7.dp,
-    maxHeight: Dp = 86.dp
+    maxHeight: Dp = 170.dp,
+    audioLevel: Float = 0f
 ) {
     val transition = rememberInfiniteTransition(label = "spectrum")
     val heights = List(8) { index ->
@@ -344,13 +367,15 @@ private fun SpectrumBars(
         verticalAlignment = Alignment.Bottom
     ) {
         heights.forEach { anim ->
-            val barHeight = (18f + (maxHeight.value - 18f) * anim.value).dp
+            val energy = (0.15f + audioLevel * 1.15f).coerceIn(0.1f, 1f)
+            val shimmer = 0.55f + 0.45f * anim.value
+            val barHeight = (12f + (maxHeight.value - 12f) * energy * shimmer).dp
             Box(
                 modifier = Modifier
                     .width(barWidth)
                     .height(barHeight)
                     .shadow(
-                        elevation = 10.dp,
+                        elevation = (10f + 16f * audioLevel).dp,
                         shape = RoundedCornerShape(50),
                         ambientColor = Color(0xFFBFD6FF).copy(alpha = 0.35f),
                         spotColor = Color(0xFFBFD6FF).copy(alpha = 0.35f)
@@ -359,9 +384,9 @@ private fun SpectrumBars(
                     .background(
                         Brush.verticalGradient(
                             listOf(
-                                Color.White.copy(alpha = 0.95f),
-                                Color(0xFFBFD6FF).copy(alpha = 0.7f),
-                                Color.White.copy(alpha = 0.45f)
+                                Color.White.copy(alpha = 0.98f),
+                                Color(0xFFBFD6FF).copy(alpha = 0.75f + 0.2f * audioLevel),
+                                Color.White.copy(alpha = 0.35f + 0.25f * audioLevel)
                             )
                         )
                     )
@@ -371,7 +396,10 @@ private fun SpectrumBars(
 }
 
 @Composable
-private fun FlowingRibbons(modifier: Modifier = Modifier) {
+private fun FlowingRibbons(
+    modifier: Modifier = Modifier,
+    audioLevel: Float = 0f
+) {
     val transition = rememberInfiniteTransition(label = "ribbons")
     val phase by transition.animateFloat(
         initialValue = 0f,
@@ -383,8 +411,10 @@ private fun FlowingRibbons(modifier: Modifier = Modifier) {
         label = "phase"
     )
 
+    val pulse = 0.8f + audioLevel * 0.5f
+
     Canvas(modifier = modifier) {
-        val yShift = (sin(phase * 2f * PI).toFloat()) * size.height * 0.05f
+        val yShift = (sin(phase * 2f * PI).toFloat()) * size.height * 0.05f * pulse
         val leftPath = Path().apply {
             moveTo(size.width * 0.05f, size.height * 0.35f + yShift)
             cubicTo(
@@ -406,22 +436,50 @@ private fun FlowingRibbons(modifier: Modifier = Modifier) {
             path = leftPath,
             brush = Brush.linearGradient(
                 listOf(
-                    Color(0xFF95B6FF).copy(alpha = 0.12f),
+                    Color(0xFF95B6FF).copy(alpha = 0.08f + audioLevel * 0.25f),
                     Color.Transparent
                 )
             ),
-            style = Stroke(width = size.minDimension * 0.015f, cap = StrokeCap.Round)
+            style = Stroke(width = size.minDimension * 0.012f * pulse, cap = StrokeCap.Round)
         )
         drawPath(
             path = rightPath,
             brush = Brush.linearGradient(
                 listOf(
-                    Color(0xFF6FE3D6).copy(alpha = 0.12f),
+                    Color(0xFF6FE3D6).copy(alpha = 0.08f + audioLevel * 0.25f),
                     Color.Transparent
                 )
             ),
-            style = Stroke(width = size.minDimension * 0.018f, cap = StrokeCap.Round)
+            style = Stroke(width = size.minDimension * 0.014f * pulse, cap = StrokeCap.Round)
         )
+    }
+}
+
+@Composable
+private fun NoiseVeil(
+    modifier: Modifier = Modifier,
+    intensity: Float = 0.08f
+) {
+    Canvas(modifier = modifier) {
+        val step = 14f
+        val alpha = intensity.coerceIn(0f, 0.2f)
+        val color = Color.White.copy(alpha = alpha)
+        var y = 0f
+        while (y < size.height) {
+            var x = 0f
+            while (x < size.width) {
+                val seed = ((x * 0.13f + y * 0.19f) % 1f)
+                if (seed > 0.55f) {
+                    drawCircle(
+                        color = color,
+                        radius = 0.8f,
+                        center = androidx.compose.ui.geometry.Offset(x, y)
+                    )
+                }
+                x += step
+            }
+            y += step
+        }
     }
 }
 
@@ -505,7 +563,8 @@ fun CompositionPageContentPreview() {
             messages = listOf(
                 PromptMessage("你好，生成一首音乐，要求是流行的，包含4个音符"),
                 BinaryResponseMessage(ByteString.EMPTY)
-            )
+            ),
+            audioLevel = 0.6f
         )
     }
 }
