@@ -16,3 +16,5 @@ val Green800 = Color(0xFF2E7D32)
 val Amber800 = Color(0xFFFF8F00)
 val Grey800 = Color(0xFF424242)
 val Clouds = Color(0xFFECF0F1)
+
+val Ochre = Color(0xFFB68A4C)
