@@ -120,4 +120,5 @@
     <string name="home_greeting">今日想听哪一份谱？</string>
     <string name="brand_mark_yuefu">乐府</string>
     <string name="brand_seal_le">乐</string>
+    <string name="scan_sheet_subtitle">拍照或导入乐谱，AI 即刻识别</string>
 </resources>
