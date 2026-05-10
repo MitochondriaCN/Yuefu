@@ -5,6 +5,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -12,6 +21,10 @@ import androidx.compose.material.icons.filled.Blender
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Blender
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -21,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavType
@@ -59,13 +73,14 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MainActivityFramework(modifier: Modifier = Modifier) {
         val navItems = listOf(
-            NavItem("home", R.string.home, Icons.Filled.Home),
-            NavItem("sheet", R.string.sheet, Icons.Filled.MusicNote),
-            NavItem("composition", R.string.composition, Icons.Filled.Blender),
-            NavItem("settings", R.string.settings, Icons.Filled.Settings)
+            NavItem("home", R.string.home, Icons.Filled.Home, Icons.Outlined.Home),
+            NavItem("sheet", R.string.sheet, Icons.Filled.MusicNote, Icons.Outlined.MusicNote),
+            NavItem("composition", R.string.composition, Icons.Filled.Blender, Icons.Outlined.Blender),
+            NavItem("settings", R.string.settings, Icons.Filled.Settings, Icons.Outlined.Settings)
         )
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentRoute = navBackStackEntry?.destination?.route
 
         fun bottomBarNavigate(targetRoute: String) {
             navController.navigate(targetRoute) {
@@ -80,28 +95,68 @@ class MainActivity : ComponentActivity() {
         Scaffold(
             modifier = modifier.fillMaxSize(),
             bottomBar = {
-                NavigationBar {
+                NavigationBar(
+                    tonalElevation = 3.dp
+                ) {
                     navItems.forEach { item ->
+                        val selected = currentRoute == item.route
                         NavigationBarItem(
-                            selected = navBackStackEntry?.destination?.route == item.route,
+                            selected = selected,
                             onClick = { bottomBarNavigate(item.route) },
-                            icon = { Icon(item.icon, null) },
+                            icon = {
+                                Icon(
+                                    imageVector = if (selected) item.selectedIcon else item.icon,
+                                    contentDescription = null
+                                )
+                            },
                             label = { Text(stringResource(item.labelStringRes)) }
                         )
                     }
                 }
             }) { innerPadding ->
             NavHost(
-                modifier = Modifier
-                    .padding(innerPadding),
+                modifier = Modifier.padding(innerPadding),
                 navController = navController,
-                startDestination = "home"
+                startDestination = "home",
+                enterTransition = {
+                    fadeIn(
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                    ) + slideInHorizontally(
+                        initialOffsetX = { it / 4 },
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
+                    )
+                },
+                exitTransition = {
+                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + slideOutHorizontally(
+                        targetOffsetX = { -it / 6 },
+                        animationSpec = spring(stiffness = Spring.StiffnessMedium)
+                    )
+                },
+                popEnterTransition = {
+                    fadeIn(
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
+                    ) + slideInHorizontally(
+                        initialOffsetX = { -it / 4 },
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
+                    )
+                },
+                popExitTransition = {
+                    fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium)) + slideOutHorizontally(
+                        targetOffsetX = { it / 6 },
+                        animationSpec = spring(stiffness = Spring.StiffnessMedium)
+                    )
+                }
             ) {
                 composable("home") {
                     HomePage(
                         hiltViewModel(),
                         onImageSelected = {
-                            // 将Uri对象编码成字符串，以安全地作为URL的一部分
                             val encodedUri = Uri.encode(it.toString())
                             navController.navigate("studio/$encodedUri")
                         })
@@ -123,7 +178,7 @@ class MainActivity : ComponentActivity() {
                         viewModel = hiltViewModel(),
                         imageUri = imageUri,
                         onFinished = {
-                            navController.popBackStack() // 移除 studio 页面
+                            navController.popBackStack()
                             bottomBarNavigate("sheet")
                         },
                         onBackPress = { navController.popBackStack() }

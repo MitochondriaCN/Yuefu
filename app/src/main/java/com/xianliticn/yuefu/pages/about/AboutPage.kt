@@ -1,8 +1,14 @@
 package com.xianliticn.yuefu.pages.about
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,8 +18,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -24,23 +32,35 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.modules.NetworkModule
+import com.xianliticn.yuefu.ui.components.scorePaperTexture
+import com.xianliticn.yuefu.ui.theme.BlueAccentContainer
+import com.xianliticn.yuefu.ui.theme.ErrorRed
+import com.xianliticn.yuefu.ui.theme.Ochre
+import com.xianliticn.yuefu.ui.theme.SuccessGreen
+import com.xianliticn.yuefu.ui.theme.YellowContainer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,138 +113,211 @@ fun AboutPageContent(
         }
     }
 
+    // One-shot staggered animation
+    var animationPlayed by rememberSaveable { mutableStateOf(false) }
+    var headerVisible by remember { mutableStateOf(animationPlayed) }
+    var devVisible by remember { mutableStateOf(animationPlayed) }
+    var statusVisible by remember { mutableStateOf(animationPlayed) }
+
+    LaunchedEffect(Unit) {
+        if (!animationPlayed) {
+            headerVisible = true
+            kotlinx.coroutines.delay(100)
+            devVisible = true
+            kotlinx.coroutines.delay(150)
+            statusVisible = true
+            animationPlayed = true
+        }
+    }
+
+    val developers = listOf("线粒体", "发发", "冰寻卿", "柒晨")
+    val devAvatars = listOf(R.drawable.xianliti, R.drawable.fafa, R.drawable.bingxunqing, R.drawable.qichen)
+    val devColors = listOf(
+        BlueAccentContainer,
+        YellowContainer,
+        MaterialTheme.colorScheme.tertiaryContainer,
+        MaterialTheme.colorScheme.secondaryContainer
+    )
+
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .scorePaperTexture(
+                color = MaterialTheme.colorScheme.onSurface,
+                alpha = 0.04f,
+            )
             .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp)
     ) {
-        Image(
-            modifier = Modifier.fillMaxWidth(),
-            painter = painterResource(R.mipmap.ic_launcher_foreground),
-            contentDescription = null
-        )
-        Text(
-            text = stringResource(R.string.app_name),
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = versionName.toString(),
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-        )
-        Spacer(Modifier.height(32.dp))
-        Text(
-            text = stringResource(R.string.developers),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = "线粒体",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(48.dp)
-                )
-            }
-        )
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = "发发",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(48.dp)
-                )
-            }
-        )
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = "冰寻卿",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(48.dp)
-                )
-            }
-        )
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = "柒晨",
-                    style = MaterialTheme.typography.titleLarge
-                )
-            },
-            trailingContent = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(48.dp)
-                )
-            }
-        )
-        Spacer(Modifier.height(32.dp))
-        Text(
-            text = stringResource(R.string.backend_status),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(horizontal = 16.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        AnimatedVisibility(
+            visible = headerVisible,
+            enter = fadeIn(tween(500)) + slideInVertically(
+                animationSpec = tween(500),
+                initialOffsetY = { it / 4 }
+            )
         ) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .background(
-                        color = if (backendOnline) Color.Green else Color.Red,
-                        shape = CircleShape
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(40.dp))
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .border(1.dp, Ochre.copy(alpha = 0.45f), CircleShape)
+                        .padding(6.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        modifier = Modifier.size(64.dp),
+                        painter = painterResource(R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit
                     )
-            )
-            Text(
-                text = NetworkModule.BASE_URL,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(start = 8.dp)
-            )
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "v${versionName}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(32.dp))
+            }
         }
-        Text(
-            text = "${stringResource(R.string.timestamp)}${backendTimestamp ?: "-"}",
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
-        Text(
-            text = "${stringResource(R.string.cache_size)}${backendTmpSize ?: "-"}",
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
 
-        Spacer(Modifier.height(32.dp))
+        AnimatedVisibility(
+            visible = devVisible,
+            enter = fadeIn(tween(500)) + slideInVertically(
+                animationSpec = tween(500),
+                initialOffsetY = { it / 4 }
+            )
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.developers),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 0.dp
+                ) {
+                    Column {
+                        developers.forEachIndexed { index, name ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Image(
+                                    painter = painterResource(devAvatars[index]),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .border(1.dp, Ochre.copy(alpha = 0.32f), CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(Modifier.width(14.dp))
+                                Text(
+                                    text = name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+            }
+        }
+
+        AnimatedVisibility(
+            visible = statusVisible,
+            enter = fadeIn(tween(500)) + slideInVertically(
+                animationSpec = tween(500),
+                initialOffsetY = { it / 4 }
+            )
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.backend_status),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 0.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(
+                                        color = if (backendOnline) SuccessGreen else ErrorRed,
+                                        shape = CircleShape
+                                    )
+                            )
+                            Text(
+                                text = NetworkModule.BASE_URL,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.timestamp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = backendTimestamp ?: "-",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.cache_size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = backendTmpSize ?: "-",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
+            }
+        }
     }
 }
 

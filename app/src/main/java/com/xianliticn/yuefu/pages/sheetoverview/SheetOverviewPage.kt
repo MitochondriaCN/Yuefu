@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.VerticalSplit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.ui.components.InfoBox
-import com.xianliticn.yuefu.ui.theme.Grey800
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
 
 @Composable
@@ -47,12 +47,7 @@ fun SheetOverviewPage(
     }
 
     if (uiState.loading)
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
+        LottieLoadingView()
     else
         SheetOverviewPageContent(
             modifier = Modifier.fillMaxSize(),
@@ -98,7 +93,7 @@ fun SheetOverviewPageContent(
             Text(
                 text = sheetAuthor,
                 style = MaterialTheme.typography.bodyMedium,
-                color = Grey800,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

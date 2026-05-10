@@ -64,7 +64,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
-import com.xianliticn.yuefu.ui.theme.Orange800
+import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
+import com.xianliticn.yuefu.ui.theme.BlueAccent
 import kotlinx.coroutines.delay
 
 @Composable
@@ -231,13 +232,9 @@ fun ScanStudioContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                CircularProgressIndicator()
-                Text(
-                    text = stringResource(R.string.updating_sheet),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.headlineSmall
+                LottieLoadingView(
+                    message = stringResource(R.string.updating_sheet)
                 )
-                Spacer(Modifier.height(20.dp))
                 AnimatedContent(
                     targetState = tipIndex,
                     transitionSpec = {
@@ -284,13 +281,13 @@ fun ScanStudioContent(
                     ) {
                         translate(left = imageOffsetX, top = imageOffsetY) {
                             drawLine(
-                                color = Orange800,
+                                color = BlueAccent,
                                 start = Offset(x = clipLeftLineX, y = 0f),
                                 end = Offset(x = clipLeftLineX, y = scaledImageHeight),
                                 strokeWidth = 10f
                             )
                             drawRect(
-                                color = Color.Gray.copy(alpha = 0.7f),
+                                color = Color.Black.copy(alpha = 0.4f),
                                 topLeft = if (clipLeftLineX < scaledImageWidth / 2) Offset.Zero else
                                     Offset(clipLeftLineX, 0f),
                                 size = Size(
@@ -301,13 +298,13 @@ fun ScanStudioContent(
                             )
 
                             drawLine(
-                                color = Orange800,
+                                color = BlueAccent,
                                 start = Offset(x = 0f, y = clipTopLineY),
                                 end = Offset(x = scaledImageWidth, y = clipTopLineY),
                                 strokeWidth = 10f
                             )
                             drawRect(
-                                color = Color.Gray.copy(alpha = 0.7f),
+                                color = Color.Black.copy(alpha = 0.4f),
                                 topLeft = if (clipTopLineY < scaledImageHeight / 2) Offset.Zero else
                                     Offset(0f, clipTopLineY),
                                 size = Size(

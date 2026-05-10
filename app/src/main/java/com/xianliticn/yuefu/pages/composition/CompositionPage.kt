@@ -2,6 +2,7 @@ package com.xianliticn.yuefu.pages.composition
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,10 +15,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Blender
 import androidx.compose.material.icons.filled.Square
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -87,10 +91,14 @@ fun CompositionPageContent(
 ) {
     var keyExpanded by remember { mutableStateOf(false) }
     var instrumentExpanded by remember { mutableStateOf(false) }
-    val currentTime by produceState(initialValue = System.currentTimeMillis()) {
-        while (true) {
-            delay(1000)
-            value = System.currentTimeMillis()
+    // Only tick when there's an active generation (last message is a response)
+    val isGenerating = messages.isNotEmpty() && messages.last() !is PromptMessage
+    val currentTime by produceState(initialValue = System.currentTimeMillis(), isGenerating) {
+        if (isGenerating) {
+            while (true) {
+                delay(1000)
+                value = System.currentTimeMillis()
+            }
         }
     }
 
@@ -109,11 +117,35 @@ fun CompositionPageContent(
     ) {
         Spacer(Modifier.height(40.dp))
 
-        if (messages.isEmpty())
+        if (messages.isEmpty()) {
+            Spacer(Modifier.height(24.dp))
+            Surface(
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                modifier = Modifier.size(80.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Filled.Blender,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.composition_headline),
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
             )
+            Text(
+                text = stringResource(R.string.composition_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+        }
 
         for (message in messages) {
             val label = SimpleDateFormat("HH:mm", Locale.getDefault())

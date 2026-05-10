@@ -5,11 +5,18 @@ import android.webkit.MimeTypeMap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,14 +24,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.Photo
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Piano
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Piano
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -32,31 +41,42 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
-import com.xianliticn.yuefu.ui.theme.Blue800
-import com.xianliticn.yuefu.ui.theme.Clouds
-import com.xianliticn.yuefu.ui.theme.Grey800
+import com.xianliticn.yuefu.ui.components.animation.LottieEmptyState
+import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
+import com.xianliticn.yuefu.ui.components.animation.pressScaleEffect
+import com.xianliticn.yuefu.ui.theme.Bronze
+import com.xianliticn.yuefu.ui.theme.InkBrown
+import com.xianliticn.yuefu.ui.theme.Moonlight
+import com.xianliticn.yuefu.ui.theme.NotoSerifSc
+import com.xianliticn.yuefu.ui.theme.OchreEdge
+import com.xianliticn.yuefu.ui.theme.PaleOchre
 import com.xianliticn.yuefu.utils.toFriendlyString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -103,7 +123,7 @@ fun HomePage(
     }
 
     HomePageContent(
-        modifier = Modifier.padding(horizontal = 16.dp),
+        modifier = Modifier.padding(horizontal = 20.dp),
         loading = uiState.loading,
         loadingMessage = uiState.loadingMessage,
         recent4 = uiState.recent4,
@@ -148,30 +168,32 @@ fun HomePageContent(
     var showingTutorial by remember { mutableStateOf(false) }
     var gettingImage by remember { mutableStateOf(false) }
 
-    if (loading) {
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CircularProgressIndicator()
-                Text(
-                    text = loadingMessage.toString(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
-            }
+    // One-shot staggered animation — only plays once per session, not on every navigation
+    var animationPlayed by rememberSaveable { mutableStateOf(false) }
+    var headerVisible by remember { mutableStateOf(animationPlayed) }
+    var actionsVisible by remember { mutableStateOf(animationPlayed) }
+    var recentVisible by remember { mutableStateOf(animationPlayed) }
+
+    LaunchedEffect(Unit) {
+        if (!animationPlayed) {
+            headerVisible = true
+            kotlinx.coroutines.delay(100)
+            actionsVisible = true
+            kotlinx.coroutines.delay(150)
+            recentVisible = true
+            animationPlayed = true
         }
+    }
+
+    if (loading) {
+        LottieLoadingView(
+            modifier = modifier,
+            message = loadingMessage.orEmpty()
+        )
     } else {
         if (gettingImage)
             ModalBottomSheet(
-                onDismissRequest = {
-                    gettingImage = false
-                }
+                onDismissRequest = { gettingImage = false }
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -188,7 +210,7 @@ fun HomePageContent(
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = { Text(stringResource(R.string.take_photo)) },
-                        leadingContent = { Icon(Icons.Default.PhotoCamera, null) },
+                        leadingContent = { Icon(Icons.Default.CameraAlt, null) },
                         modifier = Modifier.clickable {
                             gettingImage = false
                             onTakePhotoClick()
@@ -197,7 +219,7 @@ fun HomePageContent(
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = { Text(stringResource(R.string.pick_image)) },
-                        leadingContent = { Icon(Icons.Default.Photo, null) },
+                        leadingContent = { Icon(Icons.Default.Image, null) },
                         modifier = Modifier.clickable {
                             gettingImage = false
                             onPickImageClick()
@@ -212,127 +234,201 @@ fun HomePageContent(
                     gettingImage = true
                 }
             )
-        Column(
-            modifier = modifier.fillMaxWidth(),
+
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            Spacer(Modifier.height(20.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ButtonCard(
-                    icon = Icons.Default.Camera,
-                    modifier = Modifier.weight(1f),
-                    label = stringResource(R.string.shot_sheet),
-                    bgColor = Blue800
+            // Hero Header — NotoSerif "乐府" + greeting
+            item {
+                AnimatedVisibility(
+                    visible = headerVisible,
+                    enter = fadeIn(tween(500)) + slideInVertically(
+                        animationSpec = tween(500),
+                        initialOffsetY = { it / 3 }
+                    )
                 ) {
-                    if (showTutorial) {
-                        showingTutorial = true
-                        onTutorialShown()
-                    } else
-                        gettingImage = true
+                    Column {
+                        Spacer(Modifier.height(32.dp))
+                        Text(
+                            text = stringResource(R.string.brand_mark_yuefu),
+                            fontFamily = NotoSerifSc,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 36.sp,
+                            color = InkBrown
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.home_greeting),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = InkBrown.copy(alpha = 0.55f)
+                        )
+                        Spacer(Modifier.height(24.dp))
+                    }
                 }
             }
-            Spacer(Modifier.height(20.dp))
-            RecentlyUsedFile(
-                modifier = Modifier.fillMaxWidth(),
-                recent4 = recent4,
-                onItemClick = { onRecentSheetClick(it) }
+
+            // Scan Card
+            item {
+                AnimatedVisibility(
+                    visible = actionsVisible,
+                    enter = fadeIn(tween(500)) + slideInVertically(
+                        animationSpec = tween(500),
+                        initialOffsetY = { it / 3 }
+                    )
+                ) {
+                    ScanCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            if (showTutorial) {
+                                showingTutorial = true
+                                onTutorialShown()
+                            } else
+                                gettingImage = true
+                        }
+                    )
+                }
+            }
+
+            // Recent Section Header
+            item {
+                AnimatedVisibility(
+                    visible = recentVisible,
+                    enter = fadeIn(tween(500)) + slideInVertically(
+                        animationSpec = tween(500),
+                        initialOffsetY = { it / 4 }
+                    )
+                ) {
+                    Column {
+                        Spacer(Modifier.height(32.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.recently_used),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (recent4.isNotEmpty()) {
+                                Icon(
+                                    imageVector = Icons.Outlined.FolderOpen,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
+            }
+
+            // Recent Items
+            if (recent4.isEmpty()) {
+                item {
+                    EmptyRecentState()
+                }
+            } else {
+                itemsIndexed(recent4, key = { _, sheet -> sheet.id }) { index, sheet ->
+                    FileCard(
+                        label = sheet.sheetName ?: stringResource(R.string.unknown_sheet),
+                        lastOpenTime = Instant.ofEpochMilli(
+                            sheet.lastOpenTime ?: sheet.createTime
+                        ).toFriendlyString(),
+                        onClick = { onRecentSheetClick(sheet) }
+                    )
+                    if (index < recent4.lastIndex) {
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScanCard(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(16.dp)
+    ElevatedCard(
+        modifier = modifier.pressScaleEffect(),
+        onClick = onClick,
+        shape = shape,
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 6.dp,
+            pressedElevation = 4.dp
+        ),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = Color.Transparent
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(Moonlight, PaleOchre)
+                    ),
+                    shape = shape
+                )
+                .border(1.dp, OchreEdge.copy(alpha = 0.6f), shape)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.12f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+            Column(modifier = Modifier.padding(20.dp)) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    modifier = Modifier.size(40.dp),
+                    contentDescription = null,
+                    tint = InkBrown
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.shot_sheet),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = InkBrown
+                )
+            }
+            BronzeSeal(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
             )
         }
     }
 }
 
 @Composable
-fun RecentlyUsedFile(
-    modifier: Modifier = Modifier,
-    recent4: List<Sheet> = emptyList(),
-    onItemClick: (Sheet) -> Unit = {}
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+private fun BronzeSeal(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(30.dp)
+            .rotate(-2f)
+            .border(1.5.dp, Bronze, RoundedCornerShape(6.dp)),
+        contentAlignment = Alignment.Center
     ) {
         Text(
-            text = stringResource(R.string.recently_used),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary
+            text = stringResource(R.string.brand_seal_le),
+            fontFamily = NotoSerifSc,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = Bronze
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            for (i in 0..1)
-                recent4.getOrNull(i)?.let {
-                    FileCard(
-                        modifier = Modifier.weight(1f),
-                        label = it.sheetName ?: stringResource(R.string.unknown_sheet),
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime ?: it.createTime)
-                            .toFriendlyString(),
-                        onClick = { onItemClick(it) }
-                    )
-                }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            for (i in 2..3)
-                recent4.getOrNull(i)?.let {
-                    FileCard(
-                        modifier = Modifier.weight(1f),
-                        label = it.sheetName ?: stringResource(R.string.unknown_sheet),
-                        lastOpenTime = Instant.ofEpochMilli(it.lastOpenTime ?: it.createTime)
-                            .toFriendlyString(),
-                        onClick = { onItemClick(it) }
-                    )
-                }
-        }
-
-        if (recent4.isEmpty())
-            Text(
-                text = stringResource(R.string.no_recently_used_sheets),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-
-    }
-}
-
-@Composable
-private fun ButtonCard(
-    modifier: Modifier,
-    icon: ImageVector,
-    label: String,
-    bgColor: Color,
-    onClick: () -> Unit = {}
-) {
-    ElevatedCard(
-        modifier = modifier,
-        onClick = { onClick() },
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = bgColor,
-            contentColor = Clouds
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            Icon(
-                imageVector = icon,
-                modifier = Modifier.size(40.dp),
-                contentDescription = null
-            )
-            Spacer(Modifier.height(16.dp))
-            Text(
-                label,
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
     }
 }
 
@@ -344,41 +440,66 @@ fun FileCard(
     lastOpenTime: String,
     onClick: () -> Unit = {}
 ) {
-    ElevatedCard(
-        modifier = modifier,
-        onClick = { onClick() }
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .pressScaleEffect(),
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Icon(
-                imageVector = when (type) {
-                    FileCardType.MusicXml -> Icons.Default.LibraryMusic
-                    FileCardType.Midi -> Icons.Default.Piano
-                },
-                tint = Grey800,
-                contentDescription = null
-            )
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = when (type) {
+                            FileCardType.MusicXml -> Icons.Default.LibraryMusic
+                            FileCardType.Midi -> Icons.Outlined.Piano
+                        },
+                        tint = MaterialTheme.colorScheme.primary,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
                 Text(
                     text = lastOpenTime,
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
             }
         }
     }
+}
+
+@Composable
+private fun EmptyRecentState() {
+    LottieEmptyState(
+        modifier = Modifier.padding(vertical = 32.dp),
+        title = stringResource(R.string.no_recently_used_sheets),
+        rawRes = R.raw.empty_recent
+    )
 }
 
 enum class FileCardType {
