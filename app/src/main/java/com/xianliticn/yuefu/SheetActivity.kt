@@ -147,7 +147,13 @@ class SheetActivity : ComponentActivity() {
                     fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium))
                 }
             ) {
-                composable("overview") { SheetOverviewPage(hiltViewModel(), sheetId) }
+                composable("overview") {
+                    SheetOverviewPage(
+                        hiltViewModel(),
+                        sheetId,
+                        onBackPress = { finish() }
+                    )
+                }
                 composable("play") { SheetPlayPage(hiltViewModel(), sheetId) }
             }
         }

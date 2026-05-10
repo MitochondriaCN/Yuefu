@@ -125,4 +125,7 @@
     <string name="demo_mode_on">Demo Mode On</string>
     <string name="now_playing">Playing</string>
     <string name="delete_confirm_message">Are you sure you want to delete \"%s\"? This operation cannot be undone.</string>
+    <string name="home_greeting">Which score shall we hear today?</string>
+    <string name="brand_mark_yuefu">Yuefu</string>
+    <string name="brand_seal_le">乐</string>
 </resources>

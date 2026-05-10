@@ -193,13 +193,19 @@ class MainActivity : ComponentActivity() {
                         onFinished = {
                             navController.popBackStack()
                             bottomBarNavigate("sheet")
-                        }
+                        },
+                        onBackPress = { navController.popBackStack() }
                     )
                 }
 
                 composable("composition") { CompositionPage(hiltViewModel()) }
 
-                composable("about") { AboutPage(hiltViewModel()) }
+                composable("about") {
+                    AboutPage(
+                        hiltViewModel(),
+                        onBackPress = { navController.popBackStack() }
+                    )
+                }
 
                 composable("settings") {
                     SettingsPage(

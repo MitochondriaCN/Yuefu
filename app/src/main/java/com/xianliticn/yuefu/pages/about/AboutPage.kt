@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,11 +24,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -47,24 +55,44 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.modules.NetworkModule
+import com.xianliticn.yuefu.ui.components.scorePaperTexture
 import com.xianliticn.yuefu.ui.theme.BlueAccentContainer
 import com.xianliticn.yuefu.ui.theme.ErrorRed
+import com.xianliticn.yuefu.ui.theme.Ochre
 import com.xianliticn.yuefu.ui.theme.SuccessGreen
 import com.xianliticn.yuefu.ui.theme.YellowContainer
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutPage(viewModel: AboutPageViewModel) {
+fun AboutPage(viewModel: AboutPageViewModel, onBackPress: () -> Unit = {}) {
     LaunchedEffect(Unit) {
         viewModel.refresh()
     }
 
     val uiState = viewModel.uiState.collectAsState()
 
-    AboutPageContent(
-        backendOnline = uiState.value.backendOnline,
-        backendTimestamp = uiState.value.backendTimestamp,
-        backendTmpSize = uiState.value.backendTmpSize
-    )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.about)) },
+                navigationIcon = {
+                    IconButton(onClick = onBackPress) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        AboutPageContent(
+            backendOnline = uiState.value.backendOnline,
+            backendTimestamp = uiState.value.backendTimestamp,
+            backendTmpSize = uiState.value.backendTmpSize,
+            modifier = Modifier.padding(paddingValues)
+        )
+    }
 }
 
 @SuppressLint("LocalContextGetResourceValueCall")
@@ -103,6 +131,7 @@ fun AboutPageContent(
     }
 
     val developers = listOf("线粒体", "发发", "冰寻卿", "柒晨")
+    val devAvatars = listOf(R.drawable.xianliti, R.drawable.fafa, R.drawable.bingxunqing, R.drawable.qichen)
     val devColors = listOf(
         BlueAccentContainer,
         YellowContainer,
@@ -113,6 +142,10 @@ fun AboutPageContent(
     Column(
         modifier = modifier
             .fillMaxWidth()
+            .scorePaperTexture(
+                color = MaterialTheme.colorScheme.onSurface,
+                alpha = 0.04f,
+            )
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
     ) {
@@ -128,18 +161,21 @@ fun AboutPageContent(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(Modifier.height(40.dp))
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                    modifier = Modifier.size(100.dp)
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .border(1.dp, Ochre.copy(alpha = 0.45f), CircleShape)
+                        .padding(6.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Image(
-                            modifier = Modifier.size(64.dp),
-                            painter = painterResource(R.mipmap.ic_launcher_foreground),
-                            contentDescription = null
-                        )
-                    }
+                    Image(
+                        modifier = Modifier.size(64.dp),
+                        painter = painterResource(R.mipmap.ic_launcher_foreground),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit
+                    )
                 }
                 Spacer(Modifier.height(16.dp))
                 Text(
@@ -184,20 +220,15 @@ fun AboutPageContent(
                                     .padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Surface(
-                                    shape = CircleShape,
-                                    color = devColors[index % devColors.size],
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
+                                Image(
+                                    painter = painterResource(devAvatars[index]),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .border(1.dp, Ochre.copy(alpha = 0.32f), CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
                                 Spacer(Modifier.width(14.dp))
                                 Text(
                                     text = name,

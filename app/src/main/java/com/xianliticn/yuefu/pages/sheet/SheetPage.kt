@@ -1,6 +1,8 @@
 package com.xianliticn.yuefu.pages.sheet
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -56,8 +57,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -71,10 +75,10 @@ import com.xianliticn.yuefu.ui.components.animation.LottieEmptyState
 import com.xianliticn.yuefu.ui.components.animation.SheetGridSkeleton
 import com.xianliticn.yuefu.ui.components.animation.pressScaleEffect
 import com.xianliticn.yuefu.ui.theme.ErrorRed
+import com.xianliticn.yuefu.ui.theme.InkBrown
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
 import com.xianliticn.yuefu.ui.theme.SuccessGreen
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
-import com.xianliticn.yuefu.utils.getRandomPrettyColor
 import com.xianliticn.yuefu.utils.toFriendlyString
 import com.xianliticn.yuefu.vo.TaskStatus
 import java.time.Instant
@@ -463,27 +467,7 @@ private fun SheetCard(
                 .aspectRatio(1f)
         ) {
             if (cover == null)
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                        modifier = Modifier.size(56.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.LibraryMusic,
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
+                ScorePaperPlaceholder(modifier = Modifier.fillMaxSize())
             else
                 AsyncImage(
                     model = cover,
@@ -618,6 +602,35 @@ fun SheetPagePreview() {
                 taskId = UUID.randomUUID().toString(),
                 createTime = System.currentTimeMillis(),
             ),
+        )
+    }
+}
+
+@Composable
+private fun ScorePaperPlaceholder(modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(48.dp)
+        ) {
+            val lineColor = InkBrown.copy(alpha = 0.32f)
+            val gap = size.height / 4f
+            repeat(5) { i ->
+                val y = i * gap
+                drawLine(
+                    color = lineColor,
+                    start = Offset(0f, y),
+                    end = Offset(size.width, y),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+        }
+        Image(
+            painter = painterResource(R.drawable.ic_treble_clef_outline),
+            contentDescription = null,
+            modifier = Modifier.fillMaxWidth(0.4f),
+            colorFilter = ColorFilter.tint(InkBrown.copy(alpha = 0.45f))
         )
     }
 }

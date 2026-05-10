@@ -10,11 +10,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,52 +24,56 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.outlined.FolderOpen
-import androidx.compose.material.icons.outlined.Piano
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material.icons.filled.Photo
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Piano
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
-import com.xianliticn.yuefu.ui.components.animation.LottieEmptyState
-import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
-import com.xianliticn.yuefu.ui.components.animation.pressScaleEffect
+import com.xianliticn.yuefu.ui.theme.InkBrown
+import com.xianliticn.yuefu.ui.theme.InkSoft
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
+import com.xianliticn.yuefu.ui.theme.Ochre
+import com.xianliticn.yuefu.ui.theme.PaleOchre
+import com.xianliticn.yuefu.ui.theme.WarmBg
 import com.xianliticn.yuefu.utils.toFriendlyString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -115,7 +120,7 @@ fun HomePage(
     }
 
     HomePageContent(
-        modifier = Modifier.padding(horizontal = 20.dp),
+        modifier = Modifier,
         loading = uiState.loading,
         loadingMessage = uiState.loadingMessage,
         recent4 = uiState.recent4,
@@ -160,28 +165,25 @@ fun HomePageContent(
     var showingTutorial by remember { mutableStateOf(false) }
     var gettingImage by remember { mutableStateOf(false) }
 
-    // One-shot staggered animation — only plays once per session, not on every navigation
-    var animationPlayed by rememberSaveable { mutableStateOf(false) }
-    var headerVisible by remember { mutableStateOf(animationPlayed) }
-    var actionsVisible by remember { mutableStateOf(animationPlayed) }
-    var recentVisible by remember { mutableStateOf(animationPlayed) }
-
-    LaunchedEffect(Unit) {
-        if (!animationPlayed) {
-            headerVisible = true
-            kotlinx.coroutines.delay(100)
-            actionsVisible = true
-            kotlinx.coroutines.delay(150)
-            recentVisible = true
-            animationPlayed = true
-        }
-    }
-
     if (loading) {
-        LottieLoadingView(
-            modifier = modifier,
-            message = loadingMessage.orEmpty()
-        )
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator(color = Ochre)
+                Text(
+                    text = loadingMessage.toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = InkSoft,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     } else {
         if (gettingImage)
             ModalBottomSheet(
@@ -202,7 +204,7 @@ fun HomePageContent(
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = { Text(stringResource(R.string.take_photo)) },
-                        leadingContent = { Icon(Icons.Default.CameraAlt, null) },
+                        leadingContent = { Icon(Icons.Default.PhotoCamera, null) },
                         modifier = Modifier.clickable {
                             gettingImage = false
                             onTakePhotoClick()
@@ -211,7 +213,7 @@ fun HomePageContent(
                     ListItem(
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = { Text(stringResource(R.string.pick_image)) },
-                        leadingContent = { Icon(Icons.Default.Image, null) },
+                        leadingContent = { Icon(Icons.Default.Photo, null) },
                         modifier = Modifier.clickable {
                             gettingImage = false
                             onPickImageClick()
@@ -227,186 +229,225 @@ fun HomePageContent(
                 }
             )
 
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp)
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color.White)
         ) {
-            // Hero Header
-            item {
-                AnimatedVisibility(
-                    visible = headerVisible,
-                    enter = fadeIn(tween(500)) + slideInVertically(
-                        animationSpec = tween(500),
-                        initialOffsetY = { it / 3 }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+            ) {
+                Spacer(Modifier.height(28.dp))
+
+                // ── Hero ──
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = TextStyle(
+                        fontFamily = NotoSerifSc,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 36.sp,
+                        letterSpacing = 0.15.em,
+                        color = InkBrown
                     )
-                ) {
-                    Column {
-                        Spacer(Modifier.height(32.dp))
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.headlineLarge,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.home_greeting),
+                    style = TextStyle(
+                        fontFamily = NotoSerifSc,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = InkSoft,
+                        letterSpacing = 0.05.em
+                    )
+                )
+
+                Spacer(Modifier.height(20.dp))
+
+                // ── Scan CTA ──
+                ScanCard {
+                    if (showTutorial) {
+                        showingTutorial = true
+                        onTutorialShown()
+                    } else
+                        gettingImage = true
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // ── Section header ──
+                SectionHeader(text = stringResource(R.string.recently_used))
+
+                // ── Recent file cards ──
+                if (recent4.isNotEmpty()) {
+                    recent4.forEachIndexed { index, sheet ->
+                        AnimatedFileCard(
+                            index = index,
+                            label = sheet.sheetName ?: stringResource(R.string.unknown_sheet),
+                            lastOpenTime = Instant.ofEpochMilli(sheet.lastOpenTime ?: sheet.createTime)
+                                .toFriendlyString(),
+                            onClick = { onRecentSheetClick(sheet) }
+                        )
+                    }
+                } else {
+                    Text(
+                        text = stringResource(R.string.no_recently_used_sheets),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 24.dp),
+                        style = TextStyle(
+                            fontFamily = NotoSerifSc,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = NotoSerifSc
+                            fontSize = 14.sp,
+                            color = InkSoft
                         )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.home_subtitle),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(24.dp))
-                    }
-                }
-            }
-
-            // Action Cards
-            item {
-                AnimatedVisibility(
-                    visible = actionsVisible,
-                    enter = fadeIn(tween(500)) + slideInVertically(
-                        animationSpec = tween(500),
-                        initialOffsetY = { it / 3 }
                     )
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ActionCard(
-                            modifier = Modifier.weight(1f),
-                            icon = Icons.Default.CameraAlt,
-                            title = stringResource(R.string.shot_sheet),
-                            subtitle = stringResource(R.string.shot_sheet_desc),
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = {
-                                if (showTutorial) {
-                                    showingTutorial = true
-                                    onTutorialShown()
-                                } else
-                                    gettingImage = true
-                            }
-                        )
-                        ActionCard(
-                            modifier = Modifier.weight(1f),
-                            icon = Icons.Default.Image,
-                            title = stringResource(R.string.pick_image),
-                            subtitle = stringResource(R.string.pick_image_desc),
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                            onClick = {
-                                if (showTutorial) {
-                                    showingTutorial = true
-                                    onTutorialShown()
-                                } else
-                                    gettingImage = true
-                            }
-                        )
-                    }
-                }
-            }
-
-            // Recent Section Header
-            item {
-                AnimatedVisibility(
-                    visible = recentVisible,
-                    enter = fadeIn(tween(500)) + slideInVertically(
-                        animationSpec = tween(500),
-                        initialOffsetY = { it / 4 }
-                    )
-                ) {
-                    Column {
-                        Spacer(Modifier.height(32.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(R.string.recently_used),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            if (recent4.isNotEmpty()) {
-                                Icon(
-                                    imageVector = Icons.Outlined.FolderOpen,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(12.dp))
-                    }
-                }
-            }
-
-            // Recent Items
-            if (recent4.isEmpty()) {
-                item {
-                    EmptyRecentState()
-                }
-            } else {
-                itemsIndexed(recent4, key = { _, sheet -> sheet.id }) { index, sheet ->
-                    FileCard(
-                        label = sheet.sheetName ?: stringResource(R.string.unknown_sheet),
-                        lastOpenTime = Instant.ofEpochMilli(
-                            sheet.lastOpenTime ?: sheet.createTime
-                        ).toFriendlyString(),
-                        onClick = { onRecentSheetClick(sheet) }
-                    )
-                    if (index < recent4.lastIndex) {
-                        Spacer(Modifier.height(8.dp))
-                    }
                 }
             }
         }
     }
 }
 
+// ── Scan Card ──
+
 @Composable
-private fun ActionCard(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    containerColor: Color,
-    contentColor: Color,
+private fun ScanCard(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(listOf(WarmBg, PaleOchre)))
+            .border(1.dp, Ochre.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(24.dp)
+    ) {
+        // 顶部高光
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color.White.copy(alpha = 0.12f), Color.Transparent)
+                    )
+                )
+                .align(Alignment.TopCenter)
+        )
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(Ochre.copy(alpha = 0.12f), RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Camera,
+                    modifier = Modifier.size(28.dp),
+                    tint = Ochre,
+                    contentDescription = null
+                )
+            }
+
+            Spacer(Modifier.width(16.dp))
+
+            Column {
+                Text(
+                    text = stringResource(R.string.shot_sheet),
+                    style = TextStyle(
+                        fontFamily = NotoSerifSc,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp,
+                        letterSpacing = 0.04.em,
+                        color = InkBrown
+                    )
+                )
+                Text(
+                    text = stringResource(R.string.scan_sheet_subtitle),
+                    style = TextStyle(fontSize = 13.sp, color = InkSoft)
+                )
+            }
+        }
+
+        // 铜印
+        BronzeSeal(modifier = Modifier.align(Alignment.BottomEnd))
+    }
+}
+
+@Composable
+private fun BronzeSeal(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(34.dp)
+            .rotate(-12f)
+            .border(1.5.dp, Ochre, RoundedCornerShape(4.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "乐",
+            style = TextStyle(
+                fontFamily = NotoSerifSc,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Ochre.copy(alpha = 0.55f)
+            )
+        )
+    }
+}
+
+// ── Section Header ──
+
+@Composable
+private fun SectionHeader(text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 14.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .height(14.dp)
+                .background(Ochre, RoundedCornerShape(1.dp))
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = text,
+            style = TextStyle(
+                fontFamily = NotoSerifSc,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = Ochre,
+                letterSpacing = 0.3.em
+            )
+        )
+    }
+}
+
+// ── File Card ──
+
+@Composable
+private fun AnimatedFileCard(
+    index: Int,
+    label: String,
+    lastOpenTime: String,
     onClick: () -> Unit
 ) {
-    ElevatedCard(
-        modifier = modifier.pressScaleEffect(),
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = containerColor,
-            contentColor = contentColor
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(500, delayMillis = 100 * index)) +
+                slideInVertically(tween(500, delayMillis = 100 * index)) { it / 4 }
     ) {
-        Column(
-            modifier = Modifier
-                .padding(20.dp)
-                .fillMaxWidth()
-        ) {
-            Icon(
-                imageVector = icon,
-                modifier = Modifier.size(32.dp),
-                contentDescription = null
-            )
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = contentColor.copy(alpha = 0.7f)
-            )
-        }
+        FileCard(
+            label = label,
+            lastOpenTime = lastOpenTime,
+            onClick = onClick
+        )
     }
 }
 
@@ -418,51 +459,50 @@ fun FileCard(
     lastOpenTime: String,
     onClick: () -> Unit = {}
 ) {
-    Surface(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .pressScaleEffect(),
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 1.dp
+            .padding(bottom = 10.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.White)
+            .border(1.dp, Ochre.copy(alpha = 0.18f), RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(14.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                modifier = Modifier.size(44.dp)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(Ochre.copy(alpha = 0.10f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = when (type) {
-                            FileCardType.MusicXml -> Icons.Default.LibraryMusic
-                            FileCardType.Midi -> Icons.Outlined.Piano
-                        },
-                        tint = MaterialTheme.colorScheme.primary,
-                        contentDescription = null,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+                Icon(
+                    imageVector = when (type) {
+                        FileCardType.MusicXml -> Icons.Default.LibraryMusic
+                        FileCardType.Midi -> Icons.Default.Piano
+                    },
+                    modifier = Modifier.size(22.dp),
+                    tint = Ochre,
+                    contentDescription = null
+                )
             }
+
+            Spacer(Modifier.width(14.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.titleSmall,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
+                    color = InkBrown,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.basicMarquee()
                 )
                 Text(
                     text = lastOpenTime,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 13.sp,
+                    color = InkSoft,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
@@ -471,21 +511,12 @@ fun FileCard(
     }
 }
 
-@Composable
-private fun EmptyRecentState() {
-    LottieEmptyState(
-        modifier = Modifier.padding(vertical = 32.dp),
-        title = stringResource(R.string.no_recently_used_sheets),
-        rawRes = R.raw.empty_recent
-    )
-}
-
 enum class FileCardType {
     MusicXml,
     Midi
 }
 
-@Preview(showBackground = true, locale = "en", showSystemUi = true)
+@Preview(showBackground = true, locale = "zh", showSystemUi = true)
 @Composable
 fun HomePagePreview() {
     HomePageContent(
