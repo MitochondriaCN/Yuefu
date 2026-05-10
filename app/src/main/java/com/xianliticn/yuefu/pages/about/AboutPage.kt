@@ -124,7 +124,7 @@ fun AboutPageContent(
             },
             trailingContent = {
                 Image(
-                    painter = painterResource(R.drawable.ctm),
+                    painter = painterResource(R.drawable.xianliti),
                     contentDescription = null,
                     modifier = Modifier
                         .size(48.dp)
@@ -143,7 +143,7 @@ fun AboutPageContent(
             },
             trailingContent = {
                 Image(
-                    painter = painterResource(R.drawable.fyx),
+                    painter = painterResource(R.drawable.fafa),
                     contentDescription = null,
                     modifier = Modifier
                         .size(48.dp)
@@ -162,7 +162,7 @@ fun AboutPageContent(
             },
             trailingContent = {
                 Image(
-                    painter = painterResource(R.drawable.lcr),
+                    painter = painterResource(R.drawable.bingxunqing),
                     contentDescription = null,
                     modifier = Modifier
                         .size(48.dp)
@@ -181,7 +181,7 @@ fun AboutPageContent(
             },
             trailingContent = {
                 Image(
-                    painter = painterResource(R.drawable.qhm),
+                    painter = painterResource(R.drawable.qichen),
                     contentDescription = null,
                     modifier = Modifier
                         .size(48.dp)
