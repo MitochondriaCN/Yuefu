@@ -104,7 +104,7 @@ fun AboutPageContent(
     }
 
     val developers = listOf("线粒体", "发发", "冰寻卿", "柒晨")
-    val devAvatars = listOf(R.drawable.ctm, R.drawable.fyx, R.drawable.lcr, R.drawable.qhm)
+    val devAvatars = listOf(R.drawable.xianliti, R.drawable.fafa, R.drawable.bingxunqing, R.drawable.qichen)
     val devColors = listOf(
         BlueAccentContainer,
         YellowContainer,
