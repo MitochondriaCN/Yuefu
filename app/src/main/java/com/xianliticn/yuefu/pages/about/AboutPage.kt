@@ -16,11 +16,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,19 +42,37 @@ import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.modules.NetworkModule
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutPage(viewModel: AboutPageViewModel) {
+fun AboutPage(viewModel: AboutPageViewModel, onBackPress: () -> Unit = {}) {
     LaunchedEffect(Unit) {
         viewModel.refresh()
     }
 
     val uiState = viewModel.uiState.collectAsState()
 
-    AboutPageContent(
-        backendOnline = uiState.value.backendOnline,
-        backendTimestamp = uiState.value.backendTimestamp,
-        backendTmpSize = uiState.value.backendTmpSize
-    )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.about)) },
+                navigationIcon = {
+                    IconButton(onClick = onBackPress) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        AboutPageContent(
+            backendOnline = uiState.value.backendOnline,
+            backendTimestamp = uiState.value.backendTimestamp,
+            backendTmpSize = uiState.value.backendTmpSize,
+            modifier = Modifier.padding(paddingValues)
+        )
+    }
 }
 
 @SuppressLint("LocalContextGetResourceValueCall")

@@ -125,13 +125,19 @@ class MainActivity : ComponentActivity() {
                         onFinished = {
                             navController.popBackStack() // 移除 studio 页面
                             bottomBarNavigate("sheet")
-                        }
+                        },
+                        onBackPress = { navController.popBackStack() }
                     )
                 }
 
                 composable("composition") { CompositionPage(hiltViewModel()) }
 
-                composable("about") { AboutPage(hiltViewModel()) }
+                composable("about") {
+                    AboutPage(
+                        hiltViewModel(),
+                        onBackPress = { navController.popBackStack() }
+                    )
+                }
 
                 composable("settings") {
                     SettingsPage(

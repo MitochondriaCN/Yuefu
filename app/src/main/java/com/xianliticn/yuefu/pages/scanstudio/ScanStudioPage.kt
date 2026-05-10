@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material3.Button
@@ -31,6 +32,8 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -68,7 +71,8 @@ import kotlinx.coroutines.delay
 fun ScanStudioPage(
     viewModel: ScanStudioPageViewModel,
     imageUri: Uri,
-    onFinished: () -> Unit
+    onFinished: () -> Unit,
+    onBackPress: () -> Unit = {}
 ) {
     val imageParams by viewModel.imageParams.collectAsState()
     val imageModel by viewModel.imageModel.collectAsState()
@@ -89,6 +93,7 @@ fun ScanStudioPage(
         imageModel = imageModel,
         imageParams = imageParams,
         omrRunning = omrRunning,
+        onBackPress = onBackPress,
         onImageParamChange = { param, value ->
             viewModel.handleImageParamChange(param, value)
         },
@@ -107,6 +112,7 @@ fun ScanStudioContent(
     imageModel: Any? = null,
     imageParams: Map<ScanStudioPageViewModel.ImageParam, Float> = emptyMap(),
     omrRunning: Boolean = false,
+    onBackPress: () -> Unit = {},
     onImageParamChange: (ScanStudioPageViewModel.ImageParam, Float) -> Unit = { _, _ -> },
     onConfirm: (Bitmap, OmrModel) -> Unit = { _, _ -> },
     onCrop: (xOffset: Float, yOffset: Float) -> Unit = { _, _ -> }
@@ -148,10 +154,75 @@ fun ScanStudioContent(
         }
     }
 
+    Scaffold(
+        modifier = modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.optimize_sheet)) },
+                navigationIcon = {
+                    IconButton(onClick = onBackPress) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
+                },
+                actions = {
+                    if (!omrRunning) {
+                        IconButton(onClick = { clippingMode = !clippingMode }) {
+                            Icon(
+                                imageVector = Icons.Default.Crop,
+                                contentDescription = null,
+                                tint = if (clippingMode) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                            )
+                        }
+                        Box {
+                            IconButton(onClick = { showModelMenu = true }) {
+                                Icon(Icons.Default.Check, null)
+                            }
+                            DropdownMenu(
+                                expanded = showModelMenu,
+                                onDismissRequest = { showModelMenu = false }
+                            ) {
+                                Text(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    text = stringResource(R.string.choose_model),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                OmrModel.entries.forEach { model ->
+                                    DropdownMenuItem(
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                                        text = {
+                                            Column {
+                                                Text(
+                                                    text = model.label,
+                                                    style = MaterialTheme.typography.labelLarge
+                                                )
+                                                Text(
+                                                    text = model.description,
+                                                    style = MaterialTheme.typography.bodySmall
+                                                )
+                                            }
+                                        },
+                                        onClick = {
+                                            showModelMenu = false
+                                            val bitmap = imageModel as? Bitmap ?: return@DropdownMenuItem
+                                            onConfirm(bitmap, model)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
     if (omrRunning)
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .padding(horizontal = 40.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -179,68 +250,11 @@ fun ScanStudioContent(
         }
     else
         Column(
-            modifier = modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(paddingValues),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(20.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-            ) {
-                Text(
-                    stringResource(R.string.optimize_sheet),
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Spacer(Modifier.weight(1f))
-                IconButton(onClick = {
-                    clippingMode = !clippingMode
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Crop,
-                        contentDescription = null,
-                        tint = if (clippingMode) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                    )
-                }
-                Box {
-                    IconButton(onClick = {
-                        showModelMenu = true
-                    }) { Icon(Icons.Default.Check, null) }
-                    DropdownMenu(
-                        expanded = showModelMenu,
-                        onDismissRequest = { showModelMenu = false }
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            text = stringResource(R.string.choose_model),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        OmrModel.entries.forEach { model ->
-                            DropdownMenuItem(
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                text = {
-                                    Column {
-                                        Text(
-                                            text = model.label,
-                                            style = MaterialTheme.typography.labelLarge
-                                        )
-                                        Text(
-                                            text = model.description,
-                                            style = MaterialTheme.typography.bodySmall
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    showModelMenu = false
-                                    val bitmap = imageModel as? Bitmap ?: return@DropdownMenuItem
-                                    onConfirm(bitmap, model)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(20.dp))
 
             Box(
                 modifier = Modifier
@@ -408,6 +422,7 @@ fun ScanStudioContent(
                     clipTopLineY = 0f
                 }) { Text(stringResource(R.string.crop)) }
         }
+    }
 }
 
 @Preview(showBackground = true)
