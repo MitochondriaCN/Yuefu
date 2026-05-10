@@ -2,6 +2,7 @@ package com.xianliticn.yuefu.pages.scanstudio
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.view.KeyEvent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -26,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -53,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -60,10 +62,12 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import coil.compose.AsyncImage
+import com.xianliticn.yuefu.MainActivity
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
 import com.xianliticn.yuefu.ui.theme.BlueAccent
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun ScanStudioPage(
@@ -75,9 +79,34 @@ fun ScanStudioPage(
     val imageModel by viewModel.imageModel.collectAsState()
     val finished by viewModel.finished.collectAsState()
     val omrRunning by viewModel.omrRunning.collectAsState()
+    val demoModeEnabled by viewModel.demoModeEnabled.collectAsState()
+    val context = LocalContext.current
+    val activity = context as? MainActivity
 
     LaunchedEffect(Unit) {
         viewModel.initialize(imageUri)
+    }
+
+    DisposableEffect(activity, viewModel) {
+        activity?.setScanStudioVolumeKeyHandler { keyCode ->
+            when (keyCode) {
+                KeyEvent.KEYCODE_VOLUME_UP -> {
+                    viewModel.setDemoMode(true)
+                    true
+                }
+
+                KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                    viewModel.setDemoMode(false)
+                    true
+                }
+
+                else -> false
+            }
+        }
+
+        onDispose {
+            activity?.setScanStudioVolumeKeyHandler(null)
+        }
     }
 
     LaunchedEffect(finished) {
@@ -89,6 +118,7 @@ fun ScanStudioPage(
         modifier = Modifier.fillMaxWidth(),
         imageModel = imageModel,
         imageParams = imageParams,
+        demoModeEnabled = demoModeEnabled,
         omrRunning = omrRunning,
         onImageParamChange = { param, value ->
             viewModel.handleImageParamChange(param, value)
@@ -107,6 +137,7 @@ fun ScanStudioContent(
     modifier: Modifier = Modifier,
     imageModel: Any? = null,
     imageParams: Map<ScanStudioPageViewModel.ImageParam, Float> = emptyMap(),
+    demoModeEnabled: Boolean = false,
     omrRunning: Boolean = false,
     onImageParamChange: (ScanStudioPageViewModel.ImageParam, Float) -> Unit = { _, _ -> },
     onConfirm: (Bitmap, OmrModel) -> Unit = { _, _ -> },
@@ -144,7 +175,7 @@ fun ScanStudioContent(
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(3000L)
+            delay(3000.milliseconds)
             tipIndex = (tipIndex + 1) % tips.size
         }
     }
@@ -187,7 +218,7 @@ fun ScanStudioContent(
             ) {
                 Text(
                     stringResource(R.string.optimize_sheet),
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
                 )
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = {
@@ -209,7 +240,8 @@ fun ScanStudioContent(
                     ) {
                         Text(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            text = stringResource(R.string.choose_model),
+                            text = if (demoModeEnabled) stringResource(R.string.choose_model_demo_mode)
+                            else stringResource(R.string.choose_model),
                             style = MaterialTheme.typography.titleMedium
                         )
                         OmrModel.entries.forEach { model ->

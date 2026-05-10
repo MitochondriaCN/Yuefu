@@ -81,6 +81,10 @@
     <string name="downloading">下载中：</string>
     <string name="download_complete">下载完成：</string>
     <string name="updating_sheet">上传乐谱中…</string>
+    <string name="demo_mode_enabled">已开启演示模式</string>
+    <string name="demo_mode_disabled">已关闭演示模式</string>
+    <string name="demo_mode_on">演示模式</string>
+    <string name="demo_mode_off">普通模式</string>
     <string name="backend_status">服务器状态</string>
     <string name="timestamp">时间戳：</string>
     <string name="cache_size">缓存：</string>
@@ -119,4 +123,5 @@
     <string name="no_sheets">无乐谱，请前往主页扫描乐谱</string>
     <string name="delete_confirm_message">确定要删除「%s」吗？此操作无法撤销。</string>
     <string name="more_options">更多选项</string>
+    <string name="choose_model_demo_mode">请选择模型</string>
 </resources>

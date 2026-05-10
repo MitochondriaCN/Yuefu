@@ -4,6 +4,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessMedium
@@ -36,6 +41,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class ScanStudioPageViewModel @Inject constructor(
@@ -97,6 +103,12 @@ class ScanStudioPageViewModel @Inject constructor(
     private val _finished = MutableStateFlow(false)
     val finished: StateFlow<Boolean> = _finished
 
+    private val _demoModeEnabled = MutableStateFlow(false)
+    val demoModeEnabled: StateFlow<Boolean> = _demoModeEnabled
+
+    private val _demoIndex = MutableStateFlow<Int?>(null)
+    val demoIndex: StateFlow<Int?> = _demoIndex
+
     private lateinit var _originalBitmap: Bitmap
     private var transformationJob: Job? = null
     private var omrJob: Job? = null
@@ -129,7 +141,7 @@ class ScanStudioPageViewModel @Inject constructor(
         transformationJob?.cancel()
         transformationJob = viewModelScope.launch {
             //防抖
-            delay(200)
+            delay(200.milliseconds)
 
             val brightnessValue =
                 _imageParams.value.entries.find { it.key.nameResId == R.string.brightness }?.value
@@ -197,41 +209,92 @@ class ScanStudioPageViewModel @Inject constructor(
         }
     }
 
+    fun setDemoMode(enabled: Boolean) {
+        _demoModeEnabled.value = enabled
+        if (enabled) {
+            val nextDemoIndex = (_demoIndex.value ?: 0) + 1
+            _demoIndex.value = nextDemoIndex
+            Log.d("YF", "Demo index: $nextDemoIndex, vibrate times: $nextDemoIndex")
+            vibrateShortTimes(nextDemoIndex)
+        } else {
+            _demoIndex.value = null
+        }
+        Log.d("YF", "Demo mode enabled: $enabled")
+    }
+
+    private fun vibrateShortTimes(times: Int) {
+        val safeTimes = times.coerceAtLeast(1)
+        val timings = LongArray(safeTimes * 2) { index ->
+            when {
+                index == 0 -> 0L
+                index % 2 == 1 -> 120L
+                else -> 80L
+            }
+        }
+        val amplitudes = IntArray(safeTimes * 2) { index ->
+            if (index % 2 == 1) 180 else 0
+        }
+
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = context.getSystemService(VibratorManager::class.java)
+            manager?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Vibrator::class.java)
+        } ?: return
+
+        if (!vibrator.hasVibrator()) return
+
+        vibrator.vibrate(
+            VibrationEffect.createWaveform(timings, amplitudes, -1)
+        )
+    }
+
     fun handleConfirm(image: Bitmap, model: OmrModel) {
+        val demoModeEnabled = _demoModeEnabled.value
         _omrRunning.value = true
 
         omrJob?.cancel()
         omrJob = viewModelScope.launch {
-            delay(1000)
-            try {
-                val part = image.toMultipartBodyPart()
-                // 提交OMR任务
-                omrApi.submitSheetImage(
-                    engine = when (model) {
-                        OmrModel.QINGSHANG -> OmrEngine.LEGATO_FP16
-                        OmrModel.ZHENGSHENG -> OmrEngine.LEGATO_FP32
-                    },
-                    image = part
-                ).data?.let { vo ->
-                    //创建乐谱实体
-                    val sheet = Sheet(
-                        taskId = vo.taskId,
-                        isDownloaded = false,
-                        createTime = System.currentTimeMillis(),
-                        model = model.label
+            delay(1000.milliseconds)
+
+            runCatching {
+                if (demoModeEnabled) { // 演示模式
+                    omrApi.submitDemo(
+                        sleepSec = 10,
+                        index = _demoIndex.value ?: 1
                     )
-                    appDatabase.sheetDao().insert(sheet)
-                    Toast.makeText(context, R.string.omr_task_submitted, Toast.LENGTH_LONG).show()
-                    _finished.value = true
-                    return@launch
+                } else { // 正常模式
+                    val part = image.toMultipartBodyPart()
+                    omrApi.submitSheetImage(
+                        engine = when (model) {
+                            OmrModel.QINGSHANG -> OmrEngine.LEGATO_FP16
+                            OmrModel.ZHENGSHENG -> OmrEngine.LEGATO_FP32
+                        },
+                        image = part
+                    )
                 }
-                Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-                _omrRunning.value = false
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-                _omrRunning.value = false
-            }
+            }.fold(
+                onSuccess = { resp ->
+                    resp.data?.let {
+                        //创建乐谱实体
+                        val sheet = Sheet(
+                            taskId = it.taskId,
+                            isDownloaded = false,
+                            createTime = System.currentTimeMillis(),
+                            model = model.label
+                        )
+                        appDatabase.sheetDao().insert(sheet)
+                        Toast.makeText(context, R.string.omr_task_submitted, Toast.LENGTH_LONG)
+                            .show()
+                        _finished.value = true
+                    }
+                },
+                onFailure = {
+                    Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
+                    _omrRunning.value = false
+                }
+            )
         }
     }
 
