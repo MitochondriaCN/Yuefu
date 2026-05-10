@@ -29,9 +29,9 @@ class MidiEvent(
     fun getMidiData(): ByteArray =
         when (note) {
             Note.PRESS ->
-                byteArrayOf(0x90.toByte(), pitch.toByte(), 127.toByte())
+                byteArrayOf((0x90 + part).toByte(), pitch.toByte(), 127.toByte())
 
             Note.RELEASE ->
-                byteArrayOf(0x80.toByte(), pitch.toByte(), 0.toByte())
+                byteArrayOf((0x80 + part).toByte(), pitch.toByte(), 0.toByte())
         }
 }
