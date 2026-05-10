@@ -65,7 +65,6 @@ class CompositionPageViewModel @Inject constructor(
 
     private val fftSize = 1024
     private val bandCount = 16
-    private val sampleRate = 48000f
     private val fftBuffer = FloatArray(fftSize)
     private val fftReal = FloatArray(fftSize)
     private val fftImag = FloatArray(fftSize)
