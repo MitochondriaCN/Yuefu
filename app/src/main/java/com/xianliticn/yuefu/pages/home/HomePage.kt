@@ -237,7 +237,7 @@ fun HomePageContent(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Column(
                 modifier = Modifier
