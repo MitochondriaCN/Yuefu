@@ -18,3 +18,10 @@ val Grey800 = Color(0xFF424242)
 val Clouds = Color(0xFFECF0F1)
 
 val Ochre = Color(0xFFB68A4C)
+
+// ── 主页古典方案 ──
+val Ivory     = Color(0xFFFFFBF0)
+val WarmBg    = Color(0xFFF6F2E9)
+val PaleOchre = Color(0xFFE8D9BE)
+val InkBrown  = Color(0xFF3F2E1F)
+val InkSoft   = Color(0xFF8D7A6A)
