@@ -10,6 +10,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,11 +30,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
-import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Piano
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -51,10 +53,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -68,10 +72,9 @@ import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
-import com.xianliticn.yuefu.ui.components.scorePaperTexture
+import com.xianliticn.yuefu.ui.components.animation.pressScaleEffect
 import com.xianliticn.yuefu.ui.theme.InkBrown
 import com.xianliticn.yuefu.ui.theme.InkSoft
-import com.xianliticn.yuefu.ui.theme.Ivory
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
 import com.xianliticn.yuefu.ui.theme.Ochre
 import com.xianliticn.yuefu.ui.theme.PaleOchre
@@ -234,8 +237,7 @@ fun HomePageContent(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(Ivory)
-                .scorePaperTexture(color = InkBrown, alpha = 0.055f)
+                .background(Color.White)
         ) {
             Column(
                 modifier = Modifier
@@ -285,14 +287,26 @@ fun HomePageContent(
 
                 // ── Recent file cards ──
                 if (recent4.isNotEmpty()) {
-                    recent4.forEachIndexed { index, sheet ->
-                        AnimatedFileCard(
-                            index = index,
-                            label = sheet.sheetName ?: stringResource(R.string.unknown_sheet),
-                            lastOpenTime = Instant.ofEpochMilli(sheet.lastOpenTime ?: sheet.createTime)
-                                .toFriendlyString(),
-                            onClick = { onRecentSheetClick(sheet) }
-                        )
+                    recent4.chunked(2).forEachIndexed { rowIndex, rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            rowItems.forEachIndexed { colIndex, sheet ->
+                                AnimatedFileCard(
+                                    index = rowIndex * 2 + colIndex,
+                                    label = sheet.sheetName ?: stringResource(R.string.unknown_sheet),
+                                    lastOpenTime = Instant.ofEpochMilli(sheet.lastOpenTime ?: sheet.createTime)
+                                        .toFriendlyString(),
+                                    onClick = { onRecentSheetClick(sheet) },
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (rowItems.size < 2) {
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
+                        Spacer(Modifier.height(14.dp))
                     }
                 } else {
                     Text(
@@ -436,6 +450,7 @@ private fun AnimatedFileCard(
     index: Int,
     label: String,
     lastOpenTime: String,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -449,7 +464,8 @@ private fun AnimatedFileCard(
         FileCard(
             label = label,
             lastOpenTime = lastOpenTime,
-            onClick = onClick
+            onClick = onClick,
+            modifier = modifier
         )
     }
 }
@@ -458,65 +474,73 @@ private fun AnimatedFileCard(
 fun FileCard(
     modifier: Modifier = Modifier,
     label: String,
-    type: FileCardType = FileCardType.MusicXml,
     lastOpenTime: String,
     onClick: () -> Unit = {}
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 10.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(Ivory)
-            .border(1.dp, Ochre.copy(alpha = 0.18f), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-            .padding(14.dp)
+    ElevatedCard(
+        onClick = onClick,
+        modifier = modifier.pressScaleEffect()
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(Ochre.copy(alpha = 0.10f), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = when (type) {
-                        FileCardType.MusicXml -> Icons.Default.LibraryMusic
-                        FileCardType.Midi -> Icons.Default.Piano
-                    },
-                    modifier = Modifier.size(22.dp),
-                    tint = Ochre,
-                    contentDescription = null
-                )
-            }
-
-            Spacer(Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = label,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = InkBrown,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.basicMarquee()
-                )
-                Text(
-                    text = lastOpenTime,
-                    fontSize = 13.sp,
-                    color = InkSoft,
-                    maxLines = 1,
-                    modifier = Modifier.basicMarquee()
-                )
-            }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+        ) {
+            ScorePaperPlaceholder(modifier = Modifier.fillMaxSize())
         }
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 12.dp, top = 10.dp)
+                .basicMarquee()
+        )
+
+        Text(
+            text = lastOpenTime,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
+                .basicMarquee()
+        )
     }
 }
 
-enum class FileCardType {
-    MusicXml,
-    Midi
+@Composable
+private fun ScorePaperPlaceholder(modifier: Modifier = Modifier) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(48.dp)
+        ) {
+            val lineColor = InkBrown.copy(alpha = 0.32f)
+            val gap = size.height / 4f
+            repeat(5) { i ->
+                val y = i * gap
+                drawLine(
+                    color = lineColor,
+                    start = Offset(0f, y),
+                    end = Offset(size.width, y),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+        }
+        Image(
+            painter = painterResource(R.drawable.ic_treble_clef_outline),
+            contentDescription = null,
+            modifier = Modifier.fillMaxWidth(0.4f),
+            colorFilter = ColorFilter.tint(InkBrown.copy(alpha = 0.45f))
+        )
+    }
 }
 
 @Preview(showBackground = true, locale = "zh", showSystemUi = true)
