@@ -34,6 +34,7 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
+import kotlin.math.sqrt
 
 //TODO: 增加异常处理防崩溃
 @HiltViewModel
@@ -150,6 +151,8 @@ class CompositionPageViewModel @Inject constructor(
                         Log.d("YF", "LyriaResponse format: ${chunk.mimeType}")
                         val audioData = Base64.decode(chunk.data, Base64.DEFAULT)
 
+                        updateAudioLevel(audioData)
+
                         // 处理二进制数据（仅用于 UI 显示）
                         _uiState.value = _uiState.value.copy(
                             messages = _uiState.value.messages + BinaryResponseMessage(bytes)
@@ -186,7 +189,7 @@ class CompositionPageViewModel @Inject constructor(
         isWsReady.value = false
         isPlaying = false
         currentWeight = 1.0
-        _uiState.value = _uiState.value.copy(messages = emptyList())
+        _uiState.value = _uiState.value.copy(messages = emptyList(), audioLevel = 0f)
     }
 
     fun handleKeyChange(key: String) {
@@ -277,6 +280,35 @@ class CompositionPageViewModel @Inject constructor(
 
         resetWsState()
     }
+
+    private fun updateAudioLevel(audioData: ByteArray) {
+        val rms = calculateRms(audioData)
+        val current = _uiState.value.audioLevel
+        val smoothed = (current * 0.7f + rms * 0.3f).coerceIn(0f, 1f)
+        _uiState.value = _uiState.value.copy(audioLevel = smoothed)
+    }
+
+    private fun calculateRms(audioData: ByteArray): Float {
+        if (audioData.size < 2) return 0f
+
+        var sum = 0.0
+        var count = 0
+        var index = 0
+
+        while (index + 1 < audioData.size) {
+            val low = audioData[index].toInt() and 0xFF
+            val high = audioData[index + 1].toInt()
+            val sample = ((high shl 8) or low).toShort().toInt()
+            sum += (sample * sample).toDouble()
+            count += 1
+            index += 2
+        }
+
+        if (count == 0) return 0f
+
+        val rms = sqrt(sum / count)
+        return (rms / 32768.0).toFloat().coerceIn(0f, 1f)
+    }
 }
 
 data class CompositionPageState(
@@ -285,7 +317,8 @@ data class CompositionPageState(
     val selectedKey: String? = keys.firstOrNull(),
     val selectedInstrument: String? = instruments.firstOrNull(),
     val prompt: String? = null,
-    val messages: List<LyriaMessage> = emptyList()
+    val messages: List<LyriaMessage> = emptyList(),
+    val audioLevel: Float = 0f
 )
 
 private data class AudioTrackConfig(
