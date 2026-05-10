@@ -54,3 +54,5 @@ val PianoBorder = Color(0xFFD5D3C5)        // 暖灰边框
 
 // ── 播放控制栏 ──────────────────────────────────────────
 val ControlBarDark = Color(0xFF2D2D28)     // 暖深色（替代纯黑）
+
+val Ochre = Color(0xFFB68A4C)
