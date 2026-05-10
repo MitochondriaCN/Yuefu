@@ -1,6 +1,8 @@
 package com.xianliticn.yuefu.ui.components
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.ScrollState
@@ -19,16 +21,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
@@ -37,6 +39,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.xianliticn.yuefu.music.VisualNoteEvent
+import kotlin.math.abs
+import kotlin.math.roundToLong
 
 @OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("FrequentlyChangingValue")
@@ -69,6 +73,40 @@ fun PianoRollNoteFlow(
     val resonatingColorMap = remember(notes, currentProgressMillis) {
         notes.filter { currentProgressMillis in it.startTimeMillis until it.endTimeMillis }
             .associate { it.keyIndex to it.color }
+    }
+
+    var initialScrollDone by remember { mutableStateOf(false) }
+
+    // Auto-center on song load
+    LaunchedEffect(notes) {
+        if (notes.isNotEmpty() && !initialScrollDone) {
+            initialScrollDone = true
+            val midKeyIndex = notes.map { it.keyIndex }.sorted()[notes.size / 2]
+            val targetPx = (midKeyIndex + 0.5f) * whiteKeyWidthPx - viewportWidthPx / 2f
+            val maxScroll = (whiteKeyWidthPx * whiteKeys.size - viewportWidthPx).coerceAtLeast(0f)
+            scrollState.scrollTo(targetPx.coerceIn(0f, maxScroll).roundToLong().toInt())
+        }
+    }
+
+    // Follow active notes during playback
+    LaunchedEffect(currentProgressMillis) {
+        if (!isScrollMode && viewportWidthPx > 0f) {
+            val active = notes.filter {
+                currentProgressMillis in it.startTimeMillis until it.endTimeMillis
+            }
+            if (active.isNotEmpty()) {
+                val avgKey = active.map { it.keyIndex }.average().toFloat()
+                val targetPx = (avgKey + 0.5f) * whiteKeyWidthPx - viewportWidthPx / 2f
+                val maxScroll = (whiteKeyWidthPx * whiteKeys.size - viewportWidthPx).coerceAtLeast(0f)
+                val clamped = targetPx.coerceIn(0f, maxScroll).roundToLong().toInt()
+                if (abs(clamped - scrollState.value) > 30) {
+                    scrollState.animateScrollTo(
+                        clamped,
+                        tween(durationMillis = 120, easing = FastOutSlowInEasing)
+                    )
+                }
+            }
+        }
     }
 
     Box(

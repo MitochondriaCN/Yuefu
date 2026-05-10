@@ -15,7 +15,6 @@ val YellowLight = Color(0xFFDBD37F)        // 浅黄，背景点缀
 val YellowContainer = Color(0xFFF5F0C8)
 val YellowContainerDark = Color(0xFF7A7530)
 
-<<<<<<< HEAD
 // ── 品牌色：墨绿灰 ──────────────────────────────────────
 val GreenDark = Color(0xFF73715C)          // 副标题、装饰文字
 val GreenDarkDark = Color(0xFFC8C6B4)
