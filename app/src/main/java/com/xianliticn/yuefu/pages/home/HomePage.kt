@@ -71,7 +71,6 @@ import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
 import com.xianliticn.yuefu.ui.components.scorePaperTexture
 import com.xianliticn.yuefu.ui.theme.InkBrown
 import com.xianliticn.yuefu.ui.theme.InkSoft
-import com.xianliticn.yuefu.ui.theme.Ivory
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
 import com.xianliticn.yuefu.ui.theme.Ochre
 import com.xianliticn.yuefu.ui.theme.PaleOchre
@@ -234,7 +233,7 @@ fun HomePageContent(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(Ivory)
+                .background(Color.White)
                 .scorePaperTexture(color = InkBrown, alpha = 0.055f)
         ) {
             Column(
@@ -467,7 +466,7 @@ fun FileCard(
             .fillMaxWidth()
             .padding(bottom = 10.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Ivory)
+            .background(Color.White)
             .border(1.dp, Ochre.copy(alpha = 0.18f), RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(14.dp)
