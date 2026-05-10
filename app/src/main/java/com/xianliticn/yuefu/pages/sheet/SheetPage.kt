@@ -2,8 +2,8 @@ package com.xianliticn.yuefu.pages.sheet
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,30 +16,36 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SearchBar
-import androidx.compose.material3.SearchBarDefaults.InputField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,10 +55,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -60,7 +67,12 @@ import coil.compose.AsyncImage
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.InputDialog
-import com.xianliticn.yuefu.ui.theme.Grey800
+import com.xianliticn.yuefu.ui.components.animation.LottieEmptyState
+import com.xianliticn.yuefu.ui.components.animation.SheetGridSkeleton
+import com.xianliticn.yuefu.ui.components.animation.pressScaleEffect
+import com.xianliticn.yuefu.ui.theme.ErrorRed
+import com.xianliticn.yuefu.ui.theme.NotoSerifSc
+import com.xianliticn.yuefu.ui.theme.SuccessGreen
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import com.xianliticn.yuefu.utils.getRandomPrettyColor
 import com.xianliticn.yuefu.utils.toFriendlyString
@@ -114,61 +126,64 @@ fun SheetPageContent(
     var searchQuery by remember { mutableStateOf("") }
     var optionSheet by remember { mutableStateOf<Sheet?>(null) }
     var renamingSheet by remember { mutableStateOf<Sheet?>(null) }
-    val list1State = rememberLazyListState()
-    val list2State = rememberLazyListState()
+    var deletingSheet by remember { mutableStateOf<Sheet?>(null) }
 
-    LaunchedEffect(sheets) {
-        list1State.scrollToItem(0)
-        list2State.scrollToItem(0)
-    }
-
+    // Bottom Sheet: 操作菜单
     optionSheet?.let {
         ModalBottomSheet(
             onDismissRequest = { optionSheet = null },
-            content = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = it.sheetName ?: stringResource(R.string.unknown_sheet),
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .basicMarquee()
-                    )
-                    ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text(stringResource(R.string.delete)) },
-                        leadingContent = { Icon(Icons.Default.Delete, null) },
-                        modifier = Modifier.clickable {
-                            onDeleteSheet(it)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = it.sheetName ?: stringResource(R.string.unknown_sheet),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
+                        .basicMarquee()
+                )
+                Spacer(Modifier.height(4.dp))
+                SheetActionItem(
+                    icon = Icons.Default.Edit,
+                    title = stringResource(R.string.rename),
+                    tint = MaterialTheme.colorScheme.primary,
+                    onClick = {
+                        renamingSheet = it
+                        optionSheet = null
+                    }
+                )
+                if (it.isDownloaded)
+                    SheetActionItem(
+                        icon = Icons.Default.Share,
+                        title = stringResource(R.string.share),
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        onClick = {
+                            onShareSheet(it)
                             optionSheet = null
                         }
                     )
-                    ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                        headlineContent = { Text(stringResource(R.string.rename)) },
-                        leadingContent = { Icon(Icons.Default.Edit, null) },
-                        modifier = Modifier.clickable {
-                            renamingSheet = it
-                            optionSheet = null
-                        }
-                    )
-                    if (it.isDownloaded)
-                        ListItem(
-                            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                            headlineContent = { Text(stringResource(R.string.share)) },
-                            leadingContent = { Icon(Icons.Default.Share, null) },
-                            modifier = Modifier.clickable {
-                                onShareSheet(it)
-                                optionSheet = null
-                            }
-                        )
-                }
+                Spacer(Modifier.height(4.dp))
+                SheetActionItem(
+                    icon = Icons.Default.Delete,
+                    title = stringResource(R.string.delete),
+                    tint = ErrorRed,
+                    isDestructive = true,
+                    onClick = {
+                        deletingSheet = it
+                        optionSheet = null
+                    }
+                )
             }
-        )
+        }
     }
 
     InputDialog(
@@ -182,12 +197,47 @@ fun SheetPageContent(
         }
     )
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    // Delete confirmation dialog
+    deletingSheet?.let { sheet ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { deletingSheet = null },
+            title = { Text(stringResource(R.string.delete)) },
+            text = {
+                Text(
+                    stringResource(R.string.delete_confirm_message, sheet.sheetName ?: stringResource(R.string.unknown_sheet))
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        onDeleteSheet(sheet)
+                        deletingSheet = null
+                    }
+                ) {
+                    Text(
+                        stringResource(R.string.delete),
+                        color = ErrorRed
+                    )
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { deletingSheet = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // 骨架屏：首次加载且无数据时显示
+        if (loading && sheets.isEmpty()) {
+            SheetGridSkeleton(
+                modifier = modifier,
+                count = 6
+            )
+        } else {
         PullToRefreshBox(
-            modifier = modifier
-                .fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             isRefreshing = loading,
             onRefresh = onRefresh
         ) {
@@ -195,33 +245,95 @@ fun SheetPageContent(
                 modifier = Modifier.fillMaxSize(),
                 columns = GridCells.Fixed(2),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
                 contentPadding = PaddingValues(bottom = 20.dp)
             ) {
+                // 大标题 — with bottom scrim so content scrolling underneath is dimmed
                 stickyHeader {
-                    SearchBar(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 20.dp),
-                        state = rememberSearchBarState(),
-                        shadowElevation = 8.dp,
-                        inputField = {
-                            InputField(
-                                query = searchQuery,
-                                onQueryChange = {
+                            .background(
+                                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.surface,
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                                        MaterialTheme.colorScheme.surface.copy(alpha = 0f)
+                                    ),
+                                    startY = 0f,
+                                    endY = 200f
+                                )
+                            )
+                            .padding(top = 12.dp, bottom = 12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            Text(
+                                text = stringResource(R.string.sheet),
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.Bold,
+                                fontFamily = NotoSerifSc
+                            )
+                            if (sheets.isNotEmpty()) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                ) {
+                                    Text(
+                                        text = "${sheets.size}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        // 自定义搜索框
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            tonalElevation = 0.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = {
                                     searchQuery = it
                                     onSearchQueryChanged(it)
                                 },
-                                onSearch = { onSearch(searchQuery) },
-                                expanded = false,
-                                onExpandedChange = {},
-                                placeholder = { Text(stringResource(R.string.search_sheets)) },
-                                leadingIcon = { Icon(Icons.Default.Search, null) }
+                                placeholder = {
+                                    Text(
+                                        stringResource(R.string.search_sheets),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Search,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                },
+                                singleLine = true,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                ),
+                                modifier = Modifier.fillMaxWidth(),
+                                textStyle = MaterialTheme.typography.bodyMedium
                             )
                         }
-                    )
+                    }
                 }
 
+                // 网格卡片
                 items(sheets.size, key = { sheets[it].first.id }) { index ->
                     SheetCard(
                         sheet = sheets[index],
@@ -232,38 +344,101 @@ fun SheetPageContent(
                 }
             }
 
-            if (sheets.isEmpty())
-                Text(
-                    text = stringResource(R.string.no_sheets),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.Center)
+            // 空状态
+            if (sheets.isEmpty() && !loading) {
+                LottieEmptyState(
+                    modifier = Modifier.align(Alignment.Center),
+                    title = stringResource(R.string.no_sheets),
+                    rawRes = R.raw.empty_sheets
                 )
+            }
         }
+        } // end else (not skeleton)
 
+        // 下载指示器
         downloadingSheet?.let {
-            Card(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
-                    .shadow(elevation = 8.dp)
-                    .align(Alignment.BottomCenter)
+                    .padding(16.dp)
+                    .align(Alignment.BottomCenter),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.inverseSurface,
+                shadowElevation = 8.dp
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.Downloading, contentDescription = null)
-                    Text(
-                        text = stringResource(R.string.downloading) +
-                                (it.sheetName ?: stringResource(R.string.unknown_sheet))
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.inverseOnSurface
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.downloading),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = it.sheetName ?: stringResource(R.string.unknown_sheet),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.inverseOnSurface,
+                            maxLines = 1,
+                            modifier = Modifier.basicMarquee()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SheetActionItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    tint: Color,
+    isDestructive: Boolean = false,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (isDestructive) ErrorRed.copy(alpha = 0.1f)
+                else tint.copy(alpha = 0.1f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = tint
                     )
                 }
             }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (isDestructive) ErrorRed else MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -275,29 +450,40 @@ private fun SheetCard(
     onItemClick: (Pair<Sheet, TaskStatus?>) -> Unit,
     onItemHold: (Pair<Sheet, TaskStatus?>) -> Unit
 ) {
-    Column(
+    ElevatedCard(
+        onClick = { onItemClick(sheet) },
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(
-                onClick = { onItemClick(sheet) },
-                onLongClick = { onItemHold(sheet) }
-            )
+            .pressScaleEffect()
     ) {
         // 封面
-        ElevatedCard(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
         ) {
             if (cover == null)
-                Icon(
-                    imageVector = Icons.Default.LibraryMusic,
-                    contentDescription = null,
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(52.dp),
-                    tint = Color(getRandomPrettyColor())
-                )
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.LibraryMusic,
+                                contentDescription = null,
+                                modifier = Modifier.size(28.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
             else
                 AsyncImage(
                     model = cover,
@@ -305,33 +491,89 @@ private fun SheetCard(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
+
+            // 状态徽章
+            val statusBadge = when (sheet.second) {
+                TaskStatus.PROCESSING -> StatusBadge(
+                    color = MaterialTheme.colorScheme.primary,
+                    label = stringResource(R.string.scanning_sheet_short)
+                )
+                TaskStatus.FAILED -> StatusBadge(
+                    color = ErrorRed,
+                    label = stringResource(R.string.scanning_failed_short)
+                )
+                TaskStatus.COMPLETED -> StatusBadge(
+                    color = SuccessGreen,
+                    label = stringResource(R.string.waiting_to_download_short)
+                )
+                else -> null
+            }
+            statusBadge?.let { badge ->
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = badge.color.copy(alpha = 0.9f),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = badge.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        // 标题
-        Text(
-            text = sheet.first.sheetName
-                ?: stringResource(R.string.unknown_sheet),
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
+
+        // 标题 + 三点按钮
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .basicMarquee()
-        )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(start = 12.dp, end = 4.dp, top = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (sheet.second == TaskStatus.PENDING || sheet.second == TaskStatus.PROCESSING)
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp
+            Text(
+                text = sheet.first.sheetName ?: stringResource(R.string.unknown_sheet),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                modifier = Modifier
+                    .weight(1f)
+                    .basicMarquee()
+            )
+            IconButton(
+                onClick = { onItemHold(sheet) },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = stringResource(R.string.more_options),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
                 )
-            //上次打开日期或识别状态
+            }
+        }
+
+        // 副标题
+        Row(
+            modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (sheet.second == TaskStatus.PENDING || sheet.second == TaskStatus.PROCESSING) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(12.dp),
+                    strokeWidth = 1.5.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             Text(
                 text = if (sheet.first.isDownloaded)
                     Instant.ofEpochMilli(
-                        sheet.first.lastOpenTime
-                            ?: sheet.first.createTime
+                        sheet.first.lastOpenTime ?: sheet.first.createTime
                     ).toFriendlyString()
                 else when (sheet.second) {
                     TaskStatus.PENDING -> stringResource(R.string.pending_to_scan)
@@ -341,15 +583,15 @@ private fun SheetCard(
                     else -> stringResource(R.string.unknown_status)
                 },
                 style = MaterialTheme.typography.bodySmall,
-                color = Grey800,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .basicMarquee()
+                modifier = Modifier.basicMarquee()
             )
         }
     }
 }
+
+private data class StatusBadge(val color: Color, val label: String)
 
 @Composable
 @Preview(showBackground = true)

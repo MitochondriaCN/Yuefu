@@ -45,14 +45,15 @@ class SheetPlayPageViewModel @Inject constructor(
             val sheet = appDatabase.sheetDao().getById(sheetId)
             val sheetDoc =
                 readXml(File(context.getAbsoluteImportFilePath(sheet!!.fileName!!)))
-            events = Parser().generateMidiEvents(sheetDoc)
+            val parser = Parser()
+            events = parser.generateMidiEvents(sheetDoc)
             se.load(events)
             measureTimeline = buildMeasureTimeline(events)
             measureStartMillisByMeasure = measureTimeline.toMap()
 
             _uiState.emit(
                 uiState.value.copy(
-                    notes = Parser().generateVisualNoteEvents(events),
+                    notes = parser.generateVisualNoteEvents(events),
                     currentMeasure = resolveCurrentMeasure(0L),
                     maxMeasure = measureTimeline.maxOfOrNull { it.first } ?: 1
                 )

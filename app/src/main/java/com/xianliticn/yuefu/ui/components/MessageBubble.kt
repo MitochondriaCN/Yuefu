@@ -1,6 +1,10 @@
 package com.xianliticn.yuefu.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +15,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -33,58 +42,72 @@ fun MessageBubble(
     isFromUser: Boolean = false,
     supportingContent: @Composable () -> Unit = {}
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp, horizontal = 12.dp),
-        horizontalAlignment = if (isFromUser) Alignment.End else Alignment.Start
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(350)) + slideInVertically(
+            animationSpec = tween(350),
+            initialOffsetY = { it / 5 }
+        )
     ) {
-        // 标签：如 "AI" 或 "你"
-        if (label.isNotEmpty()) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.padding(bottom = 4.dp, start = 4.dp, end = 4.dp)
-            )
-        }
-
-        // 气泡主体
-        Surface(
-            modifier = Modifier.animateContentSize(),
-            color = if (isFromUser) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            },
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isFromUser) 16.dp else 4.dp,
-                bottomEnd = if (isFromUser) 4.dp else 16.dp
-            ),
-            tonalElevation = 1.dp
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp, horizontal = 12.dp),
+            horizontalAlignment = if (isFromUser) Alignment.End else Alignment.Start
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 14.dp, vertical = 10.dp)
-                    .widthIn(max = 280.dp) // 限制气泡最大宽度
-            ) {
-                if (message.isNotEmpty()) {
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = if (isFromUser) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
+            // 标签：如 "AI" 或 "你"
+            if (label.isNotEmpty()) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.padding(bottom = 4.dp, start = 4.dp, end = 4.dp)
+                )
+            }
 
-                // 渲染辅助内容
-                Box(modifier = Modifier.padding(top = if (message.isNotEmpty()) 4.dp else 0.dp)) {
-                    supportingContent()
+            // 气泡主体
+            Surface(
+                modifier = Modifier.animateContentSize(),
+                color = if (isFromUser) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+                shape = RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 16.dp,
+                    bottomStart = if (isFromUser) 16.dp else 4.dp,
+                    bottomEnd = if (isFromUser) 4.dp else 16.dp
+                ),
+                tonalElevation = 1.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                        .widthIn(max = 280.dp) // 限制气泡最大宽度
+                ) {
+                    if (message.isNotEmpty()) {
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (isFromUser) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+
+                    // 渲染辅助内容
+                    Box(modifier = Modifier.padding(top = if (message.isNotEmpty()) 4.dp else 0.dp)) {
+                        supportingContent()
+                    }
                 }
             }
         }

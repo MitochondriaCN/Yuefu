@@ -42,7 +42,7 @@
     <string name="saturation">Saturation</string>
     <string name="saturation_desc">Reduce the saturation to the minimum.</string>
     <string name="sharpen">Sharpen</string>
-    <string name="sharpen_desc">Apply a moderate amount of sharpening, but be careful to avoid \"white halos\" or noise along the edges.</string>
+    <string name="sharpen_desc">Apply a moderate amount of sharpening, but be careful to avoid "white halos" or noise along the edges.</string>
     <string name="shadows">Shadows</string>
     <string name="shadows_desc">Significantly increase the shadows to make dark details (such as paper wrinkles and shadows) disappear, while preserving the text.</string>
     <string name="highlights">Highlights</string>
