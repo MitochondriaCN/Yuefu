@@ -89,7 +89,7 @@ class SequenceEngine {
         }
 
         isPlaying = true
-        changeProgress(pausedProgressNano / 1_000_000)
+        changeProgress(pausedProgressNano / 1_000_000, markEvents = false)
 
         sendMidiInit()
 
@@ -157,7 +157,7 @@ class SequenceEngine {
         pausedProgressNano = System.nanoTime() - startTimeNano
     }
 
-    fun changeProgress(targetMillis: Long) {
+    fun changeProgress(targetMillis: Long, markEvents: Boolean = true) {
         //要使elapsedMillis = now - startMillis = targetMillis，
         //只需startMillis = now - targetMillis
         val now = System.nanoTime()
@@ -165,11 +165,13 @@ class SequenceEngine {
         pausedProgressNano = targetMillis * 1_000_000
 
         //设置音符状态
-        sequence?.forEach {
-            if (it.timeNano >= targetMillis * 1_000_000) { //在指针后
-                it.isSent = false
-            } else { //在指针前
-                it.isSent = true
+        if (markEvents) {
+            sequence?.forEach {
+                if (it.timeNano >= targetMillis * 1_000_000) { //在指针后
+                    it.isSent = false
+                } else { //在指针前
+                    it.isSent = true
+                }
             }
         }
 
