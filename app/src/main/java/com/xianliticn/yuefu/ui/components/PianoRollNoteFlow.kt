@@ -1,8 +1,6 @@
 package com.xianliticn.yuefu.ui.components
 
 import android.annotation.SuppressLint
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.ScrollState
@@ -39,7 +37,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.xianliticn.yuefu.music.VisualNoteEvent
-import kotlin.math.abs
 import kotlin.math.roundToLong
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -85,27 +82,6 @@ fun PianoRollNoteFlow(
             val targetPx = (midKeyIndex + 0.5f) * whiteKeyWidthPx - viewportWidthPx / 2f
             val maxScroll = (whiteKeyWidthPx * whiteKeys.size - viewportWidthPx).coerceAtLeast(0f)
             scrollState.scrollTo(targetPx.coerceIn(0f, maxScroll).roundToLong().toInt())
-        }
-    }
-
-    // Follow active notes during playback
-    LaunchedEffect(currentProgressMillis) {
-        if (!isScrollMode && viewportWidthPx > 0f) {
-            val active = notes.filter {
-                currentProgressMillis in it.startTimeMillis until it.endTimeMillis
-            }
-            if (active.isNotEmpty()) {
-                val avgKey = active.map { it.keyIndex }.average().toFloat()
-                val targetPx = (avgKey + 0.5f) * whiteKeyWidthPx - viewportWidthPx / 2f
-                val maxScroll = (whiteKeyWidthPx * whiteKeys.size - viewportWidthPx).coerceAtLeast(0f)
-                val clamped = targetPx.coerceIn(0f, maxScroll).roundToLong().toInt()
-                if (abs(clamped - scrollState.value) > 30) {
-                    scrollState.animateScrollTo(
-                        clamped,
-                        tween(durationMillis = 120, easing = FastOutSlowInEasing)
-                    )
-                }
-            }
         }
     }
 
