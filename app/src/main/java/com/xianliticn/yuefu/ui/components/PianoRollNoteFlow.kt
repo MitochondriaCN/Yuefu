@@ -2,6 +2,7 @@ package com.xianliticn.yuefu.ui.components
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -29,13 +30,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.music.VisualNoteEvent
 import kotlin.math.roundToLong
 
@@ -90,7 +95,21 @@ fun PianoRollNoteFlow(
             .fillMaxWidth()
             .onSizeChanged { viewportWidthPx = it.width.toFloat() }
     ) {
-        // Layer 0: warm background drift
+        // Layer 0a: image base (MEDIUM + HIGH), flipped vertically so warm tones face the falling notes
+        if (effectLevel != EffectLevel.LOW) {
+            Image(
+                painter = painterResource(R.drawable.game_background),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = keyboardHeight)
+                    .clipToBounds()
+                    .graphicsLayer { scaleY = -1f }
+            )
+        }
+
+        // Layer 0b: warm background drift overlay (HIGH only)
         if (effectLevel == EffectLevel.HIGH) {
             LiquidBackgroundDrift(
                 modifier = Modifier
