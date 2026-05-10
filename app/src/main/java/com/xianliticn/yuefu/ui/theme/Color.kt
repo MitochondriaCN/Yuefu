@@ -15,6 +15,7 @@ val YellowLight = Color(0xFFDBD37F)        // 浅黄，背景点缀
 val YellowContainer = Color(0xFFF5F0C8)
 val YellowContainerDark = Color(0xFF7A7530)
 
+<<<<<<< HEAD
 // ── 品牌色：墨绿灰 ──────────────────────────────────────
 val GreenDark = Color(0xFF73715C)          // 副标题、装饰文字
 val GreenDarkDark = Color(0xFFC8C6B4)
@@ -56,3 +57,11 @@ val PianoBorder = Color(0xFFD5D3C5)        // 暖灰边框
 val ControlBarDark = Color(0xFF2D2D28)     // 暖深色（替代纯黑）
 
 val Ochre = Color(0xFFB68A4C)
+
+val Moonlight = Color(0xFFF6F2E9)
+val PaleOchre = Color(0xFFE8D9BE)
+val OchreEdge = Color(0xFFC9B48A)
+val Bronze = Color(0xFFA87539)
+val InkBrown = Color(0xFF3F2E1F)
+val Grey800 = Color(0xFF424242)
+val Clouds = Color(0xFFECF0F1)

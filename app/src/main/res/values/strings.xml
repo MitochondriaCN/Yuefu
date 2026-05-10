@@ -117,4 +117,7 @@
     <string name="no_sheets">无乐谱，请前往主页扫描乐谱</string>
     <string name="delete_confirm_message">确定要删除「%s」吗？此操作无法撤销。</string>
     <string name="more_options">更多选项</string>
+    <string name="home_greeting">今日想听哪一份谱？</string>
+    <string name="brand_mark_yuefu">乐府</string>
+    <string name="brand_seal_le">乐</string>
 </resources>

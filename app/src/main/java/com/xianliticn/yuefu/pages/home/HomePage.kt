@@ -9,7 +9,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,14 +54,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
@@ -68,7 +71,12 @@ import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
 import com.xianliticn.yuefu.ui.components.animation.LottieEmptyState
 import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
 import com.xianliticn.yuefu.ui.components.animation.pressScaleEffect
+import com.xianliticn.yuefu.ui.theme.Bronze
+import com.xianliticn.yuefu.ui.theme.InkBrown
+import com.xianliticn.yuefu.ui.theme.Moonlight
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
+import com.xianliticn.yuefu.ui.theme.OchreEdge
+import com.xianliticn.yuefu.ui.theme.PaleOchre
 import com.xianliticn.yuefu.utils.toFriendlyString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -231,7 +239,7 @@ fun HomePageContent(
             modifier = modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            // Hero Header
+            // Hero Header — NotoSerif "乐府" + greeting
             item {
                 AnimatedVisibility(
                     visible = headerVisible,
@@ -243,23 +251,24 @@ fun HomePageContent(
                     Column {
                         Spacer(Modifier.height(32.dp))
                         Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.headlineLarge,
+                            text = stringResource(R.string.brand_mark_yuefu),
+                            fontFamily = NotoSerifSc,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = NotoSerifSc
+                            fontSize = 36.sp,
+                            color = InkBrown
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = stringResource(R.string.home_subtitle),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(R.string.home_greeting),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = InkBrown.copy(alpha = 0.55f)
                         )
                         Spacer(Modifier.height(24.dp))
                     }
                 }
             }
 
-            // Action Cards
+            // Scan Card
             item {
                 AnimatedVisibility(
                     visible = actionsVisible,
@@ -268,41 +277,16 @@ fun HomePageContent(
                         initialOffsetY = { it / 3 }
                     )
                 ) {
-                    Row(
+                    ScanCard(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ActionCard(
-                            modifier = Modifier.weight(1f),
-                            icon = Icons.Default.CameraAlt,
-                            title = stringResource(R.string.shot_sheet),
-                            subtitle = stringResource(R.string.shot_sheet_desc),
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                            onClick = {
-                                if (showTutorial) {
-                                    showingTutorial = true
-                                    onTutorialShown()
-                                } else
-                                    gettingImage = true
-                            }
-                        )
-                        ActionCard(
-                            modifier = Modifier.weight(1f),
-                            icon = Icons.Default.Image,
-                            title = stringResource(R.string.pick_image),
-                            subtitle = stringResource(R.string.pick_image_desc),
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                            onClick = {
-                                if (showTutorial) {
-                                    showingTutorial = true
-                                    onTutorialShown()
-                                } else
-                                    gettingImage = true
-                            }
-                        )
-                    }
+                        onClick = {
+                            if (showTutorial) {
+                                showingTutorial = true
+                                onTutorialShown()
+                            } else
+                                gettingImage = true
+                        }
+                    )
                 }
             }
 
@@ -365,48 +349,86 @@ fun HomePageContent(
 }
 
 @Composable
-private fun ActionCard(
+private fun ScanCard(
     modifier: Modifier = Modifier,
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    containerColor: Color,
-    contentColor: Color,
     onClick: () -> Unit
 ) {
+    val shape = RoundedCornerShape(16.dp)
     ElevatedCard(
         modifier = modifier.pressScaleEffect(),
         onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = containerColor,
-            contentColor = contentColor
+        shape = shape,
+        elevation = CardDefaults.elevatedCardElevation(
+            defaultElevation = 6.dp,
+            pressedElevation = 4.dp
         ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 0.dp)
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = Color.Transparent
+        )
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .padding(20.dp)
                 .fillMaxWidth()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(Moonlight, PaleOchre)
+                    ),
+                    shape = shape
+                )
+                .border(1.dp, OchreEdge.copy(alpha = 0.6f), shape)
         ) {
-            Icon(
-                imageVector = icon,
-                modifier = Modifier.size(32.dp),
-                contentDescription = null
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.12f),
+                                Color.Transparent
+                            )
+                        )
+                    )
             )
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = contentColor.copy(alpha = 0.7f)
+            Column(modifier = Modifier.padding(20.dp)) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    modifier = Modifier.size(40.dp),
+                    contentDescription = null,
+                    tint = InkBrown
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = stringResource(R.string.shot_sheet),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = InkBrown
+                )
+            }
+            BronzeSeal(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun BronzeSeal(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(30.dp)
+            .rotate(-2f)
+            .border(1.5.dp, Bronze, RoundedCornerShape(6.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = stringResource(R.string.brand_seal_le),
+            fontFamily = NotoSerifSc,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp,
+            color = Bronze
+        )
     }
 }
 
