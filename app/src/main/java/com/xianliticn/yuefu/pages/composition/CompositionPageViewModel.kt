@@ -34,6 +34,12 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import okio.ByteString
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 //TODO: 增加异常处理防崩溃
@@ -57,6 +63,19 @@ class CompositionPageViewModel @Inject constructor(
 
     private var currentWeight = 1.0
     private var isPlaying = false
+
+    private val fftSize = 1024
+    private val bandCount = 16
+    private val sampleRate = 48000f
+    private val fftBuffer = FloatArray(fftSize)
+    private val fftReal = FloatArray(fftSize)
+    private val fftImag = FloatArray(fftSize)
+    private val window = FloatArray(fftSize) { index ->
+        (0.5f - 0.5f * cos(2.0 * PI * index / (fftSize - 1))).toFloat()
+    }
+    private var fftWriteIndex = 0
+    private var fftFilled = false
+    private var spectrum = FloatArray(bandCount)
 
     private val _uiState = MutableStateFlow(
         CompositionPageState(
@@ -151,7 +170,7 @@ class CompositionPageViewModel @Inject constructor(
                         Log.d("YF", "LyriaResponse format: ${chunk.mimeType}")
                         val audioData = Base64.decode(chunk.data, Base64.DEFAULT)
 
-                        updateAudioLevel(audioData)
+                        updateAudioSpectrum(audioData)
 
                         // 处理二进制数据（仅用于 UI 显示）
                         _uiState.value = _uiState.value.copy(
@@ -189,7 +208,14 @@ class CompositionPageViewModel @Inject constructor(
         isWsReady.value = false
         isPlaying = false
         currentWeight = 1.0
-        _uiState.value = _uiState.value.copy(messages = emptyList(), audioLevel = 0f)
+        fftWriteIndex = 0
+        fftFilled = false
+        spectrum = FloatArray(bandCount)
+        _uiState.value = _uiState.value.copy(
+            messages = emptyList(),
+            audioLevel = 0f,
+            spectrum = List(bandCount) { 0f }
+        )
     }
 
     fun handleKeyChange(key: String) {
@@ -281,33 +307,171 @@ class CompositionPageViewModel @Inject constructor(
         resetWsState()
     }
 
-    private fun updateAudioLevel(audioData: ByteArray) {
-        val rms = calculateRms(audioData)
-        val current = _uiState.value.audioLevel
-        val smoothed = (current * 0.7f + rms * 0.3f).coerceIn(0f, 1f)
-        _uiState.value = _uiState.value.copy(audioLevel = smoothed)
-    }
+    private fun updateAudioSpectrum(audioData: ByteArray) {
+        val samples = extractMonoSamples(audioData)
+        if (samples.isEmpty()) return
 
-    private fun calculateRms(audioData: ByteArray): Float {
-        if (audioData.size < 2) return 0f
+        pushSamples(samples)
+        val bands = computeSpectrumBands() ?: return
 
-        var sum = 0.0
-        var count = 0
-        var index = 0
-
-        while (index + 1 < audioData.size) {
-            val low = audioData[index].toInt() and 0xFF
-            val high = audioData[index + 1].toInt()
-            val sample = ((high shl 8) or low).toShort().toInt()
-            sum += (sample * sample).toDouble()
-            count += 1
-            index += 2
+        val attack = 0.55f
+        val decay = 0.12f
+        for (index in 0 until bandCount) {
+            val target = bands[index]
+            val current = spectrum[index]
+            spectrum[index] = if (target > current) {
+                current + (target - current) * attack
+            } else {
+                current + (target - current) * decay
+            }
         }
 
-        if (count == 0) return 0f
+        val bass = (spectrum[0] + spectrum[1] + spectrum[2]) / 3f
+        val level = (0.2f + bass * 0.8f).coerceIn(0f, 1f)
 
-        val rms = sqrt(sum / count)
-        return (rms / 32768.0).toFloat().coerceIn(0f, 1f)
+        _uiState.value = _uiState.value.copy(
+            audioLevel = level,
+            spectrum = spectrum.toList()
+        )
+    }
+
+    private fun extractMonoSamples(audioData: ByteArray): FloatArray {
+        if (audioData.size < 2) return FloatArray(0)
+
+        val isStereo = audioData.size % 4 == 0
+        val sampleCount = if (isStereo) audioData.size / 4 else audioData.size / 2
+        val samples = FloatArray(sampleCount)
+
+        var index = 0
+        var sampleIndex = 0
+        while (index + 1 < audioData.size && sampleIndex < sampleCount) {
+            val low = audioData[index].toInt() and 0xFF
+            val high = audioData[index + 1].toInt()
+            val left = ((high shl 8) or low).toShort().toInt()
+
+            if (isStereo && index + 3 < audioData.size) {
+                val lowR = audioData[index + 2].toInt() and 0xFF
+                val highR = audioData[index + 3].toInt()
+                val right = ((highR shl 8) or lowR).toShort().toInt()
+                samples[sampleIndex] = ((left + right) * 0.5f / 32768f).coerceIn(-1f, 1f)
+                index += 4
+            } else {
+                samples[sampleIndex] = (left / 32768f).coerceIn(-1f, 1f)
+                index += 2
+            }
+            sampleIndex += 1
+        }
+
+        return samples
+    }
+
+    private fun pushSamples(samples: FloatArray) {
+        for (sample in samples) {
+            fftBuffer[fftWriteIndex] = sample
+            fftWriteIndex = (fftWriteIndex + 1) % fftSize
+            if (fftWriteIndex == 0) {
+                fftFilled = true
+            }
+        }
+    }
+
+    private fun computeSpectrumBands(): FloatArray? {
+        if (!fftFilled) return null
+
+        for (index in 0 until fftSize) {
+            val bufferIndex = (fftWriteIndex + index) % fftSize
+            fftReal[index] = fftBuffer[bufferIndex] * window[index]
+            fftImag[index] = 0f
+        }
+
+        fft(fftReal, fftImag)
+
+        val magnitudes = FloatArray(fftSize / 2)
+        var maxMag = 1e-6f
+        for (index in 1 until fftSize / 2) {
+            val mag = sqrt(fftReal[index] * fftReal[index] + fftImag[index] * fftImag[index])
+            magnitudes[index] = mag
+            if (mag > maxMag) maxMag = mag
+        }
+
+        val bands = FloatArray(bandCount)
+        val maxBin = fftSize / 2 - 1
+        val bandWidth = max(1, maxBin / bandCount)
+        val logBase = 1f + 12f * maxMag
+
+        for (band in 0 until bandCount) {
+            val startBin = max(1, band * bandWidth)
+            val endBin = min(maxBin, (band + 1) * bandWidth)
+
+            var peak = 0f
+            var bin = startBin
+            while (bin <= endBin) {
+                val value = magnitudes[bin]
+                if (value > peak) peak = value
+                bin += 1
+            }
+
+            val normalized = (kotlin.math.log10(1f + 12f * peak) / kotlin.math.log10(logBase))
+                .coerceIn(0f, 1f)
+            bands[band] = normalized
+        }
+
+        return bands
+    }
+
+    private fun fft(real: FloatArray, imag: FloatArray) {
+        val n = real.size
+        var j = 0
+        var i = 1
+        while (i < n) {
+            var bit = n shr 1
+            while (j and bit != 0) {
+                j = j xor bit
+                bit = bit shr 1
+            }
+            j = j xor bit
+            if (i < j) {
+                val tempReal = real[i]
+                val tempImag = imag[i]
+                real[i] = real[j]
+                imag[i] = imag[j]
+                real[j] = tempReal
+                imag[j] = tempImag
+            }
+            i += 1
+        }
+
+        var len = 2
+        while (len <= n) {
+            val ang = (-2.0 * PI / len)
+            val wLenReal = cos(ang).toFloat()
+            val wLenImag = sin(ang).toFloat()
+            var start = 0
+            while (start < n) {
+                var wReal = 1f
+                var wImag = 0f
+                var k = 0
+                while (k < len / 2) {
+                    val uReal = real[start + k]
+                    val uImag = imag[start + k]
+                    val vReal = real[start + k + len / 2] * wReal - imag[start + k + len / 2] * wImag
+                    val vImag = real[start + k + len / 2] * wImag + imag[start + k + len / 2] * wReal
+
+                    real[start + k] = uReal + vReal
+                    imag[start + k] = uImag + vImag
+                    real[start + k + len / 2] = uReal - vReal
+                    imag[start + k + len / 2] = uImag - vImag
+
+                    val nextWReal = wReal * wLenReal - wImag * wLenImag
+                    val nextWImag = wReal * wLenImag + wImag * wLenReal
+                    wReal = nextWReal
+                    wImag = nextWImag
+                    k += 1
+                }
+                start += len
+            }
+            len = len shl 1
+        }
     }
 }
 
@@ -318,7 +482,8 @@ data class CompositionPageState(
     val selectedInstrument: String? = instruments.firstOrNull(),
     val prompt: String? = null,
     val messages: List<LyriaMessage> = emptyList(),
-    val audioLevel: Float = 0f
+    val audioLevel: Float = 0f,
+    val spectrum: List<Float> = List(16) { 0f }
 )
 
 private data class AudioTrackConfig(
