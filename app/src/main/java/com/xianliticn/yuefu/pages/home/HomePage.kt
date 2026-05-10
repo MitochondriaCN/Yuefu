@@ -68,7 +68,6 @@ import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
-import com.xianliticn.yuefu.ui.components.scorePaperTexture
 import com.xianliticn.yuefu.ui.theme.InkBrown
 import com.xianliticn.yuefu.ui.theme.InkSoft
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
@@ -234,7 +233,6 @@ fun HomePageContent(
             modifier = modifier
                 .fillMaxSize()
                 .background(Color.White)
-                .scorePaperTexture(color = InkBrown, alpha = 0.055f)
         ) {
             Column(
                 modifier = Modifier
