@@ -11,6 +11,7 @@ import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface OmrApi {
 
@@ -28,6 +29,15 @@ interface OmrApi {
         @Path("engine") engine: OmrEngine,
         @Part image: MultipartBody.Part
     ): ApiResponse<SubmitTaskVo>
+
+    /**
+     * 提交Demo任务
+     */
+    @POST("omr/submit/demo")
+    suspend fun submitDemo(
+        @Query("sleepSec") sleepSec: Int,
+        @Query("index") index: Int
+    )
 
     /**
      * 获取OMR任务状态

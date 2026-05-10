@@ -4,6 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
@@ -37,6 +41,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
@@ -101,6 +106,9 @@ class ScanStudioPageViewModel @Inject constructor(
 
     private val _demoModeEnabled = MutableStateFlow(false)
     val demoModeEnabled: StateFlow<Boolean> = _demoModeEnabled
+
+    private val _demoIndex = MutableStateFlow<Int?>(null)
+    val demoIndex: StateFlow<Int?> = _demoIndex
 
     private lateinit var _originalBitmap: Bitmap
     private var transformationJob: Job? = null
@@ -204,7 +212,43 @@ class ScanStudioPageViewModel @Inject constructor(
 
     fun setDemoMode(enabled: Boolean) {
         _demoModeEnabled.value = enabled
+        if (enabled) {
+            val nextDemoIndex = (_demoIndex.value ?: 0) + 1
+            _demoIndex.value = nextDemoIndex
+            Log.d("YF", "Demo index: $nextDemoIndex, vibrate times: $nextDemoIndex")
+            vibrateShortTimes(nextDemoIndex)
+        } else {
+            _demoIndex.value = null
+        }
         Log.d("YF", "Demo mode enabled: $enabled")
+    }
+
+    private fun vibrateShortTimes(times: Int) {
+        val safeTimes = times.coerceAtLeast(1)
+        val timings = LongArray(safeTimes * 2) { index ->
+            when {
+                index == 0 -> 0L
+                index % 2 == 1 -> 120L
+                else -> 80L
+            }
+        }
+        val amplitudes = IntArray(safeTimes * 2) { index ->
+            if (index % 2 == 1) 180 else 0
+        }
+
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val manager = context.getSystemService(VibratorManager::class.java)
+            manager?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            context.getSystemService(Vibrator::class.java)
+        } ?: return
+
+        if (!vibrator.hasVibrator()) return
+
+        vibrator.vibrate(
+            VibrationEffect.createWaveform(timings, amplitudes, -1)
+        )
     }
 
     fun handleConfirm(image: Bitmap, model: OmrModel) {
