@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessMedium
@@ -36,6 +37,7 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
 class ScanStudioPageViewModel @Inject constructor(
@@ -97,6 +99,9 @@ class ScanStudioPageViewModel @Inject constructor(
     private val _finished = MutableStateFlow(false)
     val finished: StateFlow<Boolean> = _finished
 
+    private val _demoModeEnabled = MutableStateFlow(false)
+    val demoModeEnabled: StateFlow<Boolean> = _demoModeEnabled
+
     private lateinit var _originalBitmap: Bitmap
     private var transformationJob: Job? = null
     private var omrJob: Job? = null
@@ -129,7 +134,7 @@ class ScanStudioPageViewModel @Inject constructor(
         transformationJob?.cancel()
         transformationJob = viewModelScope.launch {
             //防抖
-            delay(200)
+            delay(200.milliseconds)
 
             val brightnessValue =
                 _imageParams.value.entries.find { it.key.nameResId == R.string.brightness }?.value
@@ -197,13 +202,24 @@ class ScanStudioPageViewModel @Inject constructor(
         }
     }
 
+    fun setDemoMode(enabled: Boolean) {
+        _demoModeEnabled.value = enabled
+        Log.d("YF", "Demo mode enabled: $enabled")
+    }
+
     fun handleConfirm(image: Bitmap, model: OmrModel) {
+        val demoModeEnabled = _demoModeEnabled.value
         _omrRunning.value = true
 
         omrJob?.cancel()
         omrJob = viewModelScope.launch {
-            delay(1000)
+            delay(1000.milliseconds)
             try {
+                if (demoModeEnabled) {
+                    // Demo mode confirm flow goes here.
+                } else {
+                    // Normal confirm flow goes here.
+                }
                 val part = image.toMultipartBodyPart()
                 // 提交OMR任务
                 omrApi.submitSheetImage(

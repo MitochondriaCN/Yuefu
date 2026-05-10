@@ -3,6 +3,7 @@
     <string name="app_name">Yuefu</string>
     <string name="home">Home</string>
     <string name="shot_sheet">Scan score</string>
+    <string name="pick_image_desc">Import Image</string>
     <string name="import_file">Import score</string>
     <string name="invalid_sheet">Invalid sheet music file.</string>
     <string name="import_success">Import successful!</string>
@@ -71,11 +72,13 @@
     <string name="scanned_successfully">Waiting for downloading</string>
     <string name="waiting_to_download">Waiting for downloading</string>
     <string name="scanning_failed">Failed to scan</string>
+    <string name="waiting_to_download_short">Waiting For Downloading</string>
     <string name="unknown_status">Unknown status</string>
     <string name="already_downloading">There is already a task</string>
     <string name="downloading">"Downloading: "</string>
     <string name="download_complete">"Download completed: "</string>
     <string name="updating_sheet">Updating the sheet…</string>
+    <string name="demo_mode_off">Demo Mode Off</string>
     <string name="backend_status">Server Status</string>
     <string name="timestamp">"Timestamp: "</string>
     <string name="cache_size">"Cache: "</string>
@@ -85,10 +88,12 @@
     <string name="composition_prompt_placeholder">A cheerful pop song…</string>
     <string name="composition">Composition</string>
     <string name="composition_headline">Need some inspiration?</string>
+    <string name="composition_desc">Describe the music style you want, and AI will create music for you in real time</string>
     <string name="instrument">Instrument</string>
     <string name="key">Key</string>
     <string name="connection_lost">Connection has lost, please retry</string>
     <string name="ai_generating">AI Generating</string>
+    <string name="stop">Stop</string>
     <string name="this_may_take_a_while">This may take a while</string>
     <string name="comp_risk_control">The prompt doesn\'t suit the rule, please retry</string>
     <string name="failed_to_fetch_image">Failed to fetch image, please check the permissions</string>
@@ -109,4 +114,15 @@
     <string name="failed_to_download">Failed to download</string>
     <string name="no_recently_used_sheets">No recently used sheets. Please scan the sheet.</string>
     <string name="no_sheets">无乐谱，请前往主页扫描乐谱</string>
+    <string name="more_options">More Options</string>
+    <string name="choose_model_demo_mode">Please Choose Model</string>
+    <string name="home_subtitle">Take It and Listen to It</string>
+    <string name="shot_sheet_desc">Take Photo</string>
+    <string name="scanning_sheet_short">Scanning</string>
+    <string name="scanning_failed_short">Failed</string>
+    <string name="demo_mode_enabled">Demo Mode On</string>
+    <string name="demo_mode_disabled">Demo Mode Off</string>
+    <string name="demo_mode_on">Demo Mode On</string>
+    <string name="now_playing">Playing</string>
+    <string name="delete_confirm_message">Are you sure you want to delete \"%s\"? This operation cannot be undone.</string>
 </resources>
