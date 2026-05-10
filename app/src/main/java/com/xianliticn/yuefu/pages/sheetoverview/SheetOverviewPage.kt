@@ -11,11 +11,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.VerticalSplit
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
 import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,10 +40,12 @@ import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.ui.components.InfoBox
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SheetOverviewPage(
     viewModel: SheetOverviewPageViewModel,
-    sheetId: Int
+    sheetId: Int,
+    onBackPress: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val imageModel by viewModel.sheetPicture.collectAsState()
@@ -46,18 +54,34 @@ fun SheetOverviewPage(
         viewModel.refresh(sheetId)
     }
 
-    if (uiState.loading)
-        LottieLoadingView()
-    else
-        SheetOverviewPageContent(
-            modifier = Modifier.fillMaxSize(),
-            sheetName = uiState.sheetTitle ?: stringResource(R.string.unknown_sheet),
-            sheetAuthor = uiState.sheetAuthor ?: stringResource(R.string.unknown_author),
-            sheetCreatedTime = uiState.sheetCreatedTime,
-            sheetMeasureCount = uiState.sheetMeasureCount,
-            sheetModel = uiState.sheetModel,
-            sheetPicture = imageModel
-        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = onBackPress) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        if (uiState.loading)
+            LottieLoadingView()
+        else
+            SheetOverviewPageContent(
+                modifier = Modifier.padding(paddingValues),
+                sheetName = uiState.sheetTitle ?: stringResource(R.string.unknown_sheet),
+                sheetAuthor = uiState.sheetAuthor ?: stringResource(R.string.unknown_author),
+                sheetCreatedTime = uiState.sheetCreatedTime,
+                sheetMeasureCount = uiState.sheetMeasureCount,
+                sheetModel = uiState.sheetModel,
+                sheetPicture = imageModel
+            )
+    }
 }
 
 @Composable
@@ -77,7 +101,7 @@ fun SheetOverviewPageContent(
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(32.dp)
     ) {
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(8.dp))
 
 
         Column(
