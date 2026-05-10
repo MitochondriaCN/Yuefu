@@ -41,7 +41,6 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
-import java.util.Locale
 import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel
@@ -258,40 +257,44 @@ class ScanStudioPageViewModel @Inject constructor(
         omrJob?.cancel()
         omrJob = viewModelScope.launch {
             delay(1000.milliseconds)
-            try {
-                if (demoModeEnabled) {
-                    // Demo mode confirm flow goes here.
-                } else {
-                    // Normal confirm flow goes here.
-                }
-                val part = image.toMultipartBodyPart()
-                // 提交OMR任务
-                omrApi.submitSheetImage(
-                    engine = when (model) {
-                        OmrModel.QINGSHANG -> OmrEngine.LEGATO_FP16
-                        OmrModel.ZHENGSHENG -> OmrEngine.LEGATO_FP32
-                    },
-                    image = part
-                ).data?.let { vo ->
-                    //创建乐谱实体
-                    val sheet = Sheet(
-                        taskId = vo.taskId,
-                        isDownloaded = false,
-                        createTime = System.currentTimeMillis(),
-                        model = model.label
+
+            runCatching {
+                if (demoModeEnabled) { // 演示模式
+                    omrApi.submitDemo(
+                        sleepSec = 10,
+                        index = _demoIndex.value ?: 1
                     )
-                    appDatabase.sheetDao().insert(sheet)
-                    Toast.makeText(context, R.string.omr_task_submitted, Toast.LENGTH_LONG).show()
-                    _finished.value = true
-                    return@launch
+                } else { // 正常模式
+                    val part = image.toMultipartBodyPart()
+                    omrApi.submitSheetImage(
+                        engine = when (model) {
+                            OmrModel.QINGSHANG -> OmrEngine.LEGATO_FP16
+                            OmrModel.ZHENGSHENG -> OmrEngine.LEGATO_FP32
+                        },
+                        image = part
+                    )
                 }
-                Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-                _omrRunning.value = false
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
-                _omrRunning.value = false
-            }
+            }.fold(
+                onSuccess = { resp ->
+                    resp.data?.let {
+                        //创建乐谱实体
+                        val sheet = Sheet(
+                            taskId = it.taskId,
+                            isDownloaded = false,
+                            createTime = System.currentTimeMillis(),
+                            model = model.label
+                        )
+                        appDatabase.sheetDao().insert(sheet)
+                        Toast.makeText(context, R.string.omr_task_submitted, Toast.LENGTH_LONG)
+                            .show()
+                        _finished.value = true
+                    }
+                },
+                onFailure = {
+                    Toast.makeText(context, R.string.failed_to_omr, Toast.LENGTH_LONG).show()
+                    _omrRunning.value = false
+                }
+            )
         }
     }
 

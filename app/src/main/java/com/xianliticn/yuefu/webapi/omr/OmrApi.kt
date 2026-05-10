@@ -37,7 +37,7 @@ interface OmrApi {
     suspend fun submitDemo(
         @Query("sleepSec") sleepSec: Int,
         @Query("index") index: Int
-    )
+    ): ApiResponse<SubmitTaskVo>
 
     /**
      * 获取OMR任务状态
