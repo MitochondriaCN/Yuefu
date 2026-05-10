@@ -82,7 +82,8 @@ fun CompositionPage(viewModel: CompositionPageViewModel = hiltViewModel()) {
         selectedInstrument = uiState.selectedInstrument ?: stringResource(R.string.unknown),
         onInstrumentChange = { viewModel.handleInstrumentChange(it) },
         messages = compactMessages(uiState.messages),
-        audioLevel = uiState.audioLevel
+        audioLevel = uiState.audioLevel,
+        spectrum = uiState.spectrum
     )
 }
 
@@ -101,7 +102,8 @@ fun CompositionPageContent(
     selectedInstrument: String = "钢琴",
     onInstrumentChange: (String) -> Unit = {},
     messages: List<LyriaMessage> = emptyList(),
-    audioLevel: Float = 0f
+    audioLevel: Float = 0f,
+    spectrum: List<Float> = emptyList()
 ) {
     var keyExpanded by remember { mutableStateOf(false) }
     var instrumentExpanded by remember { mutableStateOf(false) }
@@ -110,7 +112,8 @@ fun CompositionPageContent(
         PlayingNowScreen(
             modifier = modifier.fillMaxSize(),
             onStopClick = onStopClick,
-            audioLevel = audioLevel
+            audioLevel = audioLevel,
+            spectrum = spectrum
         )
         return
     }
@@ -236,7 +239,8 @@ fun CompositionPageContent(
 private fun PlayingNowScreen(
     modifier: Modifier = Modifier,
     onStopClick: () -> Unit = {},
-    audioLevel: Float = 0f
+    audioLevel: Float = 0f,
+    spectrum: List<Float> = emptyList()
 ) {
     val level by animateFloatAsState(
         targetValue = audioLevel,
@@ -324,7 +328,7 @@ private fun PlayingNowScreen(
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.weight(1f))
-                SpectrumBars(audioLevel = level)
+                SpectrumBars(audioLevel = level, spectrum = spectrum)
             }
         }
 
@@ -340,19 +344,20 @@ private fun PlayingNowScreen(
 @Composable
 private fun SpectrumBars(
     modifier: Modifier = Modifier,
-    barWidth: Dp = 7.dp,
+    barWidth: Dp = 5.dp,
     maxHeight: Dp = 170.dp,
-    audioLevel: Float = 0f
+    audioLevel: Float = 0f,
+    spectrum: List<Float> = emptyList()
 ) {
     val transition = rememberInfiniteTransition(label = "spectrum")
-    val heights = List(8) { index ->
+    val heights = List(16) { index ->
         transition.animateFloat(
             initialValue = 0.2f,
             targetValue = 1f,
             animationSpec = infiniteRepeatable(
                 animation = tween(
-                    durationMillis = 900 + index * 120,
-                    delayMillis = index * 90,
+                    durationMillis = 860 + index * 70,
+                    delayMillis = index * 40,
                     easing = FastOutSlowInEasing
                 ),
                 repeatMode = RepeatMode.Reverse
@@ -363,11 +368,12 @@ private fun SpectrumBars(
 
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Bottom
     ) {
-        heights.forEach { anim ->
-            val energy = (0.15f + audioLevel * 1.15f).coerceIn(0.1f, 1f)
+        heights.forEachIndexed { index, anim ->
+            val band = spectrum.getOrNull(index) ?: audioLevel
+            val energy = (0.08f + band * 0.92f).coerceIn(0.08f, 1f)
             val shimmer = 0.55f + 0.45f * anim.value
             val barHeight = (12f + (maxHeight.value - 12f) * energy * shimmer).dp
             Box(
@@ -375,7 +381,7 @@ private fun SpectrumBars(
                     .width(barWidth)
                     .height(barHeight)
                     .shadow(
-                        elevation = (10f + 16f * audioLevel).dp,
+                        elevation = (8f + 14f * audioLevel).dp,
                         shape = RoundedCornerShape(50),
                         ambientColor = Color(0xFFBFD6FF).copy(alpha = 0.35f),
                         spotColor = Color(0xFFBFD6FF).copy(alpha = 0.35f)
@@ -385,7 +391,7 @@ private fun SpectrumBars(
                         Brush.verticalGradient(
                             listOf(
                                 Color.White.copy(alpha = 0.98f),
-                                Color(0xFFBFD6FF).copy(alpha = 0.75f + 0.2f * audioLevel),
+                                Color(0xFFBFD6FF).copy(alpha = 0.65f + 0.25f * audioLevel),
                                 Color.White.copy(alpha = 0.35f + 0.25f * audioLevel)
                             )
                         )
