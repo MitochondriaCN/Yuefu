@@ -54,3 +54,18 @@ val PianoBorder = Color(0xFFD5D3C5)        // 暖灰边框
 
 // ── 播放控制栏 ──────────────────────────────────────────
 val ControlBarDark = Color(0xFF2D2D28)     // 暖深色（替代纯黑）
+
+val Ochre = Color(0xFFB68A4C)
+
+val Moonlight = Color(0xFFF6F2E9)
+val PaleOchre = Color(0xFFE8D9BE)
+val OchreEdge = Color(0xFFC9B48A)
+val Bronze = Color(0xFFA87539)
+val InkBrown = Color(0xFF3F2E1F)
+val Grey800 = Color(0xFF424242)
+val Clouds = Color(0xFFECF0F1)
+
+// ── 主页古典方案 ──
+val Ivory     = Color(0xFFFFFBF0)
+val WarmBg    = Color(0xFFF6F2E9)
+val InkSoft   = Color(0xFF8D7A6A)
