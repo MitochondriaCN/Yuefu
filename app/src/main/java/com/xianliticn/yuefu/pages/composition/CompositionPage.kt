@@ -1,6 +1,16 @@
 package com.xianliticn.yuefu.pages.composition
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,17 +21,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Blender
-import androidx.compose.material.icons.filled.Square
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -34,24 +40,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.xianliticn.yuefu.R
-import com.xianliticn.yuefu.ui.components.MessageBubble
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
-import kotlinx.coroutines.delay
 import okio.Buffer
 import okio.ByteString
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import kotlin.math.PI
+import kotlin.math.sin
 
 @Composable
 fun CompositionPage(viewModel: CompositionPageViewModel = hiltViewModel()) {
@@ -70,6 +82,7 @@ fun CompositionPage(viewModel: CompositionPageViewModel = hiltViewModel()) {
         selectedInstrument = uiState.selectedInstrument ?: stringResource(R.string.unknown),
         onInstrumentChange = { viewModel.handleInstrumentChange(it) },
         messages = compactMessages(uiState.messages),
+        audioLevel = uiState.audioLevel
     )
 }
 
@@ -87,110 +100,36 @@ fun CompositionPageContent(
     onKeyChange: (String) -> Unit = {},
     selectedInstrument: String = "钢琴",
     onInstrumentChange: (String) -> Unit = {},
-    messages: List<LyriaMessage> = emptyList()
+    messages: List<LyriaMessage> = emptyList(),
+    audioLevel: Float = 0f
 ) {
     var keyExpanded by remember { mutableStateOf(false) }
     var instrumentExpanded by remember { mutableStateOf(false) }
-    // Only tick when there's an active generation (last message is a response)
-    val isGenerating = messages.isNotEmpty() && messages.last() !is PromptMessage
-    val currentTime by produceState(initialValue = System.currentTimeMillis(), isGenerating) {
-        if (isGenerating) {
-            while (true) {
-                delay(1000)
-                value = System.currentTimeMillis()
-            }
-        }
+
+    if (messages.isNotEmpty()) {
+        PlayingNowScreen(
+            modifier = modifier.fillMaxSize(),
+            onStopClick = onStopClick,
+            audioLevel = audioLevel
+        )
+        return
     }
 
     Column(
-        modifier = if (messages.isNotEmpty())
-            modifier
-                .fillMaxSize()
-                .animateContentSize()
-                .verticalScroll(rememberScrollState())
-        else
-            modifier
-                .fillMaxWidth()
-                .animateContentSize(),
+        modifier = modifier
+            .fillMaxWidth()
+            .animateContentSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
         Spacer(Modifier.height(40.dp))
 
-        if (messages.isEmpty()) {
-            Spacer(Modifier.height(24.dp))
-            Surface(
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                modifier = Modifier.size(80.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Filled.Blender,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.composition_headline),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
-            )
-            Text(
-                text = stringResource(R.string.composition_desc),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(Modifier.height(8.dp))
-        }
+        Text(
+            text = stringResource(R.string.composition_headline),
+            style = MaterialTheme.typography.headlineMedium
+        )
 
-        for (message in messages) {
-            val label = SimpleDateFormat("HH:mm", Locale.getDefault())
-                .format(Date(message.getTimestampMillis()))
-            val messageText = when (message) {
-                is PromptMessage -> message.getMessageString()
-                is BinaryResponseMessage -> message.getMessageString()
-                else -> stringResource(R.string.unknown)
-            }
-            val isUserMessage = when (message) {
-                is PromptMessage -> true
-                else -> false
-            }
-
-            MessageBubble(
-                label = label,
-                message = messageText,
-                isFromUser = isUserMessage,
-                supportingContent = {
-                    // 如果是当前列表中最后一条消息
-                    // 就转圈
-                    if (messages.last() == message)
-                        Row(
-                            modifier = Modifier.padding(top = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp
-                            )
-                            if (currentTime - message.getTimestampMillis() > 1000 * 10)
-                                Text(
-                                    text = stringResource(R.string.this_may_take_a_while),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                        }
-                }
-            )
-        }
-
-        if (messages.isNotEmpty())
-            Spacer(Modifier.weight(1f))
-
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(8.dp))
 
         OutlinedTextField(
             modifier = Modifier
@@ -208,95 +147,372 @@ fun CompositionPageContent(
                         onClick = { onSendClick() },
                         enabled = prompt.isNotBlank(),
                     ) { Icon(Icons.AutoMirrored.Default.Send, null) }
-                    if (messages.isNotEmpty())
-                        FilledIconButton(
-                            onClick = { onStopClick() },
-                        ) { Icon(Icons.Default.Square, null) }
                 }
             }
         )
 
-        if (messages.isEmpty())
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp) // 两个组件之间的间距
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ExposedDropdownMenuBox(
+                expanded = keyExpanded,
+                onExpandedChange = { keyExpanded = !keyExpanded },
+                modifier = Modifier.weight(1f)
             ) {
-                // 调式选择
-                ExposedDropdownMenuBox(
+                OutlinedTextField(
+                    value = selectedKey,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.key)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = keyExpanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.menuAnchor(
+                        ExposedDropdownMenuAnchorType.PrimaryEditable,
+                        keys.isNotEmpty()
+                    ),
+                    singleLine = true
+                )
+                ExposedDropdownMenu(
                     expanded = keyExpanded,
-                    onExpandedChange = { keyExpanded = !keyExpanded },
-                    modifier = Modifier.weight(1f) // 平分空间
+                    onDismissRequest = { keyExpanded = false }
                 ) {
-                    OutlinedTextField(
-                        value = selectedKey,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.key)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = keyExpanded) },
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        modifier = Modifier.menuAnchor(
-                            ExposedDropdownMenuAnchorType.PrimaryEditable,
-                            keys.isNotEmpty()
-                        ),
-                        singleLine = true
-                    )
-                    ExposedDropdownMenu(
-                        expanded = keyExpanded,
-                        onDismissRequest = { keyExpanded = false }
-                    ) {
-                        keys.forEach { selectionOption ->
-                            DropdownMenuItem(
-                                text = { Text(selectionOption) },
-                                onClick = {
-                                    onKeyChange(selectionOption)
-                                    keyExpanded = false
-                                },
-                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                            )
-                        }
-                    }
-                }
-
-                // 乐器选择
-                ExposedDropdownMenuBox(
-                    expanded = instrumentExpanded,
-                    onExpandedChange = { instrumentExpanded = !instrumentExpanded },
-                    modifier = Modifier.weight(1f) // 平分空间
-                ) {
-                    OutlinedTextField(
-                        value = selectedInstrument,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.instrument)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = instrumentExpanded) },
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        modifier = Modifier.menuAnchor(
-                            ExposedDropdownMenuAnchorType.PrimaryEditable,
-                            instruments.isNotEmpty()
-                        ),
-                        singleLine = true
-                    )
-                    ExposedDropdownMenu(
-                        expanded = instrumentExpanded,
-                        onDismissRequest = { instrumentExpanded = false }
-                    ) {
-                        instruments.forEach { selectionOption ->
-                            DropdownMenuItem(
-                                text = { Text(selectionOption) },
-                                onClick = {
-                                    onInstrumentChange(selectionOption)
-                                    instrumentExpanded = false
-                                },
-                                contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                            )
-                        }
+                    keys.forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(selectionOption) },
+                            onClick = {
+                                onKeyChange(selectionOption)
+                                keyExpanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
                     }
                 }
             }
 
+            ExposedDropdownMenuBox(
+                expanded = instrumentExpanded,
+                onExpandedChange = { instrumentExpanded = !instrumentExpanded },
+                modifier = Modifier.weight(1f)
+            ) {
+                OutlinedTextField(
+                    value = selectedInstrument,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text(stringResource(R.string.instrument)) },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = instrumentExpanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                    modifier = Modifier.menuAnchor(
+                        ExposedDropdownMenuAnchorType.PrimaryEditable,
+                        instruments.isNotEmpty()
+                    ),
+                    singleLine = true
+                )
+                ExposedDropdownMenu(
+                    expanded = instrumentExpanded,
+                    onDismissRequest = { instrumentExpanded = false }
+                ) {
+                    instruments.forEach { selectionOption ->
+                        DropdownMenuItem(
+                            text = { Text(selectionOption) },
+                            onClick = {
+                                onInstrumentChange(selectionOption)
+                                instrumentExpanded = false
+                            },
+                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        )
+                    }
+                }
+            }
+        }
+
         Spacer(Modifier.height(40.dp))
+    }
+}
+
+@Composable
+private fun PlayingNowScreen(
+    modifier: Modifier = Modifier,
+    onStopClick: () -> Unit = {},
+    audioLevel: Float = 0f
+) {
+    val level by animateFloatAsState(
+        targetValue = audioLevel,
+        animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing),
+        label = "audioLevel"
+    )
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFF07090D))
+            .drawBehind {
+                val mainRadius = size.minDimension * 0.95f
+                val glowAlpha = 0.28f + level * 0.4f
+                drawRect(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFF1A2230).copy(alpha = glowAlpha),
+                            Color.Transparent
+                        ),
+                        center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.22f),
+                        radius = mainRadius
+                    )
+                )
+                drawRect(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color(0xFF101722).copy(alpha = 0.55f + level * 0.25f),
+                            Color.Transparent
+                        ),
+                        center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.86f),
+                        radius = size.minDimension * 0.9f
+                    )
+                )
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color(0xFF05070B).copy(alpha = 0.85f)
+                        )
+                    )
+                )
+            }
+    ) {
+        NoiseVeil(modifier = Modifier.matchParentSize(), intensity = 0.08f)
+        FlowingRibbons(modifier = Modifier.matchParentSize(), audioLevel = level)
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = 22.dp)
+                .fillMaxWidth()
+                .height(360.dp)
+                .clip(RoundedCornerShape(32.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.2f),
+                            Color.White.copy(alpha = 0.08f)
+                        )
+                    )
+                )
+                .border(
+                    width = 1.dp,
+                    color = Color.White.copy(alpha = 0.28f),
+                    shape = RoundedCornerShape(32.dp)
+                )
+                .padding(vertical = 26.dp, horizontal = 26.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.now_playing),
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White.copy(alpha = 0.9f),
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = stringResource(R.string.ai_generating),
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.weight(1f))
+                SpectrumBars(audioLevel = level)
+            }
+        }
+
+        CircularPlayButton(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 36.dp),
+            onClick = onStopClick
+        )
+    }
+}
+
+@Composable
+private fun SpectrumBars(
+    modifier: Modifier = Modifier,
+    barWidth: Dp = 7.dp,
+    maxHeight: Dp = 170.dp,
+    audioLevel: Float = 0f
+) {
+    val transition = rememberInfiniteTransition(label = "spectrum")
+    val heights = List(8) { index ->
+        transition.animateFloat(
+            initialValue = 0.2f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(
+                    durationMillis = 900 + index * 120,
+                    delayMillis = index * 90,
+                    easing = FastOutSlowInEasing
+                ),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "bar$index"
+        )
+    }
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Bottom
+    ) {
+        heights.forEach { anim ->
+            val energy = (0.15f + audioLevel * 1.15f).coerceIn(0.1f, 1f)
+            val shimmer = 0.55f + 0.45f * anim.value
+            val barHeight = (12f + (maxHeight.value - 12f) * energy * shimmer).dp
+            Box(
+                modifier = Modifier
+                    .width(barWidth)
+                    .height(barHeight)
+                    .shadow(
+                        elevation = (10f + 16f * audioLevel).dp,
+                        shape = RoundedCornerShape(50),
+                        ambientColor = Color(0xFFBFD6FF).copy(alpha = 0.35f),
+                        spotColor = Color(0xFFBFD6FF).copy(alpha = 0.35f)
+                    )
+                    .clip(RoundedCornerShape(50))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.98f),
+                                Color(0xFFBFD6FF).copy(alpha = 0.75f + 0.2f * audioLevel),
+                                Color.White.copy(alpha = 0.35f + 0.25f * audioLevel)
+                            )
+                        )
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+private fun FlowingRibbons(
+    modifier: Modifier = Modifier,
+    audioLevel: Float = 0f
+) {
+    val transition = rememberInfiniteTransition(label = "ribbons")
+    val phase by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 6000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "phase"
+    )
+
+    val pulse = 0.8f + audioLevel * 0.5f
+
+    Canvas(modifier = modifier) {
+        val yShift = (sin(phase * 2f * PI).toFloat()) * size.height * 0.05f * pulse
+        val leftPath = Path().apply {
+            moveTo(size.width * 0.05f, size.height * 0.35f + yShift)
+            cubicTo(
+                size.width * 0.25f, size.height * 0.22f + yShift,
+                size.width * 0.45f, size.height * 0.5f + yShift,
+                size.width * 0.9f, size.height * 0.38f + yShift
+            )
+        }
+        val rightPath = Path().apply {
+            moveTo(size.width * 0.1f, size.height * 0.65f - yShift)
+            cubicTo(
+                size.width * 0.35f, size.height * 0.85f - yShift,
+                size.width * 0.6f, size.height * 0.45f - yShift,
+                size.width * 0.95f, size.height * 0.62f - yShift
+            )
+        }
+
+        drawPath(
+            path = leftPath,
+            brush = Brush.linearGradient(
+                listOf(
+                    Color(0xFF95B6FF).copy(alpha = 0.08f + audioLevel * 0.25f),
+                    Color.Transparent
+                )
+            ),
+            style = Stroke(width = size.minDimension * 0.012f * pulse, cap = StrokeCap.Round)
+        )
+        drawPath(
+            path = rightPath,
+            brush = Brush.linearGradient(
+                listOf(
+                    Color(0xFF6FE3D6).copy(alpha = 0.08f + audioLevel * 0.25f),
+                    Color.Transparent
+                )
+            ),
+            style = Stroke(width = size.minDimension * 0.014f * pulse, cap = StrokeCap.Round)
+        )
+    }
+}
+
+@Composable
+private fun NoiseVeil(
+    modifier: Modifier = Modifier,
+    intensity: Float = 0.08f
+) {
+    Canvas(modifier = modifier) {
+        val step = 14f
+        val alpha = intensity.coerceIn(0f, 0.2f)
+        val color = Color.White.copy(alpha = alpha)
+        var y = 0f
+        while (y < size.height) {
+            var x = 0f
+            while (x < size.width) {
+                val seed = ((x * 0.13f + y * 0.19f) % 1f)
+                if (seed > 0.55f) {
+                    drawCircle(
+                        color = color,
+                        radius = 0.8f,
+                        center = androidx.compose.ui.geometry.Offset(x, y)
+                    )
+                }
+                x += step
+            }
+            y += step
+        }
+    }
+}
+
+@Composable
+private fun CircularPlayButton(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
+    Box(
+        modifier = modifier
+            .size(70.dp)
+            .clip(RoundedCornerShape(35.dp))
+            .background(
+                Brush.radialGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.3f),
+                        Color.White.copy(alpha = 0.08f)
+                    )
+                )
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(35.dp)),
+        contentAlignment = Alignment.Center
+    ) {
+        FilledIconButton(
+            onClick = onClick,
+            modifier = Modifier.size(56.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Stop,
+                contentDescription = stringResource(R.string.stop),
+                tint = Color.White
+            )
+        }
     }
 }
 
@@ -347,7 +563,8 @@ fun CompositionPageContentPreview() {
             messages = listOf(
                 PromptMessage("你好，生成一首音乐，要求是流行的，包含4个音符"),
                 BinaryResponseMessage(ByteString.EMPTY)
-            )
+            ),
+            audioLevel = 0.6f
         )
     }
 }

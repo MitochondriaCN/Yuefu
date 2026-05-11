@@ -2,6 +2,7 @@ package com.xianliticn.yuefu
 
 import android.net.Uri
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -9,10 +10,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -59,6 +57,21 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var settingsManager: SettingsManager
+
+    private var scanStudioVolumeKeyHandler: ((Int) -> Boolean)? = null
+
+    fun setScanStudioVolumeKeyHandler(handler: ((Int) -> Boolean)?) {
+        scanStudioVolumeKeyHandler = handler
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (scanStudioVolumeKeyHandler?.invoke(keyCode) == true) {
+                return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
