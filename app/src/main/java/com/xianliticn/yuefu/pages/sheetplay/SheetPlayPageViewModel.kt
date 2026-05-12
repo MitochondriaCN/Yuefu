@@ -30,7 +30,7 @@ class SheetPlayPageViewModel @Inject constructor(
     lateinit var context: Context
 
     private var sheetId: Int = 0
-    private var se = SequenceEngine()
+    private lateinit var se: SequenceEngine
     private var events: List<MidiEvent> = emptyList()
     private var measureTimeline: List<Pair<Int, Long>> = emptyList()
     private var measureStartMillisByMeasure: Map<Int, Long> = emptyMap()
@@ -40,6 +40,10 @@ class SheetPlayPageViewModel @Inject constructor(
 
     fun refresh(sheetId: Int) {
         this.sheetId = sheetId
+
+        if (!::se.isInitialized) {
+            se = SequenceEngine(context)
+        }
 
         viewModelScope.launch {
             val sheet = appDatabase.sheetDao().getById(sheetId)
@@ -69,6 +73,13 @@ class SheetPlayPageViewModel @Inject constructor(
                 )
             }.launchIn(viewModelScope)
         }
+    }
+
+    override fun onCleared() {
+        if (::se.isInitialized) {
+            se.release()
+        }
+        super.onCleared()
     }
 
     fun handlePlayOrPause() {
