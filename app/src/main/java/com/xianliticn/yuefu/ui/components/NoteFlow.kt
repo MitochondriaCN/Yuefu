@@ -18,7 +18,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.music.VisualNoteEvent
@@ -76,6 +78,7 @@ fun NoteFlow(
                 p.y += p.vy * delta
                 p.vy += 0.00015f * delta
                 p.rotation += p.rotationSpeed * delta
+                p.velocityAngle = kotlin.math.atan2(p.vy, p.vx)
                 p.life -= delta
                 if (p.life <= 0) {
                     particles.removeAt(i)
@@ -266,20 +269,51 @@ fun NoteFlow(
             val alpha = (p.life / p.maxLife).coerceIn(0f, 1f)
 
             when (p.type) {
-                ParticleType.Trail, ParticleType.Sustain -> {
-                    val radius = p.size * (0.5f + 0.5f * alpha)
-                    drawCircle(
-                        color = p.color.copy(alpha = alpha * 0.7f),
-                        radius = radius,
-                        center = Offset(px, py)
-                    )
+                ParticleType.Trail -> {
+                    val speed = kotlin.math.sqrt(p.vx * p.vx + p.vy * p.vy)
+                    val stretch = 1.0f + speed * 8f
+                    val rx = p.size * stretch * (0.4f + 0.6f * alpha)
+                    val ry = p.size * 0.35f * (0.4f + 0.6f * alpha)
+                    withTransform({
+                        translate(left = px, top = py)
+                        rotate(p.velocityAngle * 180f / kotlin.math.PI.toFloat())
+                    }) {
+                        drawOval(
+                            color = p.color.copy(alpha = alpha * 0.6f),
+                            topLeft = Offset(-rx, -ry),
+                            size = Size(rx * 2, ry * 2)
+                        )
+                    }
+                }
+                ParticleType.Sustain -> {
+                    val speed = kotlin.math.sqrt(p.vx * p.vx + p.vy * p.vy)
+                    val stretch = 1.0f + speed * 6f
+                    val rx = p.size * stretch * (0.4f + 0.6f * alpha)
+                    val ry = p.size * 0.3f * (0.4f + 0.6f * alpha)
+                    withTransform({
+                        translate(left = px, top = py)
+                        rotate(p.velocityAngle * 180f / kotlin.math.PI.toFloat())
+                    }) {
+                        drawOval(
+                            color = p.color.copy(alpha = alpha * 0.7f),
+                            topLeft = Offset(-rx, -ry),
+                            size = Size(rx * 2, ry * 2)
+                        )
+                    }
                 }
                 ParticleType.BurstSpark -> {
-                    val radius = p.size * (0.3f + 0.7f * alpha)
-                    drawCircle(
+                    val len = p.size * (2.2f + 2f * alpha)
+                    val angle = p.velocityAngle
+                    val startX = px - kotlin.math.cos(angle) * len * 0.3f
+                    val startY = py - kotlin.math.sin(angle) * len * 0.3f
+                    val endX = px + kotlin.math.cos(angle) * len * 0.7f
+                    val endY = py + kotlin.math.sin(angle) * len * 0.7f
+                    drawLine(
                         color = p.color.copy(alpha = alpha * 0.9f),
-                        radius = radius,
-                        center = Offset(px, py)
+                        start = Offset(startX, startY),
+                        end = Offset(endX, endY),
+                        strokeWidth = 2.2f * alpha,
+                        cap = StrokeCap.Round
                     )
                 }
                 ParticleType.BurstRay -> {
@@ -322,7 +356,8 @@ data class Particle(
     val size: Float,
     val type: ParticleType,
     var rotation: Float = 0f,
-    var rotationSpeed: Float = 0f
+    var rotationSpeed: Float = 0f,
+    var velocityAngle: Float = 0f
 )
 
 data class BurstState(
@@ -359,7 +394,7 @@ private fun emitTrailParticles(
                 life = 300f + kotlin.random.Random.nextFloat() * 200f,
                 maxLife = 500f,
                 color = note.color.copy(alpha = 0.6f),
-                size = 1f + kotlin.random.Random.nextFloat(),
+                size = 1.2f + kotlin.random.Random.nextFloat(),
                 type = ParticleType.Trail
             )
         )
@@ -448,7 +483,7 @@ private fun emitBurstStage3(
                     Color.White.copy(alpha = 0.9f)
                 else
                     Color(0xFFFFD700).copy(alpha = 0.8f),
-                size = 2f + kotlin.random.Random.nextFloat() * 2f,
+                size = 2.5f + kotlin.random.Random.nextFloat() * 2f,
                 type = ParticleType.BurstSpark
             )
         )
@@ -476,7 +511,7 @@ private fun emitSustainParticles(
                 life = 500f + kotlin.random.Random.nextFloat() * 300f,
                 maxLife = 800f,
                 color = note.color.copy(alpha = 0.7f),
-                size = 1.5f + kotlin.random.Random.nextFloat() * 1.5f,
+                size = 1.8f + kotlin.random.Random.nextFloat() * 1.5f,
                 type = ParticleType.Sustain
             )
         )
