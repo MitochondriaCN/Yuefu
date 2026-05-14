@@ -1,6 +1,6 @@
 package com.xianliticn.yuefu.music
 
-import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -8,14 +8,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.billthefarmer.mididriver.MidiDriver
 
 /**
  * 音序引擎。
  */
-class SequenceEngine(
-    private val context: Context,
-    private val soundFontAssetPath: String = "soundfonts/default.sf2"
-) {
+class SequenceEngine {
     private var sequence: List<MidiEvent>? = null
     private var isPlaying = false
     private var startTimeNano = 0L
@@ -27,12 +25,17 @@ class SequenceEngine(
     private var playJob: Job? = null
     private var progressJob: Job? = null
 
-    private var output: MidiOutput = createOutput()
+    private val midiDriver = MidiDriver.getInstance()
 
     private val _currentProgressMillis = MutableStateFlow(0L)
     val currentProgressMillis = _currentProgressMillis.asStateFlow()
 
     init {
+        midiDriver.setOnMidiStartListener {
+            Log.d("DEV", "MidiDriver started")
+        }
+        midiDriver.start()
+
         progressJob = scope.launch {
             while (true) {
                 if (isPlaying) {
@@ -55,10 +58,21 @@ class SequenceEngine(
     }
 
     private fun sendMidiInit() {
-        for (channel in 0 until 16) {
-            output.setPreset(channel, 0)
-        }
-        output.setVolume(100)
+        // GM System On - 重置合成器到 General MIDI 标准状态
+        midiDriver.queueEvent(
+            byteArrayOf(
+                0xF0.toByte(), 0x7E.toByte(), 0x7F.toByte(),
+                0x09.toByte(), 0x01.toByte(), 0xF7.toByte()
+            )
+        )
+        // Program Change: 钢琴 (program 0) 在通道 0
+        midiDriver.queueEvent(byteArrayOf(0xC0.toByte(), 0x00.toByte()))
+        // Control Change 7 (通道音量) = 127
+        midiDriver.queueEvent(byteArrayOf(0xB0.toByte(), 0x07.toByte(), 0x7F.toByte()))
+        // Control Change 11 (表情) = 127
+        midiDriver.queueEvent(byteArrayOf(0xB0.toByte(), 0x0B.toByte(), 0x7F.toByte()))
+        // 设置主音量
+        midiDriver.setVolume(100)
     }
 
     fun play() {
@@ -78,7 +92,6 @@ class SequenceEngine(
         changeProgress(pausedProgressNano / 1_000_000)
 
         sendMidiInit()
-        output.start()
 
         playJob = scope.launch {
             eventIndex = 0
@@ -117,12 +130,7 @@ class SequenceEngine(
                 }
 
                 // 时间到了，立即发送
-                val channel = (event.part % 16).coerceAtLeast(0)
-                if (event.note == Note.PRESS) {
-                    output.noteOn(channel, event.pitch, 127)
-                } else {
-                    output.noteOff(channel, event.pitch)
-                }
+                midiDriver.queueEvent(event.getMidiData())
                 event.isSent = true
                 eventIndex++
             }
@@ -142,16 +150,11 @@ class SequenceEngine(
         playJob?.cancel()
 
         // 立即停止所有正在播放的音符，避免暂停后仍有残留声音
-        output.allSoundOff()
-        output.allNotesOff()
-        output.stop()
+        midiDriver.queueEvent(byteArrayOf(0xB0.toByte(), 0x78.toByte(), 0x00.toByte())) // All Sound Off
+        midiDriver.queueEvent(byteArrayOf(0xB0.toByte(), 0x7B.toByte(), 0x00.toByte())) // All Notes Off
 
         isPlaying = false
         pausedProgressNano = System.nanoTime() - startTimeNano
-    }
-
-    fun release() {
-        output.release()
     }
 
     fun changeProgress(targetMillis: Long) {
@@ -171,16 +174,5 @@ class SequenceEngine(
         }
 
         eventIndex = 0
-    }
-
-    private fun createOutput(): MidiOutput {
-        val soundFontOutput = SoundFontOutput(context, soundFontAssetPath)
-        soundFontOutput.init()
-        return if (soundFontOutput.isReady()) {
-            soundFontOutput
-        } else {
-            soundFontOutput.release()
-            MidiDriverOutput().also { it.init() }
-        }
     }
 }
