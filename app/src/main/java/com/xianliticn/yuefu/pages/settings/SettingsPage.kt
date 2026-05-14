@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.ui.components.EffectLevel
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 
 @Composable
@@ -56,10 +58,13 @@ fun SettingsPage(
     onAboutClick: () -> Unit = {}
 ) {
     val isTutorialShown by viewModel.isTutorialShown.collectAsState()
+    val effectLevel by viewModel.effectLevel.collectAsState()
 
     SettingsPageContent(
         isTutorialShown = isTutorialShown,
         onTutorialShownChange = viewModel::setTutorialShown,
+        effectLevel = effectLevel,
+        onEffectLevelChange = viewModel::setEffectLevel,
         onAboutClick = onAboutClick,
         modifier = Modifier.fillMaxSize()
     )
@@ -69,6 +74,8 @@ fun SettingsPage(
 fun SettingsPageContent(
     isTutorialShown: Boolean,
     onTutorialShownChange: (Boolean) -> Unit,
+    effectLevel: EffectLevel = EffectLevel.HIGH,
+    onEffectLevelChange: (EffectLevel) -> Unit = {},
     onAboutClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -133,6 +140,14 @@ fun SettingsPageContent(
                         icon = Icons.Default.Tune,
                         checked = isTutorialShown,
                         onCheckedChange = onTutorialShownChange
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+
+                SettingsSection(title = stringResource(R.string.visual_effects)) {
+                    EffectLevelSelector(
+                        currentLevel = effectLevel,
+                        onLevelChange = onEffectLevelChange
                     )
                 }
                 Spacer(Modifier.height(16.dp))
@@ -286,6 +301,68 @@ fun SettingsClickItem(
 }
 
 @Composable
+fun EffectLevelSelector(
+    currentLevel: EffectLevel,
+    onLevelChange: (EffectLevel) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val levels = listOf(EffectLevel.LOW, EffectLevel.MEDIUM, EffectLevel.HIGH)
+    val labels = mapOf(
+        EffectLevel.LOW to stringResource(R.string.effect_low),
+        EffectLevel.MEDIUM to stringResource(R.string.effect_medium),
+        EffectLevel.HIGH to stringResource(R.string.effect_high)
+    )
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.effect_level),
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Text(
+            text = stringResource(R.string.effect_level_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            levels.forEach { level ->
+                val selected = level == currentLevel
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { onLevelChange(level) },
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (selected) MaterialTheme.colorScheme.primaryContainer
+                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = if (selected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = labels[level] ?: "",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 @Preview(showBackground = true)
 fun SettingsPagePreview() {
     YuefuTheme {
@@ -293,7 +370,9 @@ fun SettingsPagePreview() {
             onAboutClick = {},
             modifier = Modifier.fillMaxSize(),
             isTutorialShown = true,
-            onTutorialShownChange = {}
+            onTutorialShownChange = {},
+            effectLevel = EffectLevel.HIGH,
+            onEffectLevelChange = {}
         )
     }
 }
