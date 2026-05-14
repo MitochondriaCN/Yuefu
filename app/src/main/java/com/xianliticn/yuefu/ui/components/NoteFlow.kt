@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -24,10 +25,15 @@ import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.music.VisualNoteEvent
+import com.xianliticn.yuefu.ui.theme.AccentAmber
+import com.xianliticn.yuefu.ui.theme.CoreColor0
+import com.xianliticn.yuefu.ui.theme.CoreColor1
+import com.xianliticn.yuefu.ui.theme.CoreColor2
+import com.xianliticn.yuefu.ui.theme.CoreColor3
+import com.xianliticn.yuefu.ui.theme.HitLineGlow
+import com.xianliticn.yuefu.ui.theme.HitLineShadow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlin.math.cos
-import kotlin.math.sin
 
 @Composable
 fun NoteFlow(
@@ -38,18 +44,19 @@ fun NoteFlow(
     pixelsPerSecond: Float = 300f,
     currentProgressMillis: Long,
     visibleRange: NoteFlowVisibleRange,
-    effectLevel: EffectLevel = EffectLevel.HIGH
+    effectLevel: EffectLevel = EffectLevel.HIGH,
+    onNoteHit: (keyIndex: Float, color: Color) -> Unit = { _, _ -> }
 ) {
     val pixelsPerMillis = pixelsPerSecond / 1000f
 
     // 粒子状态
     val particles = remember { mutableStateListOf<Particle>() }
-    val burstStates = remember { mutableMapOf<Long, BurstState>() }
     var frameCounter by remember { mutableIntStateOf(0) }
     var lastProcessedProgress by remember { mutableLongStateOf(-1L) }
     var lastSustainPulse by remember { mutableLongStateOf(0L) }
     val animationTick = remember { mutableIntStateOf(0) }
     var canvasHeightPx by remember { mutableFloatStateOf(0f) }
+    val noteHistories = remember { mutableMapOf<Long, ArrayDeque<NoteHistoryPoint>>() }
 
     val currentProgressState = rememberUpdatedState(currentProgressMillis)
     val notesState = rememberUpdatedState(notes)
@@ -79,31 +86,28 @@ fun NoteFlow(
                 p.vy += 0.00015f * delta
                 p.rotation += p.rotationSpeed * delta
                 p.velocityAngle = kotlin.math.atan2(p.vy, p.vx)
-                p.life -= delta
+                p.life -= p.decayPerMs * delta
                 if (p.life <= 0) {
                     particles.removeAt(i)
                 }
             }
 
             // 限制粒子总数
-            while (particles.size > 300) {
+            while (particles.size > 400) {
                 particles.removeAt(0)
             }
 
             if (hitLineY > 0) {
-                // 检查新触发
+                // 检查新触发，直接生成 burst
                 if (lastProcessedProgress >= 0 && now > lastProcessedProgress) {
                     val newlyTriggered = notesList.filter {
                         it.startTimeMillis > lastProcessedProgress && it.startTimeMillis <= now
                     }
                     newlyTriggered.forEach { note ->
                         if (level != EffectLevel.LOW) {
-                            burstStates[note.startTimeMillis] = BurstState(
-                                startTime = now,
-                                keyIndex = note.keyIndex,
-                                color = note.color
-                            )
+                            spawnBurst(particles, note, whiteKeyWidth, hitLineY, level)
                         }
+                        onNoteHit(note.keyIndex, note.color)
                     }
                 }
 
@@ -124,6 +128,31 @@ fun NoteFlow(
                     }
                 }
 
+                // 历史采样（每2帧）
+                if (frameCounter % 2 == 0) {
+                    val ppm = pixelsPerSecond / 1000f
+                    notesList.forEach { note ->
+                        if (note.startTimeMillis <= now && note.endTimeMillis > now) {
+                            val rawMid = (note.keyIndex + 0.5f) * whiteKeyWidth
+                            val noteStartDistance = (note.startTimeMillis - now) * ppm
+                            val headY = hitLineY - noteStartDistance
+                            val deque = noteHistories.getOrPut(note.startTimeMillis) { ArrayDeque() }
+                            deque.addLast(
+                                NoteHistoryPoint(
+                                    x = rawMid,
+                                    y = headY,
+                                    width = whiteKeyWidth * 0.44f * 0.45f,
+                                    color = note.color
+                                )
+                            )
+                            while (deque.size > 16) deque.removeFirst()
+                        }
+                    }
+                    noteHistories.keys.filter { key ->
+                        notesList.none { it.startTimeMillis == key }
+                    }.forEach { noteHistories.remove(it) }
+                }
+
                 // 持续流粒子
                 if (level == EffectLevel.HIGH) {
                     val pulseInterval = 200L
@@ -139,34 +168,12 @@ fun NoteFlow(
                     lastSustainPulse = now
                 }
 
-                // Burst 阶段
-                val iterator = burstStates.iterator()
-                while (iterator.hasNext()) {
-                    val (_, state) = iterator.next()
-                    val elapsed = now - state.startTime
-
-                    if (!state.stage1Emitted && elapsed >= 0) {
-                        emitBurstStage1(particles, state, whiteKeyWidth, hitLineY)
-                        state.stage1Emitted = true
-                    }
-                    if (!state.stage2Emitted && elapsed >= 50) {
-                        emitBurstStage2(particles, state, whiteKeyWidth, hitLineY)
-                        state.stage2Emitted = true
-                    }
-                    if (!state.stage3Emitted && elapsed >= 100) {
-                        emitBurstStage3(particles, state, whiteKeyWidth, hitLineY, level)
-                        state.stage3Emitted = true
-                    }
-                    if (elapsed > 800) {
-                        iterator.remove()
-                    }
-                }
             }
 
             lastProcessedProgress = now
 
             // 触发重组以重绘粒子
-            if (particles.isNotEmpty() || burstStates.isNotEmpty()) {
+            if (particles.isNotEmpty()) {
                 animationTick.value++
             }
         }
@@ -221,22 +228,30 @@ fun NoteFlow(
             val noteLeft = mid - width / 2f
             val noteRight = mid + width / 2f
 
-            // 伪外发光（仅 HIGH）
+            // ── Layer 1: 外层 radial gradient 光晕(halo) ──
             if (effectLevel == EffectLevel.HIGH) {
-                val glowPad = 3.dp.toPx()
-                drawRoundRect(
-                    color = note.color.copy(alpha = 0.12f),
-                    topLeft = Offset(x = noteLeft - glowPad, y = drawTopY - glowPad),
-                    size = Size(width = width + glowPad * 2, height = height + glowPad * 2),
-                    cornerRadius = CornerRadius(cornerRadiusPx + glowPad)
+                val haloR = maxOf(width * 1.6f, height * 0.4f)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            note.color.copy(alpha = 0.22f),
+                            note.color.copy(alpha = 0.06f),
+                            Color.Transparent
+                        ),
+                        center = Offset(mid, drawTopY + height / 2f),
+                        radius = haloR
+                    ),
+                    radius = haloR,
+                    center = Offset(mid, drawTopY + height / 2f)
                 )
             }
 
-            // 渐变填充：尾部淡、头部实
+            // ── Layer 2: 主体(纵向渐变,尾淡头实) ──
             val gradientBrush = Brush.verticalGradient(
                 colors = listOf(
-                    note.color.copy(alpha = 0.50f),
-                    note.color.copy(alpha = 0.85f),
+                    note.color.copy(alpha = 0.40f),
+                    note.color.copy(alpha = 0.75f),
+                    note.color.copy(alpha = 0.95f),
                     note.color
                 ),
                 startY = drawTopY,
@@ -250,33 +265,96 @@ fun NoteFlow(
                 cornerRadius = CornerRadius(cornerRadiusPx)
             )
 
-            // 顶部高光线
-            val highlightY = drawTopY + 1.5.dp.toPx()
-            if (highlightY < noteBottomY - cornerRadiusPx && height > cornerRadiusPx * 2) {
+            // ── Layer 3: 内层亮芯线 ──
+            val coreColor = when (note.partId % 4) {
+                0 -> CoreColor0
+                1 -> CoreColor1
+                2 -> CoreColor2
+                else -> CoreColor3
+            }
+            val coreY = drawTopY + 2.5f.dp.toPx()
+            if (coreY < noteBottomY - cornerRadiusPx && height > cornerRadiusPx * 2) {
                 drawLine(
-                    color = Color.White.copy(alpha = 0.30f),
-                    start = Offset(x = noteLeft + cornerRadiusPx * 0.3f, y = highlightY),
-                    end = Offset(x = noteRight - cornerRadiusPx * 0.3f, y = highlightY),
-                    strokeWidth = 1.dp.toPx()
+                    color = coreColor.copy(alpha = 0.85f),
+                    start = Offset(x = mid - width * 0.25f, y = coreY),
+                    end = Offset(x = mid + width * 0.25f, y = coreY),
+                    strokeWidth = 1.3f.dp.toPx()
+                )
+            }
+
+            // ── Layer 4: 底部白色微光(水滴质感) ──
+            val microGlowHeight = 8f.dp.toPx().coerceAtMost(height * 0.4f)
+            if (microGlowHeight > 1f) {
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.35f)),
+                        startY = noteBottomY - microGlowHeight,
+                        endY = noteBottomY
+                    ),
+                    topLeft = Offset(x = noteLeft + 2f.dp.toPx(), y = noteBottomY - microGlowHeight),
+                    size = Size(width = width - 4f.dp.toPx(), height = microGlowHeight)
                 )
             }
         }
+
+        // ── 绘制音符记忆拖尾 ──
+        noteHistories.forEach { (_, deque) ->
+            if (deque.size < 3) return@forEach
+            val pts = deque.toList()
+            for (i in 0 until pts.size - 1) {
+                val ratio = (i + 1).toFloat() / pts.size
+                val alpha = ratio * 0.18f
+                val strokeW = pts[i].width * ratio
+                val px1 = pts[i].x + offsetX
+                val px2 = pts[i + 1].x + offsetX
+                drawLine(
+                    color = pts[i].color.copy(alpha = alpha),
+                    start = Offset(px1, pts[i].y),
+                    end = Offset(px2, pts[i + 1].y),
+                    strokeWidth = strokeW.coerceAtLeast(0.5f),
+                    cap = StrokeCap.Round
+                )
+            }
+        }
+
+        // ── 柔光地平线判定线 ──
+        drawLine(
+            brush = Brush.horizontalGradient(
+                colors = listOf(
+                    HitLineGlow.copy(alpha = 0.20f),
+                    HitLineGlow.copy(alpha = 0.35f),
+                    HitLineGlow.copy(alpha = 0.20f)
+                ),
+                startX = 0f,
+                endX = canvasWidth
+            ),
+            start = Offset(0f, hitLineY),
+            end = Offset(canvasWidth, hitLineY),
+            strokeWidth = 1.5f.dp.toPx()
+        )
+        drawLine(
+            color = HitLineShadow.copy(alpha = 0.15f),
+            start = Offset(0f, hitLineY + 1.5f.dp.toPx()),
+            end = Offset(canvasWidth, hitLineY + 1.5f.dp.toPx()),
+            strokeWidth = 3f.dp.toPx()
+        )
 
         // 绘制粒子
         particles.forEach { p ->
             val px = p.x + offsetX
             val py = p.y
             val alpha = (p.life / p.maxLife).coerceIn(0f, 1f)
+            if (alpha <= 0f) return@forEach
 
             when (p.type) {
-                ParticleType.Trail -> {
+                ParticleType.Trail, ParticleType.Sustain -> {
                     val speed = kotlin.math.sqrt(p.vx * p.vx + p.vy * p.vy)
-                    val stretch = 1.0f + speed * 8f
-                    val rx = p.size * stretch * (0.4f + 0.6f * alpha)
-                    val ry = p.size * 0.35f * (0.4f + 0.6f * alpha)
+                    val angle = p.velocityAngle
+                    val rx = p.size * (0.8f + speed * 1.5f)
+                    val ry = p.size * 0.4f
                     withTransform({
                         translate(left = px, top = py)
-                        rotate(p.velocityAngle * 180f / kotlin.math.PI.toFloat())
+                        rotate(angle * 180f / kotlin.math.PI.toFloat())
                     }) {
                         drawOval(
                             color = p.color.copy(alpha = alpha * 0.6f),
@@ -285,55 +363,45 @@ fun NoteFlow(
                         )
                     }
                 }
-                ParticleType.Sustain -> {
-                    val speed = kotlin.math.sqrt(p.vx * p.vx + p.vy * p.vy)
-                    val stretch = 1.0f + speed * 6f
-                    val rx = p.size * stretch * (0.4f + 0.6f * alpha)
-                    val ry = p.size * 0.3f * (0.4f + 0.6f * alpha)
+                ParticleType.BurstSpark -> {
+                    val len = p.size * (2.5f + 2f * alpha)
+                    val angle = p.velocityAngle
                     withTransform({
                         translate(left = px, top = py)
-                        rotate(p.velocityAngle * 180f / kotlin.math.PI.toFloat())
+                        rotate(angle * 180f / kotlin.math.PI.toFloat())
                     }) {
-                        drawOval(
-                            color = p.color.copy(alpha = alpha * 0.7f),
-                            topLeft = Offset(-rx, -ry),
-                            size = Size(rx * 2, ry * 2)
+                        drawLine(
+                            color = p.color.copy(alpha = alpha * 0.9f),
+                            start = Offset(-len * 0.3f, 0f),
+                            end = Offset(len * 0.7f, 0f),
+                            strokeWidth = 1.8f * alpha,
+                            cap = StrokeCap.Round
                         )
                     }
                 }
-                ParticleType.BurstSpark -> {
-                    val len = p.size * (2.2f + 2f * alpha)
-                    val angle = p.velocityAngle
-                    val startX = px - kotlin.math.cos(angle) * len * 0.3f
-                    val startY = py - kotlin.math.sin(angle) * len * 0.3f
-                    val endX = px + kotlin.math.cos(angle) * len * 0.7f
-                    val endY = py + kotlin.math.sin(angle) * len * 0.7f
-                    drawLine(
-                        color = p.color.copy(alpha = alpha * 0.9f),
-                        start = Offset(startX, startY),
-                        end = Offset(endX, endY),
-                        strokeWidth = 2.2f * alpha,
-                        cap = StrokeCap.Round
-                    )
-                }
                 ParticleType.BurstRay -> {
-                    val length = p.size * (2f + 1f * alpha)
-                    val endX = px + cos(p.rotation) * length
-                    val endY = py + sin(p.rotation) * length
-                    drawLine(
-                        color = p.color.copy(alpha = alpha * 0.8f),
-                        start = Offset(px, py),
-                        end = Offset(endX, endY),
-                        strokeWidth = 2f
-                    )
+                    val len = p.size * (2.5f + alpha)
+                    val angle = p.velocityAngle
+                    withTransform({
+                        translate(left = px, top = py)
+                        rotate(angle * 180f / kotlin.math.PI.toFloat())
+                    }) {
+                        drawLine(
+                            color = p.color.copy(alpha = alpha * 0.9f),
+                            start = Offset(0f, 0f),
+                            end = Offset(len, 0f),
+                            strokeWidth = 2f * alpha,
+                            cap = StrokeCap.Round
+                        )
+                    }
                 }
                 ParticleType.BurstRing -> {
                     val radius = p.size + (60f - p.size) * (1f - alpha)
                     drawCircle(
-                        color = Color(0xFFFFD700).copy(alpha = alpha * 0.6f),
+                        color = p.color.copy(alpha = alpha * 0.5f),
                         radius = radius,
                         center = Offset(px, py),
-                        style = Stroke(width = 3f * alpha)
+                        style = Stroke(width = 2.5f * alpha)
                     )
                 }
             }
@@ -352,6 +420,7 @@ data class Particle(
     var vy: Float,
     var life: Float,
     val maxLife: Float,
+    val decayPerMs: Float = 1f,
     val color: Color,
     val size: Float,
     val type: ParticleType,
@@ -360,14 +429,127 @@ data class Particle(
     var velocityAngle: Float = 0f
 )
 
-data class BurstState(
-    val startTime: Long,
-    val keyIndex: Float,
-    val color: Color,
-    var stage1Emitted: Boolean = false,
-    var stage2Emitted: Boolean = false,
-    var stage3Emitted: Boolean = false
+data class NoteHistoryPoint(
+    val x: Float,
+    val y: Float,
+    val width: Float,
+    val color: Color
 )
+
+private fun spawnBurst(
+    particles: MutableList<Particle>,
+    note: VisualNoteEvent,
+    whiteKeyWidth: Float,
+    hitLineY: Float,
+    level: EffectLevel
+) {
+    val centerX = (note.keyIndex + 0.5f) * whiteKeyWidth
+    val centerY = hitLineY
+    val color = note.color
+
+    // 6 trail 粒子
+    repeat(6) {
+        val angle = kotlin.random.Random.nextFloat() * kotlin.math.PI * 2
+        val speed = 0.5f + kotlin.random.Random.nextFloat() * 2.5f
+        particles.add(
+            Particle(
+                x = centerX, y = centerY,
+                vx = kotlin.math.cos(angle).toFloat() * speed,
+                vy = kotlin.math.sin(angle).toFloat() * speed,
+                life = 800f + kotlin.random.Random.nextFloat() * 400f,
+                maxLife = 1200f,
+                decayPerMs = 0.8f,
+                color = color,
+                size = 2f + kotlin.random.Random.nextFloat() * 4f,
+                type = ParticleType.Trail,
+                rotation = kotlin.random.Random.nextFloat() * kotlin.math.PI.toFloat() * 2f,
+                rotationSpeed = (kotlin.random.Random.nextFloat() - 0.5f) * 0.15f
+            )
+        )
+    }
+
+    // 4 sustain 粒子
+    repeat(4) {
+        val angle = -kotlin.math.PI / 2 + (kotlin.random.Random.nextFloat() - 0.5f) * 1.2f
+        val speed = 0.5f + kotlin.random.Random.nextFloat() * 2.5f
+        particles.add(
+            Particle(
+                x = centerX, y = centerY,
+                vx = kotlin.math.cos(angle).toFloat() * speed,
+                vy = kotlin.math.sin(angle).toFloat() * speed,
+                life = 800f + kotlin.random.Random.nextFloat() * 400f,
+                maxLife = 1200f,
+                decayPerMs = 0.8f,
+                color = color,
+                size = 2f + kotlin.random.Random.nextFloat() * 4f,
+                type = ParticleType.Sustain,
+                rotation = kotlin.random.Random.nextFloat() * kotlin.math.PI.toFloat() * 2f,
+                rotationSpeed = (kotlin.random.Random.nextFloat() - 0.5f) * 0.15f
+            )
+        )
+    }
+
+    // burst sparks
+    val burstCount = when (level) {
+        EffectLevel.LOW -> 0
+        EffectLevel.MEDIUM -> 12
+        EffectLevel.HIGH -> 18
+    }
+    repeat(burstCount) {
+        val angle = -kotlin.math.PI * 2 / 3 + kotlin.random.Random.nextFloat() * kotlin.math.PI / 3
+        val speed = 0.3f + kotlin.random.Random.nextFloat() * 0.3f
+        particles.add(
+            Particle(
+                x = centerX + (kotlin.random.Random.nextFloat() - 0.5f) * 8f,
+                y = centerY + (kotlin.random.Random.nextFloat() - 0.5f) * 4f,
+                vx = kotlin.math.cos(angle).toFloat() * speed,
+                vy = kotlin.math.sin(angle).toFloat() * speed,
+                life = 600f + kotlin.random.Random.nextFloat() * 200f,
+                maxLife = 800f,
+                decayPerMs = 1.0f,
+                color = if (kotlin.random.Random.nextBoolean()) AccentAmber else color,
+                size = 2.5f + kotlin.random.Random.nextFloat() * 2f,
+                type = ParticleType.BurstSpark,
+                rotation = kotlin.random.Random.nextFloat() * kotlin.math.PI.toFloat() * 2f,
+                rotationSpeed = (kotlin.random.Random.nextFloat() - 0.5f) * 0.15f
+            )
+        )
+    }
+
+    // 8 rays
+    val rayCount = 8
+    repeat(rayCount) { i ->
+        val angle = kotlin.math.PI * 2 * i / rayCount
+        particles.add(
+            Particle(
+                x = centerX, y = centerY,
+                vx = kotlin.math.cos(angle).toFloat() * 1.8f,
+                vy = kotlin.math.sin(angle).toFloat() * 1.8f,
+                life = 600f,
+                maxLife = 600f,
+                decayPerMs = 1.6f,
+                color = AccentAmber,
+                size = 12f + kotlin.random.Random.nextFloat() * 8f,
+                type = ParticleType.BurstRay,
+                rotation = angle.toFloat()
+            )
+        )
+    }
+
+    // 1 ring
+    particles.add(
+        Particle(
+            x = centerX, y = centerY,
+            vx = 0f, vy = 0f,
+            life = 1000f,
+            maxLife = 1000f,
+            decayPerMs = 1.0f,
+            color = AccentAmber,
+            size = 8f,
+            type = ParticleType.BurstRing
+        )
+    )
+}
 
 private fun emitTrailParticles(
     particles: MutableList<Particle>,
@@ -381,110 +563,21 @@ private fun emitTrailParticles(
     val noteEndDistance = (note.endTimeMillis - currentTime) * pixelsPerMillis
     val noteTopY = hitLineY - noteEndDistance
 
-    val count = 1 + kotlin.random.Random.nextInt(2)
-    repeat(count) {
+    repeat(1 + kotlin.random.Random.nextInt(2)) {
         val angle = kotlin.random.Random.nextFloat() * kotlin.math.PI * 2
         val speed = 0.05f + kotlin.random.Random.nextFloat() * 0.1f
         particles.add(
             Particle(
                 x = rawMid + (kotlin.random.Random.nextFloat() - 0.5f) * whiteKeyWidth * 0.25f,
                 y = noteTopY + (kotlin.random.Random.nextFloat() - 0.5f) * 5f,
-                vx = cos(angle).toFloat() * speed,
-                vy = (sin(angle).toFloat() * speed - 0.05f),
-                life = 300f + kotlin.random.Random.nextFloat() * 200f,
-                maxLife = 500f,
+                vx = kotlin.math.cos(angle).toFloat() * speed,
+                vy = kotlin.math.sin(angle).toFloat() * speed - 0.05f,
+                life = 500f + kotlin.random.Random.nextFloat() * 300f,
+                maxLife = 800f,
+                decayPerMs = 1.0f,
                 color = note.color.copy(alpha = 0.6f),
                 size = 1.2f + kotlin.random.Random.nextFloat(),
                 type = ParticleType.Trail
-            )
-        )
-    }
-}
-
-private fun emitBurstStage1(
-    particles: MutableList<Particle>,
-    state: BurstState,
-    whiteKeyWidth: Float,
-    hitLineY: Float
-) {
-    val centerX = (state.keyIndex + 0.5f) * whiteKeyWidth
-    val centerY = hitLineY
-    val rayCount = 8 + kotlin.random.Random.nextInt(5)
-
-    repeat(rayCount) { i ->
-        val angle = kotlin.math.PI * 2 * i / rayCount
-        particles.add(
-            Particle(
-                x = centerX,
-                y = centerY,
-                vx = cos(angle).toFloat() * 0.15f,
-                vy = sin(angle).toFloat() * 0.15f,
-                life = 150f,
-                maxLife = 150f,
-                color = Color.White.copy(alpha = 0.85f),
-                size = 15f + kotlin.random.Random.nextFloat() * 10f,
-                type = ParticleType.BurstRay,
-                rotation = angle.toFloat()
-            )
-        )
-    }
-}
-
-private fun emitBurstStage2(
-    particles: MutableList<Particle>,
-    state: BurstState,
-    whiteKeyWidth: Float,
-    hitLineY: Float
-) {
-    val centerX = (state.keyIndex + 0.5f) * whiteKeyWidth
-    val centerY = hitLineY
-    particles.add(
-        Particle(
-            x = centerX,
-            y = centerY,
-            vx = 0.2f,
-            vy = 0f,
-            life = 200f,
-            maxLife = 200f,
-            color = Color(0xFFFFD700).copy(alpha = 0.7f),
-            size = 10f,
-            type = ParticleType.BurstRing
-        )
-    )
-}
-
-private fun emitBurstStage3(
-    particles: MutableList<Particle>,
-    state: BurstState,
-    whiteKeyWidth: Float,
-    hitLineY: Float,
-    level: EffectLevel
-) {
-    val centerX = (state.keyIndex + 0.5f) * whiteKeyWidth
-    val centerY = hitLineY
-    val count = when (level) {
-        EffectLevel.LOW -> 0
-        EffectLevel.MEDIUM -> 15
-        EffectLevel.HIGH -> 25
-    }
-
-    repeat(count) {
-        val angle = -kotlin.math.PI * 2 / 3 + kotlin.random.Random.nextFloat() * kotlin.math.PI / 3
-        val speed = 0.3f + kotlin.random.Random.nextFloat() * 0.3f
-        particles.add(
-            Particle(
-                x = centerX + (kotlin.random.Random.nextFloat() - 0.5f) * 8f,
-                y = centerY + (kotlin.random.Random.nextFloat() - 0.5f) * 4f,
-                vx = cos(angle).toFloat() * speed,
-                vy = sin(angle).toFloat() * speed,
-                life = 400f + kotlin.random.Random.nextFloat() * 200f,
-                maxLife = 600f,
-                color = if (kotlin.random.Random.nextBoolean())
-                    Color.White.copy(alpha = 0.9f)
-                else
-                    Color(0xFFFFD700).copy(alpha = 0.8f),
-                size = 2.5f + kotlin.random.Random.nextFloat() * 2f,
-                type = ParticleType.BurstSpark
             )
         )
     }
@@ -497,19 +590,18 @@ private fun emitSustainParticles(
     hitLineY: Float
 ) {
     val centerX = (note.keyIndex + 0.5f) * whiteKeyWidth
-    val count = 3 + kotlin.random.Random.nextInt(3)
-
-    repeat(count) {
+    repeat(3 + kotlin.random.Random.nextInt(3)) {
         val angle = -kotlin.math.PI / 2 + (kotlin.random.Random.nextFloat() - 0.5f) * 0.6f
         val speed = 0.08f + kotlin.random.Random.nextFloat() * 0.12f
         particles.add(
             Particle(
                 x = centerX + (kotlin.random.Random.nextFloat() - 0.5f) * whiteKeyWidth * 0.15f,
                 y = hitLineY,
-                vx = cos(angle).toFloat() * speed,
-                vy = sin(angle).toFloat() * speed,
-                life = 500f + kotlin.random.Random.nextFloat() * 300f,
-                maxLife = 800f,
+                vx = kotlin.math.cos(angle).toFloat() * speed,
+                vy = kotlin.math.sin(angle).toFloat() * speed,
+                life = 600f + kotlin.random.Random.nextFloat() * 400f,
+                maxLife = 1000f,
+                decayPerMs = 0.8f,
                 color = note.color.copy(alpha = 0.7f),
                 size = 1.8f + kotlin.random.Random.nextFloat() * 1.5f,
                 type = ParticleType.Sustain
