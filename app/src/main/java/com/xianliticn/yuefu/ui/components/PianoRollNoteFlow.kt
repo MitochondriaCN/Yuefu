@@ -25,8 +25,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,6 +58,8 @@ import com.xianliticn.yuefu.ui.theme.PianoWhiteGradientTop
 import com.xianliticn.yuefu.ui.theme.PianoWhitePressed
 import com.xianliticn.yuefu.ui.theme.PartColor0
 import com.xianliticn.yuefu.ui.theme.PartColor1
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @OptIn(ExperimentalFoundationApi::class)
 @SuppressLint("FrequentlyChangingValue")
@@ -83,6 +87,36 @@ fun PianoRollNoteFlow(
 
     // [新增] 将dp转换为px供NoteFlow使用
     val whiteKeyWidthPx = with(density) { whiteKeyWidth.toPx() }
+
+    // keyIndex -> keyId 映射
+    val keyIndexToIdMap = remember(allKeys) {
+        val map = mutableMapOf<Float, String>()
+        var whiteCount = 0
+        allKeys.forEach { key ->
+            if (key.type == PianoKeyType.White) {
+                map[whiteCount.toFloat()] = key.id
+                whiteCount++
+            } else {
+                map[whiteCount - 0.5f] = key.id
+            }
+        }
+        map
+    }
+
+    // 琴键发光状态
+    val keyGlows = remember { mutableStateMapOf<String, KeyGlowState>() }
+
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            delay(16)
+            val toRemove = mutableListOf<String>()
+            keyGlows.forEach { (id, state) ->
+                state.life -= 0.035f
+                if (state.life <= 0f) toRemove.add(id)
+            }
+            toRemove.forEach { keyGlows.remove(it) }
+        }
+    }
 
     // 4. 触摸位置检测相关状态 (用于滑奏模式)
 
@@ -112,7 +146,12 @@ fun PianoRollNoteFlow(
             visibleRange = NoteFlowVisibleRange(
                 startPx = scrollState.value.toFloat(),
                 endPx = scrollState.value.toFloat() + viewportWidthPx
-            )
+            ),
+            onNoteHit = { keyIndex, color ->
+                keyIndexToIdMap[keyIndex]?.let { id ->
+                    keyGlows[id] = KeyGlowState(color)
+                }
+            }
         )
 
         Box(
@@ -208,6 +247,7 @@ fun PianoRollNoteFlow(
                                     },
                                 keyType = PianoKeyType.White,
                                 isPressed = pressedKeyIds.contains(keyData.id) && !isScrollMode, // 只有非滚动模式才显示按下效果
+                                glowState = keyGlows[keyData.id],
                                 // 单击模式 (如果是滚动模式，点击依然可以发声，这取决于你的需求，这里保留)
                                 onPressed = {
                                     if (isScrollMode) {
@@ -263,6 +303,7 @@ fun PianoRollNoteFlow(
                                         },
                                     keyType = PianoKeyType.Black,
                                     isPressed = pressedKeyIds.contains(keyData.id) && !isScrollMode,
+                                    glowState = keyGlows[keyData.id],
                                     onPressed = {
                                         if (isScrollMode) {
                                             onKeyPressed(keyData)
@@ -288,6 +329,7 @@ fun PianoKey(
     modifier: Modifier = Modifier,
     keyType: PianoKeyType = PianoKeyType.White,
     isPressed: Boolean = false,
+    glowState: KeyGlowState? = null,
     onPressed: () -> Unit,
     onReleased: () -> Unit
 ) {
@@ -351,6 +393,16 @@ fun PianoKey(
                         )
                     )
             )
+
+            // 命中发光层
+            glowState?.let { glow ->
+                val a = glow.life.coerceIn(0f, 1f)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(glow.color.copy(alpha = a * 0.35f))
+                )
+            }
         }
     }
 }
@@ -404,6 +456,11 @@ fun generate88Keys(): List<PianoKeyData> {
 
     return keys
 }
+
+data class KeyGlowState(
+    val color: Color,
+    var life: Float = 1.0f
+)
 
 data class PianoKeyData(
     val note: PianoKey,
