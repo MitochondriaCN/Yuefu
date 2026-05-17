@@ -131,4 +131,8 @@
     <string name="effect_medium">中</string>
     <string name="effect_high">高</string>
     <string name="measure_format">小节 %1$d/%2$d</string>
+    <string name="home_greeting">今日想听哪一份谱？</string>
+    <string name="brand_mark_yuefu">乐府</string>
+    <string name="brand_seal_le">乐</string>
+    <string name="scan_sheet_subtitle">拍照或导入乐谱，AI 即刻识别</string>
 </resources>
