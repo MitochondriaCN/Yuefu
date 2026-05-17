@@ -8,6 +8,8 @@ import com.xianliticn.yuefu.music.MidiEvent
 import com.xianliticn.yuefu.music.Parser
 import com.xianliticn.yuefu.music.SequenceEngine
 import com.xianliticn.yuefu.music.VisualNoteEvent
+import com.xianliticn.yuefu.ui.components.EffectLevel
+import com.xianliticn.yuefu.modules.SettingsManager
 import com.xianliticn.yuefu.utils.getAbsoluteImportFilePath
 import com.xianliticn.yuefu.utils.readXml
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,14 +25,15 @@ import kotlin.math.abs
 
 @HiltViewModel
 class SheetPlayPageViewModel @Inject constructor(
-    private val appDatabase: AppDatabase
+    private val appDatabase: AppDatabase,
+    private val settingsManager: SettingsManager
 ) : ViewModel() {
     @Inject
     @ApplicationContext
     lateinit var context: Context
 
     private var sheetId: Int = 0
-    private var se = SequenceEngine()
+    private lateinit var se: SequenceEngine
     private var events: List<MidiEvent> = emptyList()
     private var measureTimeline: List<Pair<Int, Long>> = emptyList()
     private var measureStartMillisByMeasure: Map<Int, Long> = emptyMap()
@@ -38,8 +41,20 @@ class SheetPlayPageViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UiState())
     val uiState = _uiState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            settingsManager.effectLevel.collect { level ->
+                _uiState.emit(uiState.value.copy(effectLevel = level))
+            }
+        }
+    }
+
     fun refresh(sheetId: Int) {
         this.sheetId = sheetId
+
+        if (!::se.isInitialized) {
+            se = SequenceEngine(context)
+        }
 
         viewModelScope.launch {
             val sheet = appDatabase.sheetDao().getById(sheetId)
@@ -69,6 +84,13 @@ class SheetPlayPageViewModel @Inject constructor(
                 )
             }.launchIn(viewModelScope)
         }
+    }
+
+    override fun onCleared() {
+        if (::se.isInitialized) {
+            se.release()
+        }
+        super.onCleared()
     }
 
     fun handlePlayOrPause() {
@@ -136,6 +158,7 @@ class SheetPlayPageViewModel @Inject constructor(
         val currentProgressMillis: Long = 0,
         val isPlaying: Boolean = false,
         val currentMeasure: Int = 1,
-        val maxMeasure: Int = 1
+        val maxMeasure: Int = 1,
+        val effectLevel: EffectLevel = EffectLevel.HIGH
     )
 }

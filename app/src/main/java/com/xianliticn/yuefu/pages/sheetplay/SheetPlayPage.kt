@@ -1,11 +1,14 @@
 package com.xianliticn.yuefu.pages.sheetplay
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -15,7 +18,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,15 +29,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.music.VisualNoteEvent
+import com.xianliticn.yuefu.ui.components.EffectLevel
 import com.xianliticn.yuefu.ui.components.PianoRollNoteFlow
-import com.xianliticn.yuefu.ui.theme.ControlBarDark
+import com.xianliticn.yuefu.ui.theme.ControlBarBlurEdge
+import com.xianliticn.yuefu.ui.theme.ControlBarGlassBottom
+import com.xianliticn.yuefu.ui.theme.ControlBarGlassTop
+import com.xianliticn.yuefu.ui.theme.ControlBarSeparator
 
 @Composable
 fun SheetPlayPage(
@@ -55,6 +63,7 @@ fun SheetPlayPage(
         isPlaying = uiState.isPlaying,
         currentMeasure = uiState.currentMeasure,
         maxMeasure = uiState.maxMeasure,
+        effectLevel = uiState.effectLevel,
         onPlayButtonClick = { viewModel.handlePlayOrPause() },
         onProgressChange = { viewModel.handleProgressChange(it) },
         onMeasureChange = { viewModel.handleMeasureChange(it) }
@@ -69,6 +78,7 @@ fun SheetPlayPageContent(
     isPlaying: Boolean = false,
     currentMeasure: Int = 1,
     maxMeasure: Int = 1,
+    effectLevel: EffectLevel = EffectLevel.HIGH,
     onPlayButtonClick: () -> Unit = {},
     onProgressChange: (Float) -> Unit = {},
     onMeasureChange: (Int) -> Unit = {}
@@ -77,10 +87,15 @@ fun SheetPlayPageContent(
     val keyboardHeight = LocalConfiguration.current.screenHeightDp.dp * 0.2f
 
     Column(modifier = modifier.fillMaxSize()) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = ControlBarDark,
-            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+        // 磨砂玻璃控制栏
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(ControlBarGlassTop, ControlBarGlassBottom)
+                    )
+                )
         ) {
             Row(
                 modifier = Modifier
@@ -104,7 +119,7 @@ fun SheetPlayPageContent(
                     onValueChange = { onProgressChange(it) }
                 )
                 Text(
-                    text = "小节 $currentMeasure/$maxMeasure",
+                    text = stringResource(R.string.measure_format, currentMeasure, maxMeasure),
                     style = MaterialTheme.typography.labelMedium
                 )
                 Slider(
@@ -123,14 +138,36 @@ fun SheetPlayPageContent(
                     )
                 }
             }
+
+            // 底部分隔线
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(ControlBarSeparator)
+            )
         }
+
+        // 控制栏下方模糊边缘
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(14.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(ControlBarBlurEdge, Color.Transparent)
+                    )
+                )
+        )
 
         PianoRollNoteFlow(
             modifier = Modifier.weight(1f),
             isScrollMode = isScrollMode,
             keyboardHeight = keyboardHeight,
             notes = notes,
-            currentProgressMillis = currentProgressMillis
+            currentProgressMillis = currentProgressMillis,
+            effectLevel = effectLevel
         )
     }
 }

@@ -124,6 +124,13 @@
     <string name="delete_confirm_message">确定要删除「%s」吗？此操作无法撤销。</string>
     <string name="more_options">更多选项</string>
     <string name="choose_model_demo_mode">请选择模型</string>
+    <string name="visual_effects">视觉效果</string>
+    <string name="effect_level">特效等级</string>
+    <string name="effect_level_desc">调整音符瀑布流的粒子特效密度</string>
+    <string name="effect_low">低</string>
+    <string name="effect_medium">中</string>
+    <string name="effect_high">高</string>
+    <string name="measure_format">小节 %1$d/%2$d</string>
     <string name="home_greeting">今日想听哪一份谱？</string>
     <string name="brand_mark_yuefu">乐府</string>
     <string name="brand_seal_le">乐</string>
