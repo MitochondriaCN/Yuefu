@@ -68,7 +68,6 @@ import androidx.core.content.FileProvider
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.entities.Sheet
 import com.xianliticn.yuefu.ui.components.ScanningTutorialBottomSheet
-import com.xianliticn.yuefu.ui.theme.BgLight
 import com.xianliticn.yuefu.ui.theme.InkBrown
 import com.xianliticn.yuefu.ui.theme.InkSoft
 import com.xianliticn.yuefu.ui.theme.NotoSerifSc
@@ -233,7 +232,7 @@ fun HomePageContent(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(BgLight)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Column(
                 modifier = Modifier

@@ -57,7 +57,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.xianliticn.yuefu.R
 import com.xianliticn.yuefu.ui.theme.AccentAmber
 import com.xianliticn.yuefu.ui.theme.AccentAmberSoft
-import com.xianliticn.yuefu.ui.theme.BgLight
 import com.xianliticn.yuefu.ui.theme.Bronze
 import com.xianliticn.yuefu.ui.theme.InkBrown
 import com.xianliticn.yuefu.ui.theme.InkSoft
@@ -260,7 +259,7 @@ private fun PlayingNowScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(BgLight)
+            .background(MaterialTheme.colorScheme.background)
             .drawBehind {
                 val mainRadius = size.minDimension * 0.95f
                 val glowAlpha = 0.18f + level * 0.3f
