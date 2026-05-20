@@ -21,7 +21,7 @@ val GreenDarkDark = Color(0xFFC8C6B4)
 val GreenMuted = Color(0xFFB8BA99)         // 边框、分割线
 
 // ── 全局背景 ────────────────────────────────────────────
-val BgLight = Color(0xFFfffdf9)            // 暖白画布（Liquid Lumina）
+val BgLight = Color(0xFFFFFBEC)            // 奶油黄页面底色（阳光书房）
 val BgDark = Color(0xFF1A1A16)             // 深暖黑（非纯黑）
 
 // ── 文字层级 ────────────────────────────────────────────

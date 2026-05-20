@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,6 +55,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.xianliticn.yuefu.R
+import com.xianliticn.yuefu.ui.theme.AccentAmber
+import com.xianliticn.yuefu.ui.theme.AccentAmberSoft
+import com.xianliticn.yuefu.ui.theme.Bronze
+import com.xianliticn.yuefu.ui.theme.InkBrown
+import com.xianliticn.yuefu.ui.theme.InkSoft
+import com.xianliticn.yuefu.ui.theme.Moonlight
+import com.xianliticn.yuefu.ui.theme.Ochre
+import com.xianliticn.yuefu.ui.theme.PaleOchre
 import com.xianliticn.yuefu.ui.theme.YuefuTheme
 import okio.Buffer
 import okio.ByteString
@@ -250,14 +259,14 @@ private fun PlayingNowScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF07090D))
+            .background(MaterialTheme.colorScheme.background)
             .drawBehind {
                 val mainRadius = size.minDimension * 0.95f
-                val glowAlpha = 0.28f + level * 0.4f
+                val glowAlpha = 0.18f + level * 0.3f
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF1A2230).copy(alpha = glowAlpha),
+                            AccentAmber.copy(alpha = glowAlpha),
                             Color.Transparent
                         ),
                         center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.22f),
@@ -267,24 +276,16 @@ private fun PlayingNowScreen(
                 drawRect(
                     brush = Brush.radialGradient(
                         colors = listOf(
-                            Color(0xFF101722).copy(alpha = 0.55f + level * 0.25f),
+                            PaleOchre.copy(alpha = 0.35f + level * 0.2f),
                             Color.Transparent
                         ),
                         center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.86f),
                         radius = size.minDimension * 0.9f
                     )
                 )
-                drawRect(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color(0xFF05070B).copy(alpha = 0.85f)
-                        )
-                    )
-                )
             }
     ) {
-        NoiseVeil(modifier = Modifier.matchParentSize(), intensity = 0.08f)
+        NoiseVeil(modifier = Modifier.matchParentSize(), intensity = 0.05f)
         FlowingRibbons(modifier = Modifier.matchParentSize(), audioLevel = level)
 
         Box(
@@ -297,14 +298,14 @@ private fun PlayingNowScreen(
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.2f),
-                            Color.White.copy(alpha = 0.08f)
+                            Moonlight,
+                            PaleOchre.copy(alpha = 0.5f)
                         )
                     )
                 )
                 .border(
                     width = 1.dp,
-                    color = Color.White.copy(alpha = 0.28f),
+                    color = Ochre.copy(alpha = 0.3f),
                     shape = RoundedCornerShape(32.dp)
                 )
                 .padding(vertical = 26.dp, horizontal = 26.dp)
@@ -317,14 +318,14 @@ private fun PlayingNowScreen(
                     text = stringResource(R.string.now_playing),
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White.copy(alpha = 0.9f),
+                    color = InkBrown,
                     textAlign = TextAlign.Center
                 )
                 Text(
                     text = stringResource(R.string.ai_generating),
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f),
+                    color = InkSoft,
                     textAlign = TextAlign.Center
                 )
                 Spacer(Modifier.weight(1f))
@@ -381,18 +382,18 @@ private fun SpectrumBars(
                     .width(barWidth)
                     .height(barHeight)
                     .shadow(
-                        elevation = (8f + 14f * audioLevel).dp,
+                        elevation = (6f + 10f * audioLevel).dp,
                         shape = RoundedCornerShape(50),
-                        ambientColor = Color(0xFFBFD6FF).copy(alpha = 0.35f),
-                        spotColor = Color(0xFFBFD6FF).copy(alpha = 0.35f)
+                        ambientColor = Bronze.copy(alpha = 0.25f),
+                        spotColor = Bronze.copy(alpha = 0.3f)
                     )
                     .clip(RoundedCornerShape(50))
                     .background(
                         Brush.verticalGradient(
                             listOf(
-                                Color.White.copy(alpha = 0.98f),
-                                Color(0xFFBFD6FF).copy(alpha = 0.65f + 0.25f * audioLevel),
-                                Color.White.copy(alpha = 0.35f + 0.25f * audioLevel)
+                                PaleOchre,
+                                Ochre,
+                                Bronze
                             )
                         )
                     )
@@ -442,7 +443,7 @@ private fun FlowingRibbons(
             path = leftPath,
             brush = Brush.linearGradient(
                 listOf(
-                    Color(0xFF95B6FF).copy(alpha = 0.08f + audioLevel * 0.25f),
+                    AccentAmberSoft.copy(alpha = 0.10f + audioLevel * 0.25f),
                     Color.Transparent
                 )
             ),
@@ -452,7 +453,7 @@ private fun FlowingRibbons(
             path = rightPath,
             brush = Brush.linearGradient(
                 listOf(
-                    Color(0xFF6FE3D6).copy(alpha = 0.08f + audioLevel * 0.25f),
+                    Ochre.copy(alpha = 0.10f + audioLevel * 0.22f),
                     Color.Transparent
                 )
             ),
@@ -469,7 +470,7 @@ private fun NoiseVeil(
     Canvas(modifier = modifier) {
         val step = 14f
         val alpha = intensity.coerceIn(0f, 0.2f)
-        val color = Color.White.copy(alpha = alpha)
+        val color = Ochre.copy(alpha = alpha * 0.6f)
         var y = 0f
         while (y < size.height) {
             var x = 0f
@@ -496,29 +497,21 @@ private fun CircularPlayButton(
 ) {
     Box(
         modifier = modifier
-            .size(70.dp)
-            .clip(RoundedCornerShape(35.dp))
+            .size(64.dp)
+            .shadow(8.dp, RoundedCornerShape(32.dp))
+            .clip(RoundedCornerShape(32.dp))
             .background(
-                Brush.radialGradient(
-                    listOf(
-                        Color.White.copy(alpha = 0.3f),
-                        Color.White.copy(alpha = 0.08f)
-                    )
-                )
+                Brush.linearGradient(listOf(Ochre, Bronze))
             )
-            .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(35.dp)),
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        FilledIconButton(
-            onClick = onClick,
-            modifier = Modifier.size(56.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Stop,
-                contentDescription = stringResource(R.string.stop),
-                tint = Color.White
-            )
-        }
+        Icon(
+            imageVector = Icons.Default.Stop,
+            contentDescription = stringResource(R.string.stop),
+            tint = Color.White,
+            modifier = Modifier.size(28.dp)
+        )
     }
 }
 
