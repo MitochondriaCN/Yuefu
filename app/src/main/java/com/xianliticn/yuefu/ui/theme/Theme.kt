@@ -13,10 +13,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = BlueAccent,
+    primary = Ochre,
     onPrimary = Color.White,
-    primaryContainer = BlueAccentContainer,
-    onPrimaryContainer = Color(0xFF1A237E),
+    primaryContainer = PaleOchre,
+    onPrimaryContainer = InkBrown,
 
     secondary = GreenDark,
     onSecondary = Color.White,
@@ -45,15 +45,15 @@ private val LightColorScheme = lightColorScheme(
     surfaceContainer = Color.White,
     inverseSurface = TextPrimary,
     inverseOnSurface = Color(0xFFF5F4F0),
-    inversePrimary = BlueAccentDark,
-    surfaceTint = BlueAccent,
+    inversePrimary = Bronze,
+    surfaceTint = Ochre,
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = BlueAccentDark,
-    onPrimary = Color(0xFF1A237E),
-    primaryContainer = BlueAccentContainerDark,
-    onPrimaryContainer = BlueAccentContainer,
+    primary = Bronze,
+    onPrimary = Color(0xFFE8E6DF),
+    primaryContainer = OchreEdge,
+    onPrimaryContainer = PaleOchre,
 
     secondary = GreenDarkDark,
     onSecondary = Color(0xFF3D3C2E),
@@ -82,8 +82,8 @@ private val DarkColorScheme = darkColorScheme(
     surfaceContainer = Color(0xFF242418),
     inverseSurface = Color(0xFFE8E6DF),
     inverseOnSurface = TextPrimary,
-    inversePrimary = BlueAccent,
-    surfaceTint = BlueAccentDark,
+    inversePrimary = Ochre,
+    surfaceTint = Bronze,
 )
 
 @Composable
