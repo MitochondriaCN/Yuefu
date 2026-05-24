@@ -1,6 +1,10 @@
 package com.xianliticn.yuefu.pages.sheet
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
@@ -339,7 +343,8 @@ fun SheetPageContent(
 
                 // 网格卡片
                 items(sheets.size, key = { sheets[it].first.id }) { index ->
-                    SheetCard(
+                    AnimatedSheetCard(
+                        index = index,
                         sheet = sheets[index],
                         onItemClick = onItemClick,
                         onItemHold = { optionSheet = it.first },
@@ -444,6 +449,31 @@ private fun SheetActionItem(
                 color = if (isDestructive) ErrorRed else MaterialTheme.colorScheme.onSurface
             )
         }
+    }
+}
+
+@Composable
+private fun AnimatedSheetCard(
+    index: Int,
+    sheet: Pair<Sheet, TaskStatus?>,
+    cover: Any? = null,
+    onItemClick: (Pair<Sheet, TaskStatus?>) -> Unit,
+    onItemHold: (Pair<Sheet, TaskStatus?>) -> Unit
+) {
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(400, delayMillis = 60 * index)) +
+                slideInVertically(tween(400, delayMillis = 60 * index)) { it / 6 }
+    ) {
+        SheetCard(
+            sheet = sheet,
+            onItemClick = onItemClick,
+            onItemHold = onItemHold,
+            cover = cover
+        )
     }
 }
 
