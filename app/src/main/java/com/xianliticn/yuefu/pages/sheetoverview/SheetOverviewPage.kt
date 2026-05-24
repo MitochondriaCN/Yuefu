@@ -1,5 +1,9 @@
 package com.xianliticn.yuefu.pages.sheetoverview
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,8 +30,12 @@ import com.xianliticn.yuefu.ui.components.animation.LottieLoadingView
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -49,9 +57,17 @@ fun SheetOverviewPage(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val imageModel by viewModel.sheetPicture.collectAsState()
+    var contentVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.refresh(sheetId)
+    }
+
+    LaunchedEffect(uiState.loading) {
+        if (!uiState.loading) {
+            delay(100)
+            contentVisible = true
+        }
     }
 
     Scaffold(
@@ -72,15 +88,21 @@ fun SheetOverviewPage(
         if (uiState.loading)
             LottieLoadingView()
         else
-            SheetOverviewPageContent(
-                modifier = Modifier.padding(paddingValues),
-                sheetName = uiState.sheetTitle ?: stringResource(R.string.unknown_sheet),
-                sheetAuthor = uiState.sheetAuthor ?: stringResource(R.string.unknown_author),
-                sheetCreatedTime = uiState.sheetCreatedTime,
-                sheetMeasureCount = uiState.sheetMeasureCount,
-                sheetModel = uiState.sheetModel,
-                sheetPicture = imageModel
-            )
+            AnimatedVisibility(
+                visible = contentVisible,
+                enter = fadeIn(tween(500)) +
+                        slideInVertically(tween(500)) { it / 8 }
+            ) {
+                SheetOverviewPageContent(
+                    modifier = Modifier.padding(paddingValues),
+                    sheetName = uiState.sheetTitle ?: stringResource(R.string.unknown_sheet),
+                    sheetAuthor = uiState.sheetAuthor ?: stringResource(R.string.unknown_author),
+                    sheetCreatedTime = uiState.sheetCreatedTime,
+                    sheetMeasureCount = uiState.sheetMeasureCount,
+                    sheetModel = uiState.sheetModel,
+                    sheetPicture = imageModel
+                )
+            }
     }
 }
 
